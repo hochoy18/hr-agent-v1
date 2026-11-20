@@ -1,0 +1,26 @@
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# 环境配置（保留 .env.example 模板）
+.env
+.env.local
+.env.*.local
+
+# 运行时产物
+backend/logs/
+backend/uploads/
+*.log
+
+# 前端
+node_modules/
+frontend/dist/
+*.local

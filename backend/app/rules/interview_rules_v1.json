@@ -1,0 +1,331 @@
+{
+  "rule_version": "v1.1",
+  "label_version": "interview-label-v1",
+  "updated": "2026-11-13",
+  "applies_to": ["INTERVIEW_QA_PAIRS_SYSTEM_PROMPT", "INTERVIEW_ANALYSIS_SYSTEM_PROMPT"],
+  "scope_note": "本文件是问答判定三个字段（verdict / substance / followup）的唯一取值依据，同时也是提示词的生成源。改档位定义必须先改本文件并升 rule_version，不允许只改提示词。候选人总分只由 4 个维度决定，其中 2 维由本文件的标签按 derivation 推导、2 维由模型按 rubric 打分（见 unscored）。derivation 与 dimension_weights 同时被打分调用读取：代码据此算分，提示词据此渲染档位表。",
+
+  "engine_legend": {
+    "rule": "代码确定性计算，模型结论不采信，命中即覆盖",
+    "llm": "模型按本文件的 requires / excludes / examples 判定",
+    "hybrid": "代码先按 rule 判，未命中再交模型"
+  },
+
+  "precedence_note": "同一字段内单选取值，precedence 数字小者先判，命中即停止。切题是兜底档：前面的档位都不成立时才落到它。",
+
+  "fields": [
+    {
+      "field": "verdict",
+      "label": "问题回应质量",
+      "question": "候选人这一段回答，有没有回应面试官问的那件事？",
+      "unit": "组（一问一答）",
+      "selection": "single",
+      "engine": "hybrid",
+      "options": [
+        {
+          "value": "未作答",
+          "precedence": 10,
+          "engine": "rule",
+          "criteria": "候选人这一轮没有提供任何可作答的内容：没说话、只有应答词，或只说不会/不知道而没有补充。",
+          "requires": [
+            "A 为空，或渲染成「（候选人没有回应）」",
+            "A 去掉标点后有效汉字不超过 5 个，或全部由应答词、语气词构成（嗯、啊、哦、好的、对、可以、是的、行、没有、不知道）"
+          ],
+          "excludes": [
+            "A 里有任一句完整陈述（有主语有谓语），即使开头是「嗯」",
+            "候选人承认不会，但同时给了替代经历、猜测或原因 —— 归部分切题或切题",
+            "A 是反问且带实质追问 —— 归回避",
+            "短但是完整判断句，如「数据库扛不住」「接口会超时」"
+          ],
+          "examples": {
+            "hit": ["嗯。", "这个……不好说", "好的，可以的", "没有"],
+            "miss": ["我不会，但我当时用脚本跑过一遍", "没做过这个，不过我们做过类似的报表迁移"],
+            "ambiguous": ["嗯，差不多吧"]
+          },
+          "note_hint": "字数只作辅助：先看有没有实质内容，再看字数。反过来用（字数够就判切题）是本档最容易出的错。"
+        },
+        {
+          "value": "回避",
+          "precedence": 20,
+          "engine": "llm",
+          "criteria": "A 有内容，但没有正面接触问题的指向，改用反问、推迟、谈条件或转谈别的事绕开。",
+          "requires": [
+            "存在一个明确的问题指向（问的是什么、为什么、多少、怎么做）",
+            "绕开方式属以下之一：反问回抛（「你觉得呢」「为什么要做」）/ 推迟（「后面再说」「看情况」）/ 谈条件（「先给我…我再说」）/ 转向无关话题"
+          ],
+          "excludes": [
+            "反问是为了澄清后再作答（「你指线上那套还是演示版？」后面给了回答）—— 不算回避",
+            "A 为空或只有应答词 —— 归未作答",
+            "答了别的事、不是绕开 —— 归答非所问"
+          ],
+          "examples": {
+            "hit": ["这个要看情况，你们先给我个方案我再评估", "为什么要做这个功能，你的想法是什么？"],
+            "miss": ["你是指生产环境还是测试环境？生产环境我们是双写。"],
+            "ambiguous": ["这个我们后面再细聊吧，今天时间也不多"]
+          },
+          "note_hint": "与部分切题的界线：回避是没碰到问题指向，部分切题是碰到了一部分。"
+        },
+        {
+          "value": "答非所问",
+          "precedence": 25,
+          "engine": "llm",
+          "criteria": "A 有实质内容，但答的是另一件事：内容与问题指向不同，不是绕开，是换了话题。",
+          "requires": [
+            "A 有可提取的实质内容",
+            "A 的内容与问题的指向不同，且不是用反问或推迟绕开"
+          ],
+          "excludes": [
+            "答错了但仍在回答同一件事 —— 归部分切题",
+            "主动补充的相关背景、延伸说明 —— 归切题",
+            "复述问题本身 —— 归回避"
+          ],
+          "examples": {
+            "hit": ["问：这个接口 QPS 多少？  答：我们团队一共六个人，两个后端。"],
+            "miss": ["问：QPS 多少？  答：大概两千，压测到过三千。（数字对不对不影响切题）"],
+            "ambiguous": ["问：为什么选这个方案？  答：当时领导定的。（回答了谁定的，没回答为什么）"]
+          },
+          "note_hint": "判断关键是「问题指向的那件事」是否被回答，不是 A 里有没有出现 Q 的词。字面重合率区分不出切题和部分切题，不要拿它当依据。"
+        },
+        {
+          "value": "部分切题",
+          "precedence": 30,
+          "engine": "llm",
+          "criteria": "正面回应了问题指向的一部分，或答到边缘：相关但没到核心。",
+          "requires": [
+            "A 与问题指向相关且接触到了其中一部分",
+            "或答到了核心的外围（讲了背景、讲了做法但没回答问题本身）"
+          ],
+          "excludes": [
+            "完整覆盖问题核心 —— 归切题",
+            "完全没碰问题指向 —— 归回避或答非所问"
+          ],
+          "examples": {
+            "hit": ["问：子 agent 有几个，定义了哪些 skill？  答：有节点调用和自检评审。（只答了机制，没答数量和 skill）"],
+            "miss": ["问：子 agent 有几个？  答：三个，分别管检索、改写和校验。"],
+            "ambiguous": ["问：怎么保证召回质量？  答：我们做了人工抽检。"]
+          },
+          "note_hint": "问题含多个子问时，只答到其中一个即落本档；全部覆盖才算切题。"
+        },
+        {
+          "value": "切题",
+          "precedence": 40,
+          "engine": "llm",
+          "criteria": "正面回应了问题的核心：听的人能从这个回答里得到所问之事的答案。",
+          "requires": [
+            "A 直接给出了问题核心的答案",
+            "问题含多个子问时，至少覆盖核心子问并给出对应内容"
+          ],
+          "excludes": [
+            "只答到边缘或只覆盖部分子问 —— 归部分切题",
+            "用反问、推迟、谈条件绕开 —— 归回避",
+            "答得又长又顺但没回答所问之事 —— 长度和流畅度都不作依据"
+          ],
+          "examples": {
+            "hit": ["问：QPS 多少？  答：大概两千，压测到过三千。"],
+            "miss": ["问：QPS 多少？  答：我们服务挺稳的，一直没什么问题。"],
+            "ambiguous": []
+          },
+          "note_hint": "本档是兜底档，但兜底的意思是「前面几档都不成立」，不是「拿不准就判切题」。拿不准时按部分切题判。"
+        }
+      ]
+    },
+    {
+      "field": "substance",
+      "label": "事实层级",
+      "question": "抛开答得好不好，这段回答里能提取到哪一层事实？",
+      "unit": "组（一问一答）",
+      "selection": "single",
+      "engine": "llm",
+      "preamble": "只看 A 的内容，不看 verdict，不评价质量。答非所问的回答同样有事实层级；被追问后补充的细节也计入本组。",
+      "options": [
+        {
+          "value": "none",
+          "score": 0,
+          "criteria": "只有态度、评价、感受或结论，抽不出任何「做了什么 / 用什么做的 / 结果如何」。",
+          "requires": ["A 里没有可提取的名词性事实（工具、步骤、角色、指标）"],
+          "excludes": [
+            "出现任何技术名词、方案名词或做法名词 —— 从 claim 起算",
+            "A 判定为未作答 —— 本字段不再单独计入，避免同一段空回答被扣两次"
+          ],
+          "examples": {
+            "hit": ["我觉得还行", "这个挺重要的", "挺好的"],
+            "miss": ["我们用 RAG 做的"],
+            "ambiguous": ["效果还不错，用户反馈挺好"]
+          }
+        },
+        {
+          "value": "claim",
+          "score": 1,
+          "criteria": "提到了概念、方案名或工具名，但没有任何具体做法。",
+          "requires": ["A 出现做法或方案的名词", "但没有说明怎么做的（步骤、参数、分工、时间）"],
+          "excludes": ["给出了可复述的做法 —— 归 action", "给出了数字或量化结果 —— 归 data"]
+        },
+        {
+          "value": "action",
+          "score": 2,
+          "criteria": "说明了具体做法：步骤、工具、分工或流程至少给出一项，但没有量化结果。",
+          "requires": ["A 至少给出一条可复述的做法", "没有给出数字、指标或明确成效"],
+          "excludes": ["给出数字或明确结果 —— 归 data"],
+          "examples": {
+            "hit": ["我先把 PDF 抽文本，再按标题切段，最后灌进向量库"],
+            "miss": ["切了 3 万条，召回率从 62% 提到 81%"]
+          }
+        },
+        {
+          "value": "data",
+          "score": 4,
+          "criteria": "给出数字、指标、比例、时长或明确结果。",
+          "requires": ["A 含可核对的数字或量化结果"],
+          "excludes": ["只有「很多」「很久」「挺快的」这类模糊量词 —— 归 action 或 claim"],
+          "examples": {
+            "hit": ["切了 3 万条，召回率从 62% 提到 81%", "每天二十万单，延迟 80ms"],
+            "miss": ["量很大，效果挺好"],
+            "ambiguous": ["大概提升了一倍"]
+          }
+        }
+      ]
+    },
+    {
+      "field": "followup",
+      "label": "追问深度",
+      "question": "面试官在这一组之后，有没有就同一件事继续往下压？",
+      "unit": "组（一问一答）",
+      "selection": "single",
+      "engine": "llm",
+      "judged_subject": "面试官的行为，不是候选人的能力。候选人答得好不好已计入 verdict / substance，本字段不重复计分。",
+      "lookahead": 2,
+      "lookahead_note": "本字段是唯一允许跨组看的字段；verdict 和 substance 仍只看本组。",
+      "options": [
+        {
+          "value": "none",
+          "score": 0,
+          "criteria": "问完就换下一件事，没有就同一件事继续问。",
+          "requires": [
+            "后续 1~2 组里没有就同一件事的继续提问",
+            "或后续提问已经换成了另一件事"
+          ],
+          "excludes": ["追问换成了新话题 —— 按 none 计", "候选人自己补充了细节、面试官没追问 —— 不算 followup"]
+        },
+        {
+          "value": "surface",
+          "score": 2,
+          "criteria": "追问了一层：要数据、要细节、要举例，但没有再往下。",
+          "requires": ["后续组里出现了就同一件事的追问", "只有一层，没形成连续下压"],
+          "excludes": ["追问已经形成两层以上 —— 归 deep", "追问换成了另一件事 —— 归 none"]
+        },
+        {
+          "value": "deep",
+          "score": 4,
+          "criteria": "连续追问，形成两层以上深挖。",
+          "requires": [
+            "同一件事在后续组里被继续追问至少两层",
+            "每层把范围收窄：从「做了什么」到「怎么做的」再到「效果多少」"
+          ],
+          "excludes": ["只是重复问了同一句话 —— 不算深挖"]
+        }
+      ]
+    }
+  ],
+
+  "exclusive_groups": [
+    {
+      "group": "answer_presence",
+      "members": ["verdict:未作答"],
+      "effect": "判定为「未作答」的组，substance 不参与事实信息量均值计算。同一段「嗯」不能既扣问答一致性又扣事实信息量。",
+      "status": "已落代码"
+    },
+    {
+      "group": "verdict_single",
+      "members": ["verdict 全部 5 档"],
+      "effect": "同一组只取一档，按 precedence 先判先得。",
+      "status": "已落代码"
+    }
+  ],
+
+  "derivation": {
+    "问答一致性": {
+      "source": "verdict",
+      "method": "positive_ratio",
+      "weights": {"切题": 1.0, "部分切题": 0.5, "答非所问": 0.0, "回避": 0.0, "未作答": 0.0},
+      "bands": [
+        {"min": 0.9, "score": 4, "label": "几乎每个问题都被正面回应"},
+        {"min": 0.7, "score": 3, "label": "绝大多数问题正面回应，个别转向或停在背景"},
+        {"min": 0.4, "score": 2, "label": "约一半问题得到正面回应，其余绕开或只谈背景"},
+        {"min": 0.1, "score": 1, "label": "多数回答只抓住个别字词，没有回应核心"}
+      ],
+      "below_min_score": 0,
+      "below_min_label": "多数回答与问题无关，或直接换话题",
+      "min_samples": 3,
+      "invalid_value": "剔除，不参与均值"
+    },
+    "事实信息量": {
+      "source": "substance",
+      "method": "average",
+      "weights": {"none": 0.0, "claim": 1.0, "action": 2.0, "data": 4.0},
+      "rounding": "round",
+      "band_note": "均值四舍五入到整数档：claim 与 action 各半落在 2 档，action 与 data 各半落在 3 档。",
+      "min_samples": 3,
+      "exclude_group": "answer_presence",
+      "invalid_value": "剔除，不参与均值"
+    },
+    "追问深度": {
+      "source": "followup",
+      "method": "average",
+      "weights": {"none": 0.0, "surface": 2.0, "deep": 4.0},
+      "bands": [
+        {"min": 3.0, "level": "充分", "note": "多数回答被追到细节层面。"},
+        {"min": 1.5, "level": "一般", "note": "有追问，但多数停在表层。"},
+        {"min": 0.0, "level": "偏浅", "note": "整场几乎没有追问，候选人未经深挖。"}
+      ],
+      "counts_as": "execution 字段，不计入候选人总分",
+      "invalid_value": "剔除，不参与均值"
+    }
+  },
+
+  "dimension_weights": {
+    "note": "4 个应答质量维度折算总分（0-100）的权重；只对 status=scored 的维度折算，缺失维度的权重按比例归一到其余维度。",
+    "weights": {
+      "问答一致性": 0.35,
+      "事实信息量": 0.35,
+      "逻辑条理性": 0.15,
+      "表达组织能力": 0.15
+    },
+    "rationale": "可核对的两维（由本文件的 verdict / substance 推导）合计 70%，由模型按 rubric 判断的两维合计 30%。"
+  },
+
+  "scoring_use": {
+    "consumers": {
+      "interview_service._apply_derived_scores": "读 derivation.<维度> 的 weights / bands / min_samples / exclude_group / rounding 算两维分数",
+      "interview_service.DIMENSION_WEIGHTS": "读 dimension_weights.weights 折算总分",
+      "interview_prompts.INTERVIEW_ANALYSIS_SYSTEM_PROMPT": "读 derivation 渲染档位表，打分调用同时收到判定统计"
+    },
+    "effect": "改本文件的阈值、权重或档位语义名，重跑分析即改变分数与提示词，不需要改代码"
+  },
+
+  "unscored": {
+    "dimensions": ["逻辑条理性", "表达组织能力"],
+    "reason": "两维合计占总分 30%，但只有文字 rubric（「基本完整」「偶有重复」这类程度词），没有可复核的指标。写进本文件只会把主观判断换个格式存放，不会让它变得可核对。",
+    "status": "等 3~5 份真实稿的模型分与文本指标（口头语密度、重复 n-gram 率、平均句长、结构标记密度）相关性验证后再纳入",
+    "rule": "本文件不描述这两维，提示词里仍按原有 rubric 打分。"
+  },
+
+  "version_policy": {
+    "rule_version": "档位定义、requires、excludes、derivation 的档位阈值或权重任一改动都要升版本",
+    "label_version": "取值集合变化（增删档位）才升版本",
+    "record": "评价结果里同时记录 rule_version 与 prompt_version，便于回溯历史评价是按哪版规则算的",
+    "status": "已落代码：evaluation.rule_version"
+  },
+
+  "known_gaps": [
+    {
+      "gap": "事实信息量用均值，claim 多时被压到 1 档",
+      "detail": "实测 26 组：8 组 action、2 组 data、11 组 claim，均值 1.35 四舍五入到 1 档。有具体做法的回答占三分之一，分数体现不出来。",
+      "fix": "改为按档位占比定档（如 data 占比 ≥20% 给 3 档），需先在多份真实稿上验证"
+    },
+    {
+      "gap": "正面率阈值离实际分布太近，单组翻转就跳档",
+      "detail": "实测切题率在 0.88~0.93 之间摆动，正好夹着 0.9 这条线，1 组问答翻转就让问答一致性 4 档跳 3 档，总分随之跳 8.75。",
+      "fix": "阈值需要按组数留余量（如要求「未正面回应 ≤1 组」才给 4 档），需先在多份真实稿上确认分部再改"
+    }
+  ]
+}
