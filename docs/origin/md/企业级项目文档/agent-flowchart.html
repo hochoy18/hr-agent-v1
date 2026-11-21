@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 执行流程图（LangGraph 版）</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body {
+    background: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: #303133;
+  }
+  h1 { text-align: center; margin-bottom: 8px; }
+  .sub { text-align: center; color: #909399; margin-bottom: 30px; font-size: 14px; line-height: 1.7; }
+  h2 { margin-top: 40px; border-left: 4px solid #409eff; padding-left: 10px; font-size: 20px; }
+  h3 { margin-top: 24px; color: #606266; font-size: 16px; }
+  .mermaid { background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 32px; overflow-x: auto; }
+  .note { background: #fff; border-left: 4px solid #409eff; padding: 14px 18px; border-radius: 4px; font-size: 14px; line-height: 1.9; margin-bottom: 28px; }
+  .warn { border-left-color: #e6a23c; }
+  code { background: #f0f2f5; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden; margin-bottom: 28px; font-size: 14px; }
+  th, td { padding: 9px 12px; border-bottom: 1px solid #ebeef5; text-align: left; vertical-align: top; }
+  th { background: #fafbfc; color: #606266; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>HR Agent 执行流程</h1>
+<div class="sub">
+基于当前代码（LangGraph 编排 + 智能面试评价），与《方案设计文档》4.5.2 / 4.5.11 / 第 5 章一致<br/>
+图 1 总览 · 图 2 路由决策 · 图 3~6 意图子图 · 图 7 文件流直通 · 图 8~9 时序 · 图 10~11 智能面试
+</div>
+
+<div class="note">
+<b>读图前先记住三个约定：</b><br/>
+1. <b>主图只做路由</b>：<code>START → route_intent →（条件边）→ 意图子图 → END</code>。写操作（删除、发送、落库）只发生在确定性子图里，路由模型不持有写工具。<br/>
+2. <b>状态分两类</b>：<code>artifacts</code> 用 <code>add_artifacts</code> reducer 跨轮累积（保留最近 50 条），<code>steps</code> 每轮被覆盖；<code>db</code> / <code>user_id</code> / <code>thread_id</code> / <code>files</code> 一律走 <code>RunnableConfig["configurable"]</code>，不进 checkpoint。<br/>
+3. <b>确认是真暂停</b>：<code>interrupt()</code> 挂起图，恢复靠 <code>POST /agent/graph/resume</code> + <code>Command(resume=value)</code>，不是靠提示词让模型「记得停下来」。
+</div>
+
+<h2>一、总览：从 HTTP 请求到 SSE 终态</h2>
+<div class="mermaid">
+flowchart TD
+    A["📩 POST /api/v1/agent/graph/chat<br/>AgentGraphChatRequest{message, thread_id, attachments}"]
+
+    B["🔐 endpoints/agent_graph.py<br/>chat_via_graph()"]
+
+    C["🧹 组装本轮输入<br/>agent_plan=None / final_response=None 显式清零<br/>preset_intent=null（对话路径）"]
+    C2["⚙️ config.configurable<br/>{agent_service, user_id, thread_id, streaming:true}"]
+
+    D["🚀 agent_graph.astream<br/>stream_mode=['updates','custom'], subgraphs=True"]
+
+    E["START → route_intent<br/>（见 图 2）"]
+
+    F{"条件边 _route_destination<br/>读 state['dest_node']"}
+
+    G1["💬 chat"]
+    G2["📄 jd_prepare"]
+    G3["✏️ jd_edit"]
+    G4["🏷️ criteria_edit"]
+    G5["🗑️ resource_delete"]
+    G6["📑 resume_screening"]
+    G7["🎯 interview_plan"]
+    G8["📝 exam_generate"]
+    G9["🧩 skill_draft"]
+    G10["📎 resume_exec"]
+    G11["📎 interview_exec"]
+    G12["📎 exam_exec"]
+
+    H["各节点 / 子图执行<br/>add_edge(node, END)"]
+
+    I{"流结束：aget_state<br/>取 state['final_response']"}
+
+    J1["✅ yield final(response, thread_id)<br/>+ data: [DONE]"]
+    J2["⚠️ yield error<br/>「LangGraph 图未产出 final_response」"]
+
+    A --> B --> C --> C2 --> D --> E --> F
+    F --> G1 & G2 & G3 & G4 & G5 & G6 & G7 & G8 & G9 & G10 & G11 & G12
+    G1 & G2 & G3 & G4 & G5 & G6 & G7 & G8 & G9 & G10 & G11 & G12 --> H --> I
+    I -->|有 final_response| J1
+    I -->|缺失| J2
+
+    style A fill:#e1f0ff
+    style C fill:#fff7e6
+    style E fill:#f0e6ff
+    style F fill:#fff7e6
+    style J1 fill:#e6ffe6
+    style J2 fill:#fdecea
+</div>
+
+<div class="note warn">
+注意 <code>agent_plan</code> / <code>preset_intent</code> / <code>final_response</code> 三个 channel 必须每轮显式清零：<code>thread_id</code> 复用同一个 checkpoint，不清就会继承上一轮的计划（例如上轮 intent=jd），导致本轮跳过意图决策。
+</div>
+
+<h2>二、route_intent 决策详解</h2>
+<div class="mermaid">
+flowchart TD
+    A["🧠 route_intent_node(state, config)"]
+
+    P0{"state['preset_intent'] 非空?"}
+    P1["🛫 直通：跳过记忆与决策<br/>agent_plan.source='preset'<br/>dest_node=preset_intent"]
+
+    M0["📚 注入跨轮产物<br/>service._graph_artifacts = state['artifacts']"]
+    M1["🧾 reasoning.build_conversation_memory<br/>对话历史 + 产物摘要"]
+
+    R0{"state['confirmed_requirements'] 非空?"}
+    R1{"confirmation_action 匹配 Skill?<br/>（如 send_email）"}
+    R2["intent = skill.intent<br/>source='confirmed_skill_action'"]
+    R3["intent = 'jd'<br/>source='confirmed_requirements'"]
+
+    Q0["⚡ 规则快通道<br/>build_rule_agent_plan<br/>关键词 + 附件特征"]
+    Q1{"规则命中?"}
+    Q2["🤖 观察型 ReAct<br/>plan_agent_action"]
+
+    Q3["create_agent + ROUTER_TOOLS<br/>仅只读工具 search_resources"]
+    Q4["可先观察「刚才/上次/这个」<br/>再输出结构化决策"]
+    Q5["RouterDecision 校验<br/>mode ∈ {chat,tool} / action ∈ {chat,use_tool,ask_user}<br/>mode 与 action 必须自洽"]
+    Q6{"校验通过?"}
+    Q7["✅ source='react'"]
+    Q8["↩️ 回退本地关键词规则<br/>source='rule_fallback'"]
+
+    S0["service._route_for_intent(intent, message)"]
+    S1{"dest_node 计算"}
+
+    T1["mode=chat 或 intent=general → chat"]
+    T2["intent ∈ skill_dispatcher.bundles → skill_draft"]
+    T3["其他 → intent 本身（jd 映射 jd_prepare）"]
+
+    Z["写入 state：intent / agent_plan / route / memory_context / dest_node"]
+
+    A --> P0
+    P0 -->|是| P1 --> Z
+    P0 -->|否| M0 --> M1 --> R0
+    R0 -->|是| R1
+    R1 -->|是| R2 --> S0
+    R1 -->|否| R3 --> S0
+    R0 -->|否| Q0 --> Q1
+    Q1 -->|命中| S0
+    Q1 -->|未命中| Q2 --> Q3 --> Q4 --> Q5 --> Q6
+    Q6 -->|是| Q7 --> S0
+    Q6 -->|否| Q8 --> S0
+    S0 --> S1
+    S1 --> T1 & T2 & T3
+    T1 & T2 & T3 --> Z
+
+    style A fill:#e1f0ff
+    style P1 fill:#e8f5e9
+    style Q2 fill:#f0e6ff
+    style Q5 fill:#fff7e6
+    style Q8 fill:#fff3e0
+    style Z fill:#e6ffe6
+</div>
+
+<div class="note">
+两条快通道优先于模型：<code>preset_intent</code>（文件流端点直通）与 <code>confirmed_requirements</code>（用户已确认）都不走 LLM。只有全新自由文本才可能触发 ReAct，且 ReAct 只有只读工具，最坏情况是多一次查询，不会误删数据。
+</div>
+
+<h2>三、意图子图：jd（解析 → 确认 → 执行）</h2>
+<div class="mermaid">
+flowchart TD
+    A["📄 jd_prepare"]
+    A1["_parse_requirements()<br/>LLM 解析结构化需求"]
+    A2{"关键字段齐全?<br/>岗位 / 部门 / 地点 / 薪资…"}
+    A3["补全提示：写入 jd_missing_fields<br/>产出确认请求响应"]
+    A4["组装 jd_interrupt_payload<br/>artifacts: [需求卡片]"]
+
+    B["⏸️ jd_confirm<br/>resume_value = interrupt(payload)<br/>图在此挂起，SSE 出 interrupt 事件"]
+
+    C{"条件边 _after_jd_confirm<br/>state['confirmed_requirements'] 非空?"}
+    C1["END（本轮结束）<br/>返回 requires_confirmation=true"]
+    C2["🔧 jd_execute"]
+
+    D1["生成 JD 文本"]
+    D2["生成评分标准"]
+    D3["写入远程 HR 服务<br/>/job-descriptions、/scoring-criteria"]
+    D4["artifacts += [JD, 评分标准]<br/>suggestions: 筛选简历 / 生成面试题 / 修改 JD"]
+
+    E["END"]
+
+    A --> A1 --> A2
+    A2 -->|不齐| A3 --> A4
+    A2 -->|齐全| A4
+    A4 --> B --> C
+    C -->|否| C1
+    C -->|是| C2 --> D1 --> D2 --> D3 --> D4 --> E
+
+    style A fill:#e1f0ff
+    style B fill:#f0e6ff
+    style C1 fill:#fff3e0
+    style D3 fill:#e8f5e9
+    style E fill:#e6ffe6
+</div>
+
+<div class="note warn">
+条件边只认 <code>confirmed_requirements</code>，不读 <code>final_response</code>——checkpoint 跨轮残留的旧值会把「刚生成的确认请求」误判成「用户已确认」。
+</div>
+
+<h2>四、意图子图：jd_edit / criteria_edit（定位 → 改写 → 保存）</h2>
+<div class="mermaid">
+flowchart TD
+    A["✏️ parse<br/>解析修改诉求 → edit_request"]
+    B["🔍 locate<br/>先看 state['artifacts']<br/>再回退 Message.context 快照"]
+    B1{"匹配结果"}
+    B2["唯一命中 → edit_target / edit_original_data"]
+    B3["多个候选 → 列清单，请用户指明<br/>写 final_response 结束本轮"]
+    B4["无命中 → 说明未找到 + 可选对象<br/>写 final_response 结束本轮"]
+    C["✍️ rewrite<br/>按 edit_instructions 局部改写<br/>产出 edit_updated_content"]
+    C1{"改写成功?"}
+    C2["失败 → 保留原文 + 说明原因<br/>写 final_response 结束本轮"]
+    D["💾 save<br/>写远程 HR 服务并刷新快照<br/>artifacts += 新版本"]
+    E["END"]
+
+    A --> B --> B1
+    B1 --> B2 --> C
+    B1 --> B3 --> E
+    B1 --> B4 --> E
+    C --> C1
+    C1 -->|是| D --> E
+    C1 -->|否| C2 --> E
+
+    style A fill:#e1f0ff
+    style B3 fill:#fff3e0
+    style B4 fill:#fff3e0
+    style C2 fill:#fff3e0
+    style D fill:#e8f5e9
+    style E fill:#e6ffe6
+</div>
+
+<div class="note">
+这两个子图都由 <code>_sequential_subgraph()</code> 生成，<code>end_after={locate, rewrite, save}</code>：任一节点写了 <code>final_response</code> 就结束本轮，不再往下走。所以「多候选请澄清」「找不到目标」都不会误写到远程服务。
+</div>
+
+<h2>五、意图子图：resource_delete（解析 → 定位 → 执行）</h2>
+<div class="mermaid">
+flowchart TD
+    A["🗑️ parse<br/>_parse_delete_request → type / keyword<br/>steps：规划 → 定位目标 → 执行删除"]
+    B["🔍 resolve"]
+    B1{"资源类型缺失?"}
+    B2["_inherit_delete_type_from_candidates<br/>从上一轮候选清单继承类型"]
+    B3{"简历 + 低分语义?"}
+    B4["_resolve_resume_screening_followup_action<br/>需要确认 → 返回确认响应"]
+    B5{"匹配结果"}
+    B6["唯一命中 → delete_matches"]
+    B7["多个候选 → 清单 + 请指明<br/>final_response 结束"]
+    B8["无匹配 → 说明未删除<br/>final_response 结束"]
+    C["🧹 execute<br/>按类型删除（resume / jd / criteria / plan…）<br/>写操作留痕 + steps 收尾"]
+    D["END"]
+
+    A --> B --> B1
+    B1 -->|是| B2 --> B3
+    B1 -->|否| B3
+    B3 -->|是| B4
+    B4 -->|需确认| D
+    B4 -->|已确认| B5
+    B3 -->|否| B5
+    B5 --> B6 --> C --> D
+    B5 --> B7 --> D
+    B5 --> B8 --> D
+
+    style A fill:#e1f0ff
+    style B4 fill:#fff3e0
+    style B7 fill:#fff3e0
+    style B8 fill:#fdecea
+    style C fill:#e8f5e9
+    style D fill:#e6ffe6
+</div>
+
+<h2>六、意图子图：skill（草稿 → 发送，以邮件为例）</h2>
+<div class="mermaid">
+flowchart TD
+    U["👤 用户：给候选人写面试邀请邮件"]
+    R["route_intent → intent=email_notification<br/>dest_node=skill_draft"]
+    D1["🧩 skill_draft_node<br/>bundle.resolve_phase → 'draft'"]
+    P1["执行 draft 阶段<br/>scripts/email_workflow.py::run_draft_phase()"]
+    P1R["产出 email_draft artifact<br/>requires_confirmation=true"]
+    F1["🖥️ 前端渲染草稿卡片 + 「确认发送」"]
+    U2["👤 用户点击确认"]
+    R2["POST /agent/graph/resume<br/>Command(resume={action:'send_email', …})"]
+    D2["skill_draft 空过（confirmed_requirements 非空）"]
+    D3{"条件边 _after_skill_draft"}
+    D3N["END：草稿轮结束"]
+    D4["📤 skill_send_node<br/>resolve_phase → 'send'<br/>run_send_phase → SMTP"]
+    D5["✅ 返回发送结果 + steps"]
+
+    U --> R --> D1 --> P1 --> P1R --> F1 --> U2 --> R2 --> D2 --> D3
+    D3 -->|无 confirmed| D3N
+    D3 -->|有 confirmed| D4 --> D5
+
+    style R fill:#e1f0ff
+    style P1 fill:#f0e6ff
+    style P1R fill:#fff7e6
+    style D3N fill:#fff3e0
+    style D4 fill:#f0e6ff
+    style D5 fill:#e6ffe6
+</div>
+
+<div class="note warn">
+邮件 Skill 的边界是硬约束：<b>只有 draft 阶段</b>会自动执行，<code>send</code> 必须由用户显式确认后才进入，系统不会自动外发。
+</div>
+
+<h2>七、文件流直通（preset_intent）</h2>
+<div class="mermaid">
+flowchart LR
+    A1["POST /agent/resume-screen/stream<br/>multipart: jd_id + files[]"]
+    A2["POST /agent/interview-plan/stream<br/>multipart: resume_evaluation_id"]
+    A3["POST /agent/exam/stream<br/>/agent/exam/document-stream"]
+
+    B["agent_graph.run_stream<br/>preset_intent=…, extra_config={files, preset_params}"]
+
+    C["route_intent：见 preset_intent 直接返回<br/>跳过记忆构建与 LLM 决策<br/>dest_node = preset_intent"]
+
+    D1["📎 resume_exec_node"]
+    D2["📎 interview_exec_node"]
+    D3["📎 exam_exec_node"]
+
+    E["执行对应链<br/>简历批量评分 / 面试方案 / 试卷生成"]
+    F["artifacts + final_response → END"]
+
+    A1 --> B
+    A2 --> B
+    A3 --> B
+    B --> C
+    C --> D1 & D2 & D3
+    D1 & D2 & D3 --> E --> F
+
+    style B fill:#fff7e6
+    style C fill:#f0e6ff
+    style F fill:#e6ffe6
+</div>
+
+<div class="note">
+上传文件体积大，走 <code>extra_config</code> 合并进 <code>configurable</code>，<b>不进 checkpoint</b>；否则每轮 checkpoint 都会带着上一次的二进制内容。
+</div>
+
+<h2>八、确认与恢复时序（interrupt → resume）</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant C as 前端 HRAgent
+    participant E as agent_graph.py
+    participant G as GraphService
+    participant K as Checkpointer
+    participant N as jd_confirm 节点
+
+    C->>E: POST /agent/graph/chat {message, thread_id}
+    E->>G: run_stream(thread_id = conversation_id)
+    G->>K: astream 写入本轮 state
+    G-->>C: SSE progress {node:"route_intent", steps}
+    G-->>C: SSE progress {node:"jd_prepare", steps}
+    G->>N: 进入 jd_confirm
+    N->>N: interrupt(payload) 挂起
+    G->>K: aget_state 取 jd_interrupt_payload
+    G-->>C: SSE interrupt {thread_id, payload{artifacts, missing_fields}}
+    G-->>C: SSE final {requires_confirmation:true}
+    Note over C: 渲染需求卡片 +「确认生成」按钮
+
+    C->>E: POST /agent/graph/resume {thread_id, value}
+    E->>G: run_stream(resume_value = value)
+    G->>K: Command(resume=value) 恢复
+    N-->>G: interrupt 返回 value，继续执行
+    G-->>C: SSE progress {node:"jd_execute", steps}
+    G-->>C: SSE final {artifacts:[JD, 评分标准]}
+    G-->>C: data: [DONE]
+</div>
+
+<div class="note">
+<code>thread_id</code> 就是 <code>conversation_id</code>：同一会话的 checkpoint 连续，所以「上一轮那个 JD」能被下一轮的编辑/删除链路反查到。
+</div>
+
+<h2>九、SSE 事件流时序</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant C as 前端
+    participant E as endpoint
+    participant G as astream 事件流
+    participant S as 图状态
+
+    C->>E: POST /agent/graph/chat
+    E->>G: 开始流式
+    G-->>C: progress {node:"route_intent", steps:[…]}
+    Note over C: 渲染步骤条
+    G-->>C: progress {node:"jd_edit:locate", steps:[…]}
+    Note over C: 子图节点带命名空间 ns:node
+    G-->>C: artifact {artifact:{type,title,content}}
+    G-->>C: delta {delta:"我"} × N
+    Note over C: 逐字渲染
+    G-->>C: interrupt {thread_id, payload}
+    G-->>C: final {response, thread_id}
+    G-->>C: data: [DONE]
+    Note over C: 关闭连接
+    Note over G,S: 兜底：全程无自定义增量时<br/>把 final.message 按 6 字切片补 delta<br/>异常路径：error {error:"…"}
+</div>
+
+<table>
+  <tr><th>事件 type</th><th>产生位置</th><th>关键字段</th><th>前端处理</th></tr>
+  <tr><td><code>progress</code></td><td>astream 的 <code>updates</code> 模式</td><td><code>node</code>、<code>steps</code></td><td>更新步骤条（running / completed / failed）</td></tr>
+  <tr><td><code>delta</code></td><td>节点内 <code>get_stream_writer()</code></td><td><code>delta</code>、可选 <code>section</code></td><td>追加流式文本</td></tr>
+  <tr><td><code>artifact</code></td><td>节点内自定义事件</td><td><code>artifact</code>（JD / 草稿 / 清单…）</td><td>渲染交互卡片</td></tr>
+  <tr><td><code>interrupt</code></td><td>流结束后检测到 <code>__interrupt__</code></td><td><code>thread_id</code>、<code>payload</code></td><td>渲染确认卡片，等待用户操作</td></tr>
+  <tr><td><code>final</code></td><td>流结束从 state 统一产出（每轮唯一）</td><td><code>response</code>（AgentChatResponse）</td><td>落库消息、刷新产物区</td></tr>
+  <tr><td><code>error</code></td><td>图未产出 <code>final_response</code></td><td><code>error</code></td><td>提示失败并允许重试</td></tr>
+</table>
+
+<h2>十、智能面试全链路</h2>
+<div class="mermaid">
+flowchart TD
+    A["📅 POST /interviews/start<br/>材料三选一：resume_evaluation_id /<br/>interview_plan_id / interview_plan_content"]
+    A1["POST /meetings<br/>auto_record / auto_asr / invitees<br/>Token 未配置 → 503；失效 → 190200"]
+    A2{"建会成功?"}
+    A2N["interview 记录保留，meeting_status=null<br/>补配 Token 后可重建"]
+
+    B["🎙️ 录制完成 或 上传音视频<br/>POST /interviews/{id}/media"]
+    B1["POST /interviews/{id}/transcript/tencent<br/>直接拉腾讯转写稿"]
+    B2{"材料形态"}
+    B3["音视频 → ffmpeg 抽音轨 → DashScope ASR"]
+    B4["文档 → 直接解析文本"]
+
+    C["🧾 transcript_segmenter<br/>分段 + 说话人识别（置信度低会标注）"]
+    D["👤 姓名确认<br/>GET/PATCH /interviews/{id}/candidate<br/>确认后再分析，避免标签错位"]
+
+    E["🔗 qa_pairing<br/>问题 ↔ 回答配对<br/>未作答单独归类"]
+    E1{"配对成功?"}
+    E1N["analyze 拒绝执行<br/>analysis_status=failed + 原因"]
+
+    F["🤖 POST /interviews/{id}/analyze<br/>engine = rule / llm / hybrid<br/>规则命中覆盖模型判断"]
+    G["📊 三维度判定：verdict / substance / followup<br/>（见 图 11）"]
+    H["⚖️ 加权总分 0.35 / 0.35 / 0.15 / 0.15<br/>只对 status=scored 折算并归一"]
+    I{"待定条件命中?"}
+    IY["⏸️ 结论待定 + 原因 + 复核提示<br/>不给录用建议"]
+    IN["✅ 推荐 / 不推荐 + 置信度 + 证据引用"]
+    J["💾 interviews.evaluation<br/>带 rule_version"]
+    K["✏️ PATCH /interviews/{id}/evaluation<br/>人工修订 → 重算总分 → 修订留痕"]
+
+    A --> A1 --> A2
+    A2 -->|否| A2N
+    A2 -->|是| B
+    B --> B2
+    B1 --> B2
+    B2 -->|音视频| B3
+    B2 -->|文档| B4
+    B3 --> C
+    B4 --> C
+    C --> D --> E --> E1
+    E1 -->|否| E1N
+    E1 -->|是| F --> G --> H --> I
+    I -->|是| IY --> J
+    I -->|否| IN --> J
+    J --> K
+
+    style A fill:#e1f0ff
+    style A1 fill:#f0e6ff
+    style D fill:#fff7e6
+    style F fill:#f0e6ff
+    style IY fill:#fff3e0
+    style IN fill:#e6ffe6
+</div>
+
+<div class="note warn">
+状态机分两条独立轴：<code>meeting_status</code>（scheduled / ongoing / cancelled / completed）与 <code>analysis_status</code>（not_started / transcribing / transcript_ready / analyzing / completed / failed）。「会议开完了」不等于「评价出来了」，UI 不能把两者混成一个状态。
+</div>
+
+<h2>十一、面试评分：加权与待定判定</h2>
+<div class="mermaid">
+flowchart TD
+    A["逐条问答：三维度判定"]
+    A1["verdict：切题 / 部分切题 / 答非所问 / 回避 / 未作答"]
+    A2["substance：none / claim / action / data"]
+    A3["followup：none / surface / deep"]
+
+    B1["规则推导 · 问答一致性<br/>positive_ratio（切题=1、部分=0.5、其余=0）<br/>≥0.9→4、≥0.7→3、≥0.4→2、≥0.1→1、否则 0"]
+    B2["规则推导 · 事实信息量<br/>按 none=0 / claim=1 / action=2 / data=4 求均值<br/>再落分档"]
+    B3["汇总 · 面试执行度<br/>followup=deep 计入执行度，不计入得分"]
+
+    C1["模型 rubric · 逻辑条理性"]
+    C2["模型 rubric · 表达组织能力"]
+    C3["两维当前 unscored<br/>只有程度词，没有可核对指标<br/>等真实稿相关性验证后再纳入"]
+
+    D["加权总分（0-100）<br/>问答一致性 0.35 + 事实信息量 0.35<br/>+ 逻辑条理性 0.15 + 表达组织能力 0.15"]
+    D1["只对 status=scored 的维度折算<br/>缺失维度权重按比例归一到其余维度"]
+    D2["模型自报总分一律不采信"]
+
+    E{"强制待定条件（任一命中即待定）"}
+    E1["可评分维度不足 MIN_SCORED_DIMENSIONS"]
+    E2["转写过短（小于 MIN_TRANSCRIPT_CHARS）"]
+    E3["问答配对失败"]
+    E4["标签缺失 ≥ 20%"]
+    E5["多说话人但找不到候选人标签"]
+
+    F1["⏸️ 待定：写明触发条件 + 建议复核动作"]
+    F2["✅ 出结论：推荐 / 不推荐 + 证据引用"]
+
+    A --> A1 & A2 & A3
+    A1 --> B1
+    A2 --> B2
+    A3 --> B3
+    B1 --> D
+    B2 --> D
+    C1 --> D
+    C2 --> D
+    C3 -.-> C1
+    C3 -.-> C2
+    D --> D1 --> D2 --> E
+    E --> E1 & E2 & E3 & E4 & E5
+    E1 & E2 & E3 & E4 & E5 -->|命中| F1
+    E -->|全部未命中| F2
+
+    style A fill:#e1f0ff
+    style B1 fill:#f0e6ff
+    style B2 fill:#f0e6ff
+    style C3 fill:#fff3e0
+    style D fill:#f0e6ff
+    style F1 fill:#fff3e0
+    style F2 fill:#e6ffe6
+</div>
+
+<div class="note">
+规则文件：<code>backend/app/rules/interview_rules_v1.json</code>（<code>rule_version = v1.1</code>）。改权重、改分档、改待定阈值都要同步改这个文件，并跑 <code>tests/services/test_interview_rules.py</code> 与 <code>test_rule_render.py</code>，否则提示词与判定会脱节。
+</div>
+
+<h2>附：图状态与配置约定</h2>
+<table>
+  <tr><th>项</th><th>约定</th></tr>
+  <tr><td><code>artifacts</code></td><td><code>add_artifacts</code> reducer 跨轮累积，<code>merged[-50:]</code> 截断；编辑/删除的「刚才那个」优先从这里反查</td></tr>
+  <tr><td><code>steps</code></td><td>普通 channel（后写覆盖），每轮由意图节点产出完整列表，前端按 <code>id</code> 对齐状态</td></tr>
+  <tr><td><code>final_response</code></td><td>每轮覆盖，存 <code>AgentChatResponse.model_dump()</code>；缺失即视为图异常，SSE 出 <code>error</code></td></tr>
+  <tr><td><code>configurable</code></td><td><code>agent_service</code>（含 db session）、<code>user_id</code>、<code>thread_id</code>、<code>streaming</code>、<code>files</code>、<code>preset_params</code>——均不进 checkpoint</td></tr>
+  <tr><td>checkpoint 表</td><td>后端启动时自动创建（与 pgvector 扩展一同初始化），无需手工迁移</td></tr>
+  <tr><td>工具注册表</td><td><code>_build_tool_registry()</code> 返回 <code>jd / jd_edit / criteria_edit / resume_screening / interview_plan / exam_generate / resource_delete</code>，Skill 目录下的插件自动注册</td></tr>
+  <tr><td>子图命名空间</td><td>进度事件里的 <code>node</code> 形如 <code>jd_edit:locate</code>，主图节点直接用名字（<code>route_intent</code>）</td></tr>
+</table>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+    flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: true },
+    sequence: { useMaxWidth: true, wrap: true },
+    themeVariables: { fontSize: '14px' }
+  });
+</script>
+</body>
+</html>

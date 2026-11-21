@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 核心业务链路与实现</title>
+<style>
+:root{
+  --navy:#003366;--navy-2:#0a2a4d;--blue:#1a6fc4;--blue-bg:#eef5fd;
+  --gold:#9a6f12;--gold-bg:#fdf6e6;--teal:#0e7c74;--teal-bg:#e9f6f4;
+  --red:#b03a2e;--red-bg:#fdeeec;
+  --ink:#101f2e;--body:#2f4257;--muted:#6d7f93;
+  --line:#e3e9f1;--bg:#f4f6fa;--card:#fff;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(16,31,46,.04),0 10px 30px rgba(16,31,46,.06);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--body);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--navy),var(--blue));z-index:99;transition:width .1s linear}
+#side{position:fixed;top:0;left:0;bottom:0;width:266px;background:#fff;border-right:1px solid var(--line);padding:26px 0 30px;overflow-y:auto;z-index:50}
+.brand{padding:0 24px 20px;border-bottom:1px solid var(--line)}
+.brand .mark{display:inline-flex;align-items:center;gap:9px;font-weight:700;color:var(--navy);letter-spacing:.4px;font-size:15px}
+.brand .dot{width:9px;height:9px;border-radius:2px;background:var(--navy);transform:rotate(45deg)}
+.brand .sub{margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+#side nav{padding:16px 12px}
+#side a{display:block;padding:6px 12px 6px 14px;font-size:13.3px;color:#4a5c70;text-decoration:none;border-left:2px solid transparent;border-radius:0 5px 5px 0;transition:.16s}
+#side a:hover{background:#f5f8fc;color:var(--navy)}
+#side a.on{background:var(--blue-bg);color:var(--navy);border-left-color:var(--navy);font-weight:600}
+#side a .n{display:inline-block;width:20px;color:#9aa9b9;font-family:var(--mono);font-size:11px}
+#side a.on .n{color:var(--blue)}
+.side-foot{padding:16px 22px 0;margin-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:#93a2b3;line-height:1.6}
+.side-foot b{color:#5c6d80;font-weight:600}
+main{margin-left:266px}
+.wrap{max-width:930px;margin:0 auto;padding:0 44px 110px}
+.hero{background:linear-gradient(150deg,#00294f 0%,#003366 45%,#0a4a7d 100%);color:#fff;padding:58px 0 46px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:46px 46px;pointer-events:none}
+.hero .wrap{position:relative;z-index:1;padding-bottom:0}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:2.4px;color:#8fc0ec;text-transform:uppercase;margin-bottom:18px}
+.hero h1{margin:0;font-size:38px;line-height:1.3;font-weight:700;letter-spacing:.5px}
+.hero .lead{margin:16px 0 0;font-size:16px;line-height:1.85;color:#c9dcef;max-width:740px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.meta span{font-size:12px;padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:100px;color:#cfe2f4;background:rgba(255,255,255,.05)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:-28px;position:relative;z-index:2;box-shadow:var(--shadow);overflow:hidden}
+.kpi{padding:20px 22px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font-size:24px;color:var(--navy);font-weight:700;letter-spacing:-.3px;font-family:var(--mono)}
+.kpi span{font-size:12px;color:var(--muted)}
+section{padding-top:54px}
+h2{font-size:25px;color:var(--ink);margin:0 0 6px;font-weight:700;display:flex;align-items:baseline;gap:12px}
+h2 .no{font-family:var(--mono);font-size:13px;color:#fff;background:var(--navy);padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600}
+.h2-rule{height:1px;background:linear-gradient(90deg,var(--navy),rgba(0,51,102,.08));margin:14px 0 26px}
+h3{font-size:17.5px;color:var(--navy-2);margin:34px 0 10px;font-weight:600;padding-left:11px;border-left:3px solid var(--blue)}
+h4{font-size:15px;color:var(--ink);margin:22px 0 8px;font-weight:600}
+p{margin:10px 0}
+strong{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:#eef2f7;color:#1d3b5c;padding:1.5px 5px;border-radius:4px}
+ul,ol{margin:10px 0;padding-left:22px}
+li{margin:6px 0}
+li::marker{color:var(--blue)}
+figure{margin:24px 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 20px 12px;box-shadow:var(--shadow)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+figcaption b{color:#4c5f74;font-weight:600}
+.tw{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:#f1f5fa;color:var(--navy);font-weight:600;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px}
+td{padding:10px 14px;border-bottom:1px solid #eef2f7;vertical-align:top;line-height:1.7}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fafcfe}
+td.k{color:var(--ink);font-weight:600;white-space:nowrap}
+.tnum{font-family:var(--mono);font-size:12.5px;color:#3c5470}
+.callout{margin:22px 0;padding:16px 20px 16px 18px;border-radius:0 9px 9px 0;border-left:4px solid var(--blue);background:var(--blue-bg);font-size:14px}
+.callout .h{display:block;font-weight:700;color:var(--navy);margin-bottom:6px;font-size:13px;letter-spacing:.6px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:#c8891c;background:var(--gold-bg)}
+.callout.warn .h{color:#8a5f0d}
+.callout.risk{border-left-color:var(--red);background:var(--red-bg)}
+.callout.risk .h{color:#8f2c22}
+.callout.ok{border-left-color:var(--teal);background:var(--teal-bg)}
+.callout.ok .h{color:#0a5f59}
+.grid{display:grid;gap:14px;margin:20px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+.card .t{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.card p{font-size:13.5px;margin:6px 0;color:#41556b;line-height:1.72}
+.card .idx{font-family:var(--mono);font-size:11px;color:#fff;background:var(--blue);border-radius:3px;padding:1px 5px}
+.card.flat{box-shadow:none;background:#fbfcfe}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:100px;background:#eef2f7;color:#4a6076;border:1px solid #e2e9f1}
+.tag.ok{background:var(--teal-bg);color:#0a5f59;border-color:#cfeae7}
+.tag.no{background:#fdeeec;color:#a3352a;border-color:#f6d8d4}
+.tag.mid{background:var(--gold-bg);color:#8a5f0d;border-color:#f0e0be}
+pre{margin:18px 0;background:#0f2438;border-radius:10px;overflow:auto;box-shadow:var(--shadow)}
+pre .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#0a1b2b;border-bottom:1px solid rgba(255,255,255,.07)}
+pre .bar i{width:8px;height:8px;border-radius:50%;background:#3d5a75}
+pre .bar span{margin-left:6px;font-family:var(--mono);font-size:11px;color:#7f9ab3;letter-spacing:.5px}
+pre code{display:block;padding:14px 16px;background:none;color:#d5e3f0;font-size:12.5px;line-height:1.75;white-space:pre}
+pre code .c{color:#6b8ba6}
+pre code .k{color:#8fc0ec}
+pre code .s{color:#a8d6a0}
+pre code .f{color:#e6c07b}
+.note{font-size:12.5px;color:var(--muted);margin-top:-8px}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.85;color:#3c5470;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:18px 0}
+.tree b{color:var(--navy);font-weight:600}
+footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);font-size:12.5px;color:#8b9bab;line-height:1.9}
+footer b{color:#5c6d80}
+@media (max-width:1080px){
+  #side{display:none}main{margin-left:0}.wrap{padding:0 24px 80px}
+  .kpis{grid-template-columns:1fr 1fr}.kpi:nth-child(2){border-right:0}
+  .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--line)}
+  .g3,.g2{grid-template-columns:1fr}.hero h1{font-size:28px}
+}
+@media print{
+  #side,#progress{display:none}main{margin:0}body{background:#fff;font-size:10.5pt}
+  section{page-break-inside:avoid}figure,.tw,pre{box-shadow:none}
+  .hero{background:#003366 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<aside id="side">
+  <div class="brand">
+    <div class="mark"><span class="dot"></span>HR Agent 文档集</div>
+    <div class="sub">Doc 04 / 04 · Business</div>
+  </div>
+  <nav>
+    <a href="#s0"><span class="n">00</span>模块地图</a>
+    <a href="#s1"><span class="n">01</span>招聘主链路</a>
+    <a href="#s2"><span class="n">02</span>面试 AI 评价</a>
+    <a href="#s3"><span class="n">03</span>知识库与 RAG</a>
+    <a href="#s4"><span class="n">04</span>Skill 插件系统</a>
+    <a href="#s5"><span class="n">05</span>评测体系</a>
+    <a href="#s6"><span class="n">06</span>数据模型</a>
+    <a href="#s7"><span class="n">07</span>工程实践与踩坑</a>
+  </nav>
+</aside>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">Business Flows · 文档 04 / 04</div>
+    <h1>核心业务链路与实现</h1>
+    <p class="lead">这一篇回答「具体怎么落地」：JD 到面试的招聘闭环、面试评价的四段流水线、RAG 的检索链路、Skill 的插件机制，以及守住这些链路质量的评测体系。</p>
+    <div class="meta"><span>招聘闭环</span><span>面试评价</span><span>RAG</span><span>Skill 插件</span><span>数据模型</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><b>5</b><span>业务域</span></div>
+    <div class="kpi"><b>2</b><span>面试评价模型调用次数</span></div>
+    <div class="kpi"><b>12</b><span>判定档位</span></div>
+    <div class="kpi"><b>3</b><span>套评测 runner</span></div>
+  </div>
+
+  <!-- 00 -->
+  <section id="s0">
+    <h2><span class="no">00</span>模块地图</h2>
+    <div class="h2-rule"></div>
+
+    <p>系统有五个业务域，共用一套用户、权限、文件与对话基础设施。每个域都遵循同一个模式：<strong>AI 生成初稿 → 落结构化表 → 人可编辑可复核</strong>。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="业务模块地图">
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="24" y="20" width="852" height="52" rx="8" fill="#003366"/>
+          <text x="44" y="43" fill="#fff" font-size="12.5" font-weight="700">公共底座</text>
+          <text x="44" y="62" fill="#b9d4ec" font-size="11.5">用户 / 角色 RBAC · JWT 鉴权 · 文件上传解析 · 对话与消息 · 统一异常 · 统计</text>
+
+          <g font-size="11.5">
+            <!-- 招聘 -->
+            <rect x="24" y="96" width="196" height="132" rx="8" fill="#fff" stroke="#c9d8e8"/>
+            <text x="42" y="120" fill="#003366" font-size="12.5" font-weight="700">智能招聘</text>
+            <text x="42" y="144" fill="#4a6b8a">JD 生成</text>
+            <text x="42" y="164" fill="#4a6b8a">评分标准</text>
+            <text x="42" y="184" fill="#4a6b8a">简历批量筛选</text>
+            <text x="42" y="204" fill="#4a6b8a">面试方案 / 面试记录</text>
+
+            <!-- 培训 -->
+            <rect x="240" y="96" width="196" height="132" rx="8" fill="#fff" stroke="#c9d8e8"/>
+            <text x="258" y="120" fill="#003366" font-size="12.5" font-weight="700">智能培训</text>
+            <text x="258" y="144" fill="#4a6b8a">试卷生成</text>
+            <text x="258" y="164" fill="#4a6b8a">考试管理</text>
+            <text x="258" y="184" fill="#4a6b8a">分享链接 / 答题</text>
+            <text x="258" y="204" fill="#4a6b8a">自动阅卷与统计</text>
+
+            <!-- 知识 -->
+            <rect x="456" y="96" width="196" height="132" rx="8" fill="#fff" stroke="#c9d8e8"/>
+            <text x="474" y="120" fill="#003366" font-size="12.5" font-weight="700">知识助理</text>
+            <text x="474" y="144" fill="#4a6b8a">文档上传 / 切片</text>
+            <text x="474" y="164" fill="#4a6b8a">知识库管理</text>
+            <text x="474" y="184" fill="#4a6b8a">混合检索 + Rerank</text>
+            <text x="474" y="204" fill="#4a6b8a">引用回答</text>
+
+            <!-- 系统 -->
+            <rect x="672" y="96" width="204" height="132" rx="8" fill="#fff" stroke="#c9d8e8"/>
+            <text x="690" y="120" fill="#003366" font-size="12.5" font-weight="700">系统管理</text>
+            <text x="690" y="144" fill="#4a6b8a">用户 / 角色</text>
+            <text x="690" y="164" fill="#4a6b8a">邮箱配置与测试</text>
+            <text x="690" y="184" fill="#4a6b8a">邮件抓取调度</text>
+            <text x="690" y="204" fill="#4a6b8a">日志与健康检查</text>
+          </g>
+
+          <!-- agent bar -->
+          <rect x="24" y="252" width="852" height="56" rx="8" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="44" y="275" fill="#003366" font-size="12" font-weight="700">统一入口　HR Agent</text>
+          <text x="44" y="294" fill="#4a6b8a" font-size="11.5">自然语言 → 意图识别 → 工具编排 → 确认 → SSE 回传。业务页面仍保留，复杂表单与批量操作直接进页面更快</text>
+
+          <g stroke="#8ea6bd" stroke-width="1" stroke-dasharray="4 3">
+            <line x1="122" y1="228" x2="122" y2="248"/>
+            <line x1="338" y1="228" x2="338" y2="248"/>
+            <line x1="554" y1="228" x2="554" y2="248"/>
+            <line x1="774" y1="228" x2="774" y2="248"/>
+          </g>
+        </g>
+      </svg>
+      <figcaption><b>图 0-1</b>　业务模块地图。Agent 是入口之一，不是唯一入口——批量上传、复杂配置这类任务走页面更高效。</figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:130px">业务域</th><th style="width:300px">核心能力</th><th>AI 参与方式</th></tr></thead>
+        <tbody>
+          <tr><td class="k">智能招聘</td><td>JD、评分标准、简历筛选、面试方案、面试评价</td><td>Dify 工作流生成 + LLM 评分/评价 + 规则算分</td></tr>
+          <tr><td class="k">智能培训</td><td>试卷生成、考试管理、自动阅卷</td><td>资料检索 + LLM 出题；客观题代码评分</td></tr>
+          <tr><td class="k">知识助理</td><td>文档处理、知识库、问答</td><td>Embedding + 混合检索 + Rerank + LLM</td></tr>
+          <tr><td class="k">系统管理</td><td>用户、角色、邮箱配置</td><td>无 AI，纯业务</td></tr>
+          <tr><td class="k">Agent</td><td>意图路由、工具调度、确认</td><td>规则 + ReAct 路由；写操作交确定性节点</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section id="s1">
+    <h2><span class="no">01</span>招聘主链路</h2>
+    <div class="h2-rule"></div>
+
+    <p>五个环节，五次「AI 产出 + 人确认」。链路的每一环都把结果落成表，下一环通过外键读取上一环的产物，而不是把上下文塞回提示词里。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="招聘链路数据流">
+        <defs><marker id="d1" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <!-- 5 stages -->
+          <g font-size="11">
+            <rect x="20" y="40" width="160" height="96" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <circle cx="40" cy="60" r="9" fill="#003366"/><text x="40" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">1</text>
+            <text x="56" y="64" fill="#003366" font-weight="600" font-size="12">需求解析</text>
+            <text x="34" y="88" fill="#7b8da1">岗位名称 / 地点 / 薪资</text>
+            <text x="34" y="106" fill="#7b8da1">经验 / 学历 / 技能</text>
+            <text x="34" y="124" fill="#8a5f0d">缺失字段 → missing_fields</text>
+
+            <rect x="200" y="40" width="160" height="96" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <circle cx="220" cy="60" r="9" fill="#003366"/><text x="220" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">2</text>
+            <text x="236" y="64" fill="#003366" font-weight="600" font-size="12">JD 生成</text>
+            <text x="214" y="88" fill="#7b8da1">Dify type=1</text>
+            <text x="214" y="106" fill="#7b8da1">SSE 流式回吐</text>
+            <text x="214" y="124" fill="#8a5f0d">HR 编辑后保存</text>
+
+            <rect x="380" y="40" width="160" height="96" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <circle cx="400" cy="60" r="9" fill="#003366"/><text x="400" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">3</text>
+            <text x="416" y="64" fill="#003366" font-weight="600" font-size="12">评分标准</text>
+            <text x="394" y="88" fill="#7b8da1">Dify type=2</text>
+            <text x="394" y="106" fill="#7b8da1">维度 / 权重 / 满分</text>
+            <text x="394" y="124" fill="#8a5f0d">绑定 JD 记录</text>
+
+            <rect x="560" y="40" width="160" height="96" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <circle cx="580" cy="60" r="9" fill="#003366"/><text x="580" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">4</text>
+            <text x="596" y="64" fill="#123a63" font-weight="600" font-size="12">简历筛选</text>
+            <text x="574" y="88" fill="#7b8da1">PDF/DOC/DOCX 解析</text>
+            <text x="574" y="106" fill="#7b8da1">Dify type=3 评分</text>
+            <text x="574" y="124" fill="#8a5f0d">维度 + 理由可查</text>
+
+            <rect x="740" y="40" width="140" height="96" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <circle cx="760" cy="60" r="9" fill="#003366"/><text x="760" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">5</text>
+            <text x="776" y="64" fill="#123a63" font-weight="600" font-size="12">面试方案</text>
+            <text x="754" y="88" fill="#7b8da1">Dify type=4</text>
+            <text x="754" y="106" fill="#7b8da1">题目 / 维度 / 风险</text>
+            <text x="754" y="124" fill="#8a5f0d">可编辑复用</text>
+          </g>
+
+          <g stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#d1)">
+            <line x1="180" y1="88" x2="196" y2="88"/><line x1="360" y1="88" x2="376" y2="88"/>
+            <line x1="540" y1="88" x2="556" y2="88"/><line x1="720" y1="88" x2="736" y2="88"/>
+          </g>
+
+          <!-- tables -->
+          <text x="20" y="176" fill="#6d7f93" font-size="11" letter-spacing="1">落库</text>
+          <g font-size="10.5">
+            <rect x="20" y="188" width="160" height="42" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="34" y="206" fill="#123a63" font-family="SF Mono, Menlo, monospace">parsed_requirements</text>
+            <text x="34" y="222" fill="#6f8dab">state 中间态，不落业务表</text>
+
+            <rect x="200" y="188" width="160" height="42" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="214" y="206" fill="#123a63" font-family="SF Mono, Menlo, monospace">job_descriptions</text>
+            <text x="214" y="222" fill="#6f8dab">title / content / skills</text>
+
+            <rect x="380" y="188" width="160" height="42" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="394" y="206" fill="#123a63" font-family="SF Mono, Menlo, monospace">scoring_criteria</text>
+            <text x="394" y="222" fill="#6f8dab">total_score / dimensions</text>
+
+            <rect x="560" y="188" width="160" height="42" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="574" y="206" fill="#123a63" font-family="SF Mono, Menlo, monospace">resume_evaluations</text>
+            <text x="574" y="222" fill="#6f8dab">score / model_score_detail</text>
+
+            <rect x="740" y="188" width="140" height="42" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="754" y="206" fill="#123a63" font-family="SF Mono, Menlo, monospace">interview_plans</text>
+            <text x="754" y="222" fill="#6f8dab">content（可编辑）</text>
+          </g>
+
+          <!-- downstream: interview -->
+          <rect x="20" y="264" width="860" height="112" rx="8" fill="#003366"/>
+          <text x="40" y="288" fill="#fff" font-size="11.5" font-weight="600">下游：智能面试</text>
+          <text x="40" y="310" fill="#c9dcef" font-size="11">会前：创建腾讯会议（主题/时间/密码/等候室/云录制）· 同步状态与真实起止时间 · 关联面试方案（方案快照进记录，后续改方案不影响历史）</text>
+          <text x="40" y="330" fill="#c9dcef" font-size="11">会后：上传录音/视频/逐字稿，或拉取会议录制转写 · 确认候选人姓名 → AI 应答质量评价 · 人工修订逐维改分</text>
+          <text x="40" y="352" fill="#8fc0ec" font-size="10.5">评价结果写入 interviews.evaluation（JSON），total_score 另存一列便于列表排序</text>
+        </g>
+      </svg>
+      <figcaption><b>图 1-1</b>　招聘链路与落库位置。注意第 1 环的需求解析不落业务表——它只是确认弹窗的输入，确认后才会生成 JD 记录。</figcaption>
+    </figure>
+
+    <h3>1.1 各环节实现要点</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:130px">环节</th><th style="width:150px">调用</th><th>关键实现</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">需求解析</td><td>本地规则 + LLM</td>
+            <td>解析出岗位名称、地点、薪资、经验、学历、技能；缺字段时走确认弹窗补全，而不是直接失败。确认 payload 里带 <code>missing_fields</code>。</td>
+          </tr>
+          <tr>
+            <td class="k">JD 生成</td><td>Dify <code>type=1</code></td>
+            <td>流式返回片段；生成后同时产出配套评分标准。保存时 <code>title</code> 与 <code>content</code> 必填，默认状态为草稿。</td>
+          </tr>
+          <tr>
+            <td class="k">评分标准</td><td>Dify <code>type=2</code></td>
+            <td>输出维度、权重、满分与说明；<code>total_score</code> 默认 100。维度之和与总分口径需人工确认。</td>
+          </tr>
+          <tr>
+            <td class="k">简历筛选</td><td>Dify <code>type=3</code></td>
+            <td>PDF/DOC/DOCX 提取文本（pdfplumber / pdfminer.six / python-docx / docx2txt），结合 JD 与评分标准输出总分、维度分、理由；结果写 <code>model_score_detail</code>。</td>
+          </tr>
+          <tr>
+            <td class="k">面试方案</td><td>Dify <code>type=4</code></td>
+            <td>必须关联一条已完成的简历评估；输出面试目标、流程、核心问题、追问建议、考察维度、评分建议、风险点。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>1.2 解析失败怎么处理</h3>
+    <p>简历解析是这个链路最脆的一环——扫描件、双栏排版、表格、乱码都会让提取结果错位。处理原则只有一条：<strong>解析失败不生成虚假评分</strong>。</p>
+    <div class="grid g3">
+      <div class="card"><div class="t">文件层</div><p>校验格式与大小（默认 10MB）。格式不支持直接拒绝，不进入解析队列。</p></div>
+      <div class="card"><div class="t">解析层</div><p>提取为空或明显残缺时标记失败，返回可理解的失败原因，允许重新上传。</p></div>
+      <div class="card"><div class="t">评分层</div><p>文本不可用时不做「兜底打分」。宁可让用户重传，也不给一个没有依据的分数。</p></div>
+    </div>
+
+    <div class="callout warn">
+      <span class="h">一个容易被忽略的约束</span>
+      <p>简历评估<strong>必须关联 JD</strong>。这不是数据完整性要求，而是业务要求：没有 JD 就没有评分基准，模型会按「通用优秀简历」打分，结果与岗位完全无关。评分标准可选，但选了就必须与 JD 口径一致。</p>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section id="s2">
+    <h2><span class="no">02</span>面试 AI 评价链路</h2>
+    <div class="h2-rule"></div>
+
+    <p>这是整个项目最复杂的模块，也是最值得看的部分。它要解决的问题是：<strong>把一段几十分钟的多人对话，变成一份有证据、可复核、可复算的评价报告</strong>。</p>
+
+    <h3>2.1 四段流水线</h3>
+    <figure>
+      <svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="面试评价四段流水线">
+        <defs><marker id="d2" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="20" y="20" width="180" height="62" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="38" y="43" fill="#123a63" font-size="11.5" font-weight="600">① 转写结构化</text>
+          <text x="38" y="62" fill="#7b8da1" font-size="10.5">纯代码：说话人 / 时间戳 / 轮次</text>
+          <text x="38" y="77" fill="#0a5f59" font-size="10">不调用模型</text>
+
+          <rect x="240" y="20" width="180" height="62" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="258" y="43" fill="#123a63" font-size="11.5" font-weight="600">② 问答配对</text>
+          <text x="258" y="62" fill="#7b8da1" font-size="10.5">纯代码：提问块 × 回答轮</text>
+          <text x="258" y="77" fill="#0a5f59" font-size="10">不调用模型</text>
+
+          <rect x="460" y="20" width="180" height="62" rx="7" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="478" y="43" fill="#003366" font-size="11.5" font-weight="600">③ 逐组判定</text>
+          <text x="478" y="62" fill="#4a6b8a" font-size="10.5">LLM：只打标签</text>
+          <text x="478" y="77" fill="#8a5f0d" font-size="10">第 1 次模型调用</text>
+
+          <rect x="680" y="20" width="200" height="62" rx="7" fill="#003366"/>
+          <text x="698" y="43" fill="#fff" font-size="11.5" font-weight="600">④ 打分 + 代码算分</text>
+          <text x="698" y="62" fill="#c9dcef" font-size="10.5">LLM 打 2 维 + 代码推 2 维</text>
+          <text x="698" y="77" fill="#e6c07b" font-size="10">第 2 次模型调用</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#d2)">
+            <line x1="200" y1="51" x2="236" y2="51"/><line x1="420" y1="51" x2="456" y2="51"/>
+            <line x1="640" y1="51" x2="676" y2="51"/>
+          </g>
+
+          <!-- detail panels -->
+          <g font-size="10.5">
+            <rect x="20" y="106" width="180" height="112" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+            <text x="34" y="126" fill="#3c5470">parse_transcript</text>
+            <text x="34" y="144" fill="#7b8da1">拆 S1..Sn 原始发言段</text>
+            <text x="34" y="162" fill="#3c5470">merge_turns</text>
+            <text x="34" y="180" fill="#7b8da1">同人连续发言合成轮</text>
+            <text x="34" y="198" fill="#3c5470">render_turns</text>
+            <text x="34" y="212" fill="#7b8da1">渲染成可回源文本</text>
+
+            <rect x="240" y="106" width="180" height="112" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+            <text x="254" y="126" fill="#3c5470">面试官轮 → 提问块</text>
+            <text x="254" y="144" fill="#7b8da1">候选人轮 → 成组</text>
+            <text x="254" y="164" fill="#3c5470">开场自述</text>
+            <text x="254" y="182" fill="#7b8da1">记入 unprompted，不成组</text>
+            <text x="254" y="202" fill="#3c5470">结尾无回应</text>
+            <text x="254" y="214" fill="#7b8da1">answer 留空 → 未作答信号</text>
+
+            <rect x="460" y="106" width="180" height="112" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+            <text x="474" y="126" fill="#3c5470">verdict 问题回应质量</text>
+            <text x="474" y="144" fill="#7b8da1">5 档 / precedence 10–40</text>
+            <text x="474" y="164" fill="#3c5470">substance 事实层级</text>
+            <text x="474" y="182" fill="#7b8da1">none 0 / claim 1 / action 2 / data 4</text>
+            <text x="474" y="202" fill="#3c5470">followup 追问深度</text>
+            <text x="474" y="214" fill="#7b8da1">none 0 / surface 2 / deep 4</text>
+
+            <rect x="680" y="106" width="200" height="112" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+            <text x="694" y="126" fill="#3c5470">模型判：逻辑 / 表达</text>
+            <text x="694" y="144" fill="#7b8da1">各按 rubric 打 0–4</text>
+            <text x="694" y="164" fill="#3c5470">代码推：一致性 / 信息量</text>
+            <text x="694" y="182" fill="#7b8da1">按规则文件阈值落档</text>
+            <text x="694" y="202" fill="#3c5470">权重折算总分</text>
+            <text x="694" y="214" fill="#7b8da1">缺失维度权重归一</text>
+          </g>
+
+          <!-- bottom: evidence -->
+          <rect x="20" y="244" width="860" height="112" rx="8" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="40" y="268" fill="#003366" font-size="11.5" font-weight="600">每个结论都能回到原文</text>
+          <text x="40" y="290" fill="#4a6b8a" font-size="11">每组问答带 question_turns / answer_turns 轮号，评价里的每条 evidence 都能定位到转写稿的具体段落。</text>
+          <text x="40" y="310" fill="#4a6b8a" font-size="11">候选人身份 = 人工填写的姓名匹配说话人标签；对不上时抽样让模型在既有标签里指认，仍失败则明确报错，不猜测。</text>
+          <text x="40" y="334" fill="#8a5f0d" font-size="10.5">完整评价 = 2 次模型调用。例外各多 1 次：姓名与标签对不上需指认；代码配不出问答组需全文自行配对。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 2-1</b>　四段流水线。前两段是纯代码，模型只负责「打标签」和「打分」，不负责切分与配对——这是控制成本与稳定性的关键。</figcaption>
+    </figure>
+
+    <h3>2.2 转写结构化：先承认它不完美</h3>
+    <p>转写稿来源多样：腾讯会议导出的 docx、第三方 ASR、人工逐字稿。格式差异很大，所以解析器用多组正则覆盖常见形态：</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:220px">格式</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td class="k">名字 + 括号时间戳</td><td><code>伍双林(00:00:07): 我们先聊聊项目</code></td></tr>
+          <tr><td class="k">名字 + 日期时间</td><td><code>Jeff 2026-11-09 21:01:42</code>（腾讯会议 docx 导出，头行独占）</td></tr>
+          <tr><td class="k">名字 + 纯时间</td><td><code>说话人1 00:00:07</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>名字校验会排除「句子、日期、纯数字」这类误命中：长度不超过 20，且不能包含标点、空格、括号。这看着琐碎，但不做就会出现「把正文里的（10:30）当成说话人」这种问题。</p>
+
+    <div class="callout">
+      <span class="h">候选人身份不做推测</span>
+      <p><code>resolve_candidate_speaker</code> 只按人工填写的姓名去对标签，对不上就返回 <code>None</code>，由调用方决定是否让模型在<strong>既有标签里指认</strong>。这条约束很重要：身份判断错了，整份评价的问答方向会完全颠倒——把面试官的话当成候选人的回答来打分。</p>
+    </div>
+
+    <h3>2.3 问答配对：一条规则解决大部分情况</h3>
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/services/qa_pairing.py</span></div><code><span class="k">def</span> <span class="f">pair_qa_turns</span>(dialogue):
+    candidate = dialogue.candidate_speaker
+    <span class="k">if not</span> candidate:
+        <span class="k">return</span> PairingResult()          <span class="c"># 身份不明，无法配对</span>
+
+    result, pending = PairingResult(), []
+    <span class="k">for</span> turn <span class="k">in</span> dialogue.turns:
+        <span class="k">if</span> turn.speaker != candidate:
+            pending.append(turn)          <span class="c"># 面试官轮攒成提问块</span>
+            <span class="k">continue</span>
+        <span class="k">if not</span> pending:
+            result.unprompted.append(turn)  <span class="c"># 候选人先开口 → 开场自述</span>
+            <span class="k">continue</span>
+        result.pairs.append(_build(len(result.pairs) + 1, pending, turn, candidate))
+        pending = []
+    <span class="k">if</span> pending:                          <span class="c"># 结尾有问无答 → 未作答信号</span>
+        result.pairs.append(_build(len(result.pairs) + 1, pending, <span class="k">None</span>, candidate))
+    <span class="k">return</span> result</code></pre>
+
+    <p>不做插话/打断的特殊处理，也不合并跨轮的回答。原因：真实面试里插话形态太多，规则越细误判越多；把边界交给后续 LLM 判定更稳，因为它的输入已经是「一问一答」的清晰结构。</p>
+
+    <h4>四项自查（不调模型）</h4>
+    <div class="grid g2">
+      <div class="card flat"><div class="t">内容守恒</div><p>结构化后的文本不能丢原文内容，拼接回去应与原文一致。</p></div>
+      <div class="card flat"><div class="t">段号连续</div><p>S1..Sn 不能跳号，否则说明解析时漏段。</p></div>
+      <div class="card flat"><div class="t">相邻轮说话人不同</div><p>同一人连续发言应已合并；若相邻轮同名，说明合并逻辑失效。</p></div>
+      <div class="card flat"><div class="t">原文行号可定位</div><p>每轮都能回指原文位置，证据才可核对。</p></div>
+    </div>
+<pre><div class="bar"><i></i><i></i><i></i><span>自查命令</span></div><code><span class="c"># 只跑结构与配对，不调模型</span>
+python scripts/inspect_transcript.py &lt;转写文件&gt; --candidate 姓名
+
+<span class="c"># 连模型实收的提示词一起看（改提示词前先确认规则真的渲染进去了）</span>
+python scripts/inspect_transcript.py &lt;转写文件&gt; --candidate 姓名 --prompt
+
+<span class="c"># 从库里取某场面试的转写（支持 UUID 前缀）</span>
+python scripts/inspect_transcript.py --interview-id &lt;id&gt;</code></pre>
+
+    <h3>2.4 逐组判定：三个字段，十二个档位</h3>
+    <p>判定阶段模型只做一件事：给每组问答打三个标签。它<strong>不配对、不打分、不算总分</strong>。</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:130px">字段</th><th style="width:230px">问题</th><th>档位</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">verdict<br><span style="font-weight:400;color:#7b8da1;font-size:12px">问题回应质量</span></td>
+            <td>这段回答有没有回应面试官问的那件事？</td>
+            <td><span class="tag no">未作答</span> <span class="tag mid">回避</span> <span class="tag mid">答非所问</span> <span class="tag">部分切题</span> <span class="tag ok">切题</span><br><span style="font-size:12px;color:#7b8da1">precedence 10 / 20 / 25 / 30 / 40，先判先得</span></td>
+          </tr>
+          <tr>
+            <td class="k">substance<br><span style="font-weight:400;color:#7b8da1;font-size:12px">事实层级</span></td>
+            <td>抛开答得好不好，能提取到哪一层事实？</td>
+            <td><code>none</code>=0（只有态度）· <code>claim</code>=1（有名词无做法）· <code>action</code>=2（有做法无数据）· <code>data</code>=4（有数字/结果）</td>
+          </tr>
+          <tr>
+            <td class="k">followup<br><span style="font-weight:400;color:#7b8da1;font-size:12px">追问深度</span></td>
+            <td>面试官有没有就同一件事继续往下压？</td>
+            <td><code>none</code>=0 · <code>surface</code>=2（追一层）· <code>deep</code>=4（连续两层以上）<br><span style="font-size:12px;color:#7b8da1">唯一允许跨组看的字段，lookahead=2</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="h">每个档位都带反例</span>
+      <p>规则文件里每档不只有 <code>criteria</code>，还有 <code>requires</code>（何时命中）、<code>excludes</code>（什么情况不算）、<code>examples{hit, miss, ambiguous}</code>（含反例）。例如「未作答」的 <code>excludes</code> 明确写了「候选人承认不会，但同时给了替代经历——归部分切题或切题」。</p>
+      <p>反例比正例更能稳定判定。只给正例时，模型容易把「短但有内容」的回答判成未作答。</p>
+    </div>
+
+    <h3>2.5 算分：能数出来的交给代码</h3>
+    <p>四个维度的算法不一样，这是有意设计的：</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:150px">维度</th><th style="width:150px">计分方式</th><th style="width:80px">权重</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td class="k">问答一致性</td><td>verdict 分布 → 正面率 → 落档</td><td class="tnum">35%</td><td>切题 1.0 / 部分切题 0.5 / 其他 0；≥0.9→4 档，≥0.7→3，≥0.4→2，≥0.1→1，否则 0</td></tr>
+          <tr><td class="k">事实信息量</td><td>substance 均值 → 四舍五入落档</td><td class="tnum">35%</td><td>none 0 / claim 1 / action 2 / data 4；未作答组不计入均值</td></tr>
+          <tr><td class="k">逻辑条理性</td><td>模型按 rubric 判档</td><td class="tnum">15%</td><td>只有文字 rubric，未纳入规则文件</td></tr>
+          <tr><td class="k">表达组织能力</td><td>模型按 rubric 判档</td><td class="tnum">15%</td><td>同上</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="quote" style="margin:20px 0;padding:18px 24px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:0 10px 10px 0;font-size:14.5px;color:#31485f;line-height:1.9">
+      总分 = <b>Σ(权重 × 分数 / 满分) / Σ权重 × 100</b>。只计可评分维度；缺失维度的权重按比例归一到其余维度——少一维不会压低总分。
+    </div>
+
+    <h3>2.6 规则文件是唯一来源</h3>
+    <p><code>app/rules/interview_rules_v1.json</code>（当前 <code>rule_version = v1.1</code>）同时充当<strong>提示词生成源</strong>和<strong>算分参数来源</strong>。改口径只改这一个文件，并升版本号。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="规则文件单一来源">
+        <defs><marker id="d3" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="300" y="24" width="300" height="88" rx="9" fill="#003366"/>
+          <text x="450" y="50" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">interview_rules_v1.json</text>
+          <text x="450" y="70" text-anchor="middle" fill="#b9d4ec" font-size="10.5">fields（12 档）· derivation · dimension_weights</text>
+          <text x="450" y="88" text-anchor="middle" fill="#b9d4ec" font-size="10.5">unscored · known_gaps · version_policy</text>
+          <text x="450" y="104" text-anchor="middle" fill="#e6c07b" font-size="10">rule_version = v1.1</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#d3)">
+            <path d="M360 112 L200 112 L200 152" fill="none"/>
+            <path d="M450 112 L450 152" fill="none"/>
+            <path d="M540 112 L700 112 L700 152" fill="none"/>
+          </g>
+
+          <g font-size="10.5">
+            <rect x="40" y="156" width="320" height="92" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <text x="56" y="178" fill="#123a63" font-size="11.5" font-weight="600">提示词生成（render.py）</text>
+            <text x="56" y="200" fill="#5b7086">档位语义名 / requires / excludes / examples</text>
+            <text x="56" y="220" fill="#5b7086">→ 判定提示词的「字段定义」段</text>
+            <text x="56" y="240" fill="#5b7086">→ 打分提示词的「算分口径」段</text>
+
+            <rect x="380" y="156" width="200" height="92" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <text x="396" y="178" fill="#123a63" font-size="11.5" font-weight="600">代码常量</text>
+            <text x="396" y="200" fill="#5b7086">导入时编译</text>
+            <text x="396" y="220" fill="#5b7086">_apply_derived_scores</text>
+            <text x="396" y="240" fill="#5b7086">DIMENSION_WEIGHTS</text>
+
+            <rect x="600" y="156" width="276" height="92" rx="7" fill="#fff" stroke="#c9d8e8"/>
+            <text x="616" y="178" fill="#123a63" font-size="11.5" font-weight="600">评价结果</text>
+            <text x="616" y="200" fill="#5b7086">evaluation.rule_version</text>
+            <text x="616" y="220" fill="#5b7086">+ prompt_version</text>
+            <text x="616" y="240" fill="#5b7086">→ 历史记录可回溯按哪版算的</text>
+          </g>
+
+          <rect x="40" y="266" width="836" height="26" rx="5" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="56" y="284" fill="#8a5f0d" font-size="10.5">锁死机制：test_interview_rules.py 与 test_rule_render.py 把 JSON 取值、代码常量、提示词渲染三者绑定，任何一处不同步都会失败。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 2-2</b>　规则文件的三处消费。好处是「模型看到的统计口径」与「代码算分的口径」不会打架，reason 不会与分数矛盾。</figcaption>
+    </figure>
+
+    <div class="callout warn">
+      <span class="h">为什么有两维没进规则文件</span>
+      <p>逻辑条理性、表达组织能力合计占 30%，但只有文字 rubric（「基本完整」「偶有重复」这类程度词），没有可复核指标。项目实测过：填充词密度、平均句长、结构词密度与内容质量无正相关（结构词密度为 <strong>−0.36</strong>）。写进文件只是把主观判断换个格式存放，不会让它变得可核对。</p>
+      <p>文件里的 <code>unscored</code> 记录了纳入条件：先用影子模式跑 20–30 份真实稿，与人工基准相关性达 0.6 以上再纳入。</p>
+    </div>
+
+    <h3>2.7 强制「待定」的四种情况</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:280px">条件</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td class="k">可评分维度 &lt; 3</td><td>样本太少，总分没有代表性</td></tr>
+          <tr><td class="k">转写 &lt; 800 字</td><td>内容不足以判断，硬打分等于编造</td></tr>
+          <tr><td class="k">问答全部失败</td><td>配对或判定环节出问题，分数不可信</td></tr>
+          <tr><td class="k">判定缺标签 ≥ 20%</td><td>模型输出不完整，统计口径已被破坏</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>命中任意一条，结论强制「待定」并在 <code>notes</code> 说明原因。这是「宁可说不知道」的具体实现——比给一个看似精确的 62 分更负责。</p>
+
+    <h3>2.8 人工修订的三条约束</h3>
+    <div class="grid g3">
+      <div class="card">
+        <div class="t"><span class="idx">01</span>只改分数，不改标签</div>
+        <p>verdict / substance 始终是模型的。修订的语义是「不同意这个档」，不是「重判问答组」。否则证据链就断了。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">02</span>AI 原分只在首次定格</div>
+        <p>之后再改仍以模型那版为基准，避免基准自身漂移。否则改三次之后，已经说不清「AI 原来给多少」。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">03</span>素材不足可转可评</div>
+        <p><code>insufficient</code> 的维度一旦人工给分即转为可评分，并计入总分。人可以为自己的判断负责。</p>
+      </div>
+    </div>
+    <p>留痕写在 <code>evaluation.manual_override</code>：修订次数、AI 原总分、<code>history[]</code>（时间 / 操作人 / 原因 / 每维改前改后 / 结论变更 / 修订前后总分），保留最近 20 条。修订原因必填。</p>
+
+    <h3>2.9 漂移与自查</h3>
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/scripts/score_drift.py</span></div><code><span class="c"># 同一份稿重复评分，输出极差 / 标准差 / 逐组标签翻转</span>
+python scripts/score_drift.py &lt;转写文件&gt; --candidate 姓名 --runs 10 --concurrency 3</code></pre>
+    <p>它回答的问题是「同一份稿重复评分会不会给出不同结果」。当前已知的漂移来源写在规则文件的 <code>known_gaps</code> 里，两条都是实测出来的：</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:220px">已知缺口</th><th style="width:330px">实测现象</th><th>拟改方向</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">均值把信息量压低</td>
+            <td>26 组样本：8 组 action、2 组 data、11 组 claim，均值 1.35 四舍五入到 1 档。有具体做法的回答占三分之一，分数体现不出来</td>
+            <td>改为按档位占比定档（如 data 占比 ≥20% 给 3 档），需先在多份真实稿上验证</td>
+          </tr>
+          <tr>
+            <td class="k">正面率阈值贴着实测分布</td>
+            <td>切题率在 0.88–0.93 之间摆动，正好夹着 0.9 这条线；1 组问答翻转就让一致性从 4 档跳 3 档，总分随之跳 8.75</td>
+            <td>阈值按组数留余量（如「未正面回应 ≤1 组」才给 4 档）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout ok">
+      <span class="h">这种「把缺陷写进配置」的做法值得学</span>
+      <p><code>known_gaps</code> 不是待办清单，而是<strong>对使用者的免责说明</strong>：任何看到分数的人都能知道这个指标在什么情况下会失真。比起把问题藏在代码注释里，写在规则文件里更可能被读到。</p>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section id="s3">
+    <h2><span class="no">03</span>知识库与 RAG</h2>
+    <div class="h2-rule"></div>
+
+    <h3>3.1 文档处理</h3>
+    <div class="flow" style="display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;margin:22px 0">
+      <div style="flex:1;padding:16px;border-right:1px solid var(--line)"><b style="display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px">上传</b><span style="font-size:12.5px;color:#6d7f93">校验格式与大小，原始文件存 uploads/</span></div>
+      <div style="flex:1;padding:16px;border-right:1px solid var(--line)"><b style="display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px">提取</b><span style="font-size:12.5px;color:#6d7f93">PDF / Word / TXT 提取正文</span></div>
+      <div style="flex:1;padding:16px;border-right:1px solid var(--line)"><b style="display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px">切片</b><span style="font-size:12.5px;color:#6d7f93">按长度与重叠切块，保留来源</span></div>
+      <div style="flex:1;padding:16px;border-right:1px solid var(--line)"><b style="display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px">向量化</b><span style="font-size:12.5px;color:#6d7f93">qwen3.7-text-embedding<br>1536 维</span></div>
+      <div style="flex:1;padding:16px"><b style="display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px">入库</b><span style="font-size:12.5px;color:#6d7f93">pgvector + content_tsv</span></div>
+    </div>
+
+    <h3>3.2 检索链路</h3>
+    <figure>
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RAG 检索链路">
+        <defs><marker id="d4" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="20" y="96" width="120" height="60" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="80" y="120" text-anchor="middle" fill="#123a63" font-size="11.5" font-weight="600">用户问题</text>
+          <text x="80" y="140" text-anchor="middle" fill="#7b8da1" font-size="10">可指定知识库</text>
+
+          <rect x="170" y="96" width="140" height="60" rx="7" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="240" y="118" text-anchor="middle" fill="#003366" font-size="11.5" font-weight="600">查询增强</text>
+          <text x="240" y="136" text-anchor="middle" fill="#4a6b8a" font-size="10">改写 + 术语扩展</text>
+          <text x="240" y="150" text-anchor="middle" fill="#4a6b8a" font-size="10">最多 6 个扩展词</text>
+
+          <rect x="340" y="40" width="170" height="60" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="425" y="62" text-anchor="middle" fill="#123a63" font-size="11.5" font-weight="600">向量召回（pgvector）</text>
+          <text x="425" y="80" text-anchor="middle" fill="#7b8da1" font-size="10">余弦相似度 · 权重 0.7</text>
+
+          <rect x="340" y="152" width="170" height="60" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="425" y="174" text-anchor="middle" fill="#123a63" font-size="11.5" font-weight="600">全文匹配（tsvector）</text>
+          <text x="425" y="192" text-anchor="middle" fill="#7b8da1" font-size="10">关键词命中 · 权重 0.3</text>
+
+          <rect x="540" y="96" width="130" height="60" rx="7" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="605" y="118" text-anchor="middle" fill="#003366" font-size="11.5" font-weight="600">合并排序</text>
+          <text x="605" y="136" text-anchor="middle" fill="#4a6b8a" font-size="10">阈值过滤 0.2</text>
+          <text x="605" y="150" text-anchor="middle" fill="#4a6b8a" font-size="10">top-k 10</text>
+
+          <rect x="700" y="96" width="90" height="60" rx="7" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="745" y="118" text-anchor="middle" fill="#0a5f59" font-size="11.5" font-weight="600">Rerank</text>
+          <text x="745" y="136" text-anchor="middle" fill="#3f7d77" font-size="9.5">gte-rerank-v2</text>
+          <text x="745" y="150" text-anchor="middle" fill="#3f7d77" font-size="9.5">失败退原排序</text>
+
+          <rect x="816" y="96" width="64" height="60" rx="7" fill="#003366"/>
+          <text x="848" y="120" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">LLM</text>
+          <text x="848" y="138" text-anchor="middle" fill="#b9d4ec" font-size="9.5">带引用</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#d4)">
+            <line x1="140" y1="126" x2="166" y2="126"/>
+            <path d="M310 118 L336 80" fill="none"/>
+            <path d="M310 134 L336 172" fill="none"/>
+            <path d="M510 70 L536 110" fill="none"/>
+            <path d="M510 182 L536 142" fill="none"/>
+            <line x1="670" y1="126" x2="696" y2="126"/>
+            <line x1="790" y1="126" x2="812" y2="126"/>
+          </g>
+
+          <rect x="20" y="236" width="860" height="46" rx="6" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="38" y="256" fill="#8a5f0d" font-size="11">先判断「是否需要知识库」：闲聊与通用问题走普通对话，不强行检索。</text>
+          <text x="38" y="274" fill="#8a5f0d" font-size="11">检索结果低于阈值或为空时，明确提示资料不足，不输出确定性结论。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 3-1</b>　混合检索链路。向量与全文各自召回后在 SQL 层合并，再交给 Rerank 排序——两者互补：向量管语义，全文管专有名词与编号。</figcaption>
+    </figure>
+
+    <h3>3.3 质量控制的三条线</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:170px">控制点</th><th>做法</th></tr></thead>
+        <tbody>
+          <tr><td class="k">相关性</td><td>最低相似度阈值过滤；Rerank 二次排序；top-k 与 final-k 可调</td></tr>
+          <tr><td class="k">诚实性</td><td>无相关内容时提示「资料不足」，不把通用知识伪装成企业文档结论</td></tr>
+          <tr><td class="k">可追溯</td><td>回答附来源片段，用户能核对是哪份文档的哪一段</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="h">删除文档时要同步清向量</span>
+      <p>如果只删业务表记录、不清切片与向量，检索仍会命中「已删除」的内容——这是 RAG 系统最典型的数据泄漏路径。用 pgvector 的好处正在这里：文档与向量同库，可以在一个事务里完成删除。</p>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="s4">
+    <h2><span class="no">04</span>Skill 插件系统</h2>
+    <div class="h2-rule"></div>
+
+    <p>Skill 的价值是<strong>不改核心代码就能扩展 Agent 能力</strong>。每个 Skill 是一个独立目录，声明 intent、阶段和执行脚本，由 dispatcher 按意图与阶段分发。</p>
+
+    <div class="tree"><b>backend/skills/&lt;skill-name&gt;/</b>
+├── <b>SKILL.md</b>         Skill 描述（YAML frontmatter）
+├── <b>skill.json</b>       清单：intent / phases / 脚本映射
+├── <b>config.txt</b>       Skill 独立配置
+└── <b>scripts/</b>         各阶段执行脚本（如 draft.py / send.py）</div>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/skills/hr-agent-email/skill.json</span></div><code>{
+  <span class="s">"name"</span>: <span class="s">"hr-agent-email"</span>,
+  <span class="s">"intent"</span>: <span class="s">"email_notification"</span>,
+  <span class="s">"route"</span>: <span class="s">"/system/email-configs"</span>,
+  <span class="s">"phases"</span>: [<span class="s">"draft"</span>, <span class="s">"send"</span>],
+  <span class="s">"default_phase"</span>: <span class="s">"draft"</span>,
+  <span class="s">"confirmation_action"</span>: <span class="s">"send_email"</span>,
+  <span class="s">"phase_scripts"</span>: {
+    <span class="s">"draft"</span>: <span class="s">"scripts/email_draft.py:generate_email_draft"</span>,
+    <span class="s">"send"</span>:  <span class="s">"scripts/email_send.py:send_confirmed_email"</span>
+  }
+}</code></pre>
+
+    <figure>
+      <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Skill 调用流程">
+        <defs><marker id="d5" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="10.5">
+          <rect x="16" y="30" width="140" height="56" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="86" y="54" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">「给候选人发通知」</text>
+          <text x="86" y="72" text-anchor="middle" fill="#7b8da1">自然语言</text>
+
+          <rect x="186" y="30" width="150" height="56" rx="6" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="261" y="52" text-anchor="middle" fill="#003366" font-weight="600" font-size="11">route_intent</text>
+          <text x="261" y="70" text-anchor="middle" fill="#4a6b8a">命中 skill bundle</text>
+
+          <rect x="366" y="30" width="140" height="56" rx="6" fill="#fff" stroke="#003366" stroke-width="1.3"/>
+          <text x="436" y="52" text-anchor="middle" fill="#003366" font-weight="600" font-size="11">skill_draft</text>
+          <text x="436" y="70" text-anchor="middle" fill="#8a5f0d">执行 draft phase</text>
+
+          <rect x="536" y="30" width="150" height="56" rx="6" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="611" y="52" text-anchor="middle" fill="#8a5f0d" font-weight="600" font-size="11">用户确认</text>
+          <text x="611" y="70" text-anchor="middle" fill="#a8813a">表单作为新消息回传</text>
+
+          <rect x="716" y="30" width="160" height="56" rx="6" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="796" y="52" text-anchor="middle" fill="#0a5f59" font-weight="600" font-size="11">skill_send</text>
+          <text x="796" y="70" text-anchor="middle" fill="#3f7d77">执行 send phase</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#d5)">
+            <line x1="156" y1="58" x2="182" y2="58"/><line x1="336" y1="58" x2="362" y2="58"/>
+            <line x1="506" y1="58" x2="532" y2="58"/><line x1="686" y1="58" x2="712" y2="58"/>
+          </g>
+
+          <rect x="16" y="120" width="860" height="118" rx="7" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="34" y="142" fill="#123a63" font-size="11" font-weight="600">AgentSkillDispatcher 做什么</text>
+          <text x="34" y="164" fill="#4c5f74">1. 扫描 skills/ 目录，读取 skill.json 与 SKILL.md → 构建 SkillMetadata（intent / phases / prerequisites / confirmation_action）</text>
+          <text x="34" y="184" fill="#4c5f74">2. 按 intent 找到 bundle，按 phase 找到 script_path:function_name</text>
+          <text x="34" y="204" fill="#4c5f74">3. 用 importlib 以模块名加载脚本，注入 context 执行，返回 dict 结果</text>
+          <text x="34" y="226" fill="#8a5f0d">4. 确认回传轮：match_confirmation_action("send_email") 命中后直通 skill_send，skill_draft 自动空过</text>
+        </g>
+      </svg>
+      <figcaption><b>图 4-1</b>　Skill 调用链路。两个阶段之间没有 interrupt，确认由「新消息 + action 匹配」完成，与 JD 的确认机制刻意区分。</figcaption>
+    </figure>
+
+    <div class="callout">
+      <span class="h">为什么 Skill 不做 interrupt</span>
+      <p>邮件确认的交互形态是「卡片 + 重新提交」，前端已经把确认内容作为一条新消息发出。改成 interrupt 需要同时改 UI、消息落库和草稿恢复逻辑，收益不足以支撑。这不是技术债，是<strong>按交互形态选择机制</strong>。</p>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section id="s5">
+    <h2><span class="no">05</span>评测体系</h2>
+    <div class="h2-rule"></div>
+
+    <p>三套 runner 各管一段，共用「固定用例 + 结构化断言 + 基线对比」的方法。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:150px">runner</th><th style="width:180px">覆盖</th><th>校验维度</th></tr></thead>
+        <tbody>
+          <tr><td class="k">run_agent_evals.py</td><td>Agent 编排</td><td>intent / route / requires_confirmation / missing_fields / steps(id,status) / artifacts(type) / 签名稳定性</td></tr>
+          <tr><td class="k">run_rag_evals.py</td><td>知识库检索与问答</td><td>召回相关性、答案与原文一致性、无依据时的拒答</td></tr>
+          <tr><td class="k">run_dify_evals.py</td><td>Dify 工作流</td><td>输出结构完整性、字段覆盖、失败率</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>5.1 两层评分</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="t">规则评分器</div>
+        <p>确定性断言：字段是否存在、枚举值是否正确、step 状态是否合理。这部分不依赖模型，结果稳定可比。</p>
+      </div>
+      <div class="card">
+        <div class="t">可选 LLM judge</div>
+        <p>对开放式输出（如 JD 质量、回答相关性）做语义评分。<code>average_judge_score</code> 为空表示未启用，不参与判定。</p>
+      </div>
+    </div>
+
+    <h3>5.2 回归怎么用</h3>
+<pre><div class="bar"><i></i><i></i><i></i><span>CI 里的用法</span></div><code><span class="c"># 跑固定评估集，输出 JSON + Markdown 报告到 evals/reports/</span>
+python scripts/run_agent_evals.py --repeat-runs 3
+
+<span class="c"># 与历史报告对比：指标回退或出现失败样例时非零退出</span>
+python scripts/run_agent_evals.py \
+  --baseline evals/reports/agent_eval_latest.json \
+  --fail-on-regression --fail-on-failed-cases</code></pre>
+
+    <div class="callout warn">
+      <span class="h">评测的真实成本</span>
+      <p>单次 16 个用例、平均延迟 4.5 秒，跑一轮约 1 分多钟；<code>--repeat-runs 3</code> 就是三倍。它不适合放在每次提交的钩子里，适合放在合并前或夜间任务。日常提交用 pytest，行为改动才跑评测。</p>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section id="s6">
+    <h2><span class="no">06</span>数据模型</h2>
+    <div class="h2-rule"></div>
+
+    <p>实体关系本身不复杂，值得说的是两处设计：<strong>评价报告存在 JSON 字段里</strong>，<strong>图状态不进业务 ER</strong>。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="核心实体关系">
+        <defs><marker id="d6" markerWidth="7" markerHeight="7" refX="5.8" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#a8bccf"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="10.5">
+          <!-- users -->
+          <rect x="20" y="20" width="130" height="46" rx="6" fill="#003366"/>
+          <text x="85" y="40" text-anchor="middle" fill="#fff" font-weight="600" font-size="11">users</text>
+          <text x="85" y="56" text-anchor="middle" fill="#b9d4ec" font-size="9.5">角色 / is_superuser</text>
+
+          <rect x="20" y="106" width="130" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="85" y="126" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">conversations</text>
+          <text x="85" y="142" text-anchor="middle" fill="#7b8da1" font-size="9.5">id = thread_id</text>
+
+          <rect x="20" y="192" width="130" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="85" y="212" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">messages</text>
+          <text x="85" y="228" text-anchor="middle" fill="#7b8da1" font-size="9.5">context.agent_response</text>
+
+          <rect x="20" y="278" width="130" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="85" y="298" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">knowledge_bases</text>
+
+          <rect x="20" y="360" width="130" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="85" y="380" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">documents</text>
+          <text x="85" y="396" text-anchor="middle" fill="#7b8da1" font-size="9.5">embedding · 切片</text>
+
+          <!-- 招聘链 -->
+          <rect x="250" y="20" width="160" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="330" y="40" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">job_descriptions</text>
+          <text x="330" y="56" text-anchor="middle" fill="#7b8da1" font-size="9.5">title / content / skills</text>
+
+          <rect x="250" y="106" width="160" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="330" y="126" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">scoring_criteria</text>
+          <text x="330" y="142" text-anchor="middle" fill="#7b8da1" font-size="9.5">judge_id（可空）</text>
+
+          <rect x="250" y="192" width="160" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="330" y="212" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">resume_evaluations</text>
+          <text x="330" y="228" text-anchor="middle" fill="#7b8da1" font-size="9.5">score · detail JSON</text>
+
+          <rect x="250" y="278" width="160" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="330" y="298" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">interview_plans</text>
+          <text x="330" y="314" text-anchor="middle" fill="#7b8da1" font-size="9.5">content（可编辑）</text>
+
+          <rect x="250" y="360" width="160" height="46" rx="6" fill="#003366"/>
+          <text x="330" y="380" text-anchor="middle" fill="#fff" font-weight="600" font-size="11">interviews</text>
+          <text x="330" y="396" text-anchor="middle" fill="#b9d4ec" font-size="9.5">evaluation JSON</text>
+
+          <!-- exams -->
+          <rect x="500" y="20" width="150" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="575" y="40" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">exams</text>
+          <text x="575" y="56" text-anchor="middle" fill="#7b8da1" font-size="9.5">试卷 / 分享链接</text>
+
+          <rect x="500" y="106" width="150" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="575" y="126" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">questions</text>
+          <text x="575" y="142" text-anchor="middle" fill="#7b8da1" font-size="9.5">题型 / 答案 / 解析</text>
+
+          <rect x="500" y="192" width="150" height="46" rx="6" fill="#fff" stroke="#c9d8e8"/>
+          <text x="575" y="212" text-anchor="middle" fill="#123a63" font-weight="600" font-size="11">exam_results</text>
+          <text x="575" y="228" text-anchor="middle" fill="#7b8da1" font-size="9.5">答题 / 得分</text>
+
+          <rect x="700" y="20" width="180" height="70" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="716" y="42" fill="#123a63" font-weight="600" font-size="11">图状态（不在业务 ER 里）</text>
+          <text x="716" y="62" fill="#6b8095" font-size="9.5" font-family="SF Mono, Menlo, monospace">checkpoints</text>
+          <text x="716" y="78" fill="#6b8095" font-size="9.5" font-family="SF Mono, Menlo, monospace">checkpoint_blobs / writes</text>
+
+          <!-- relations -->
+          <g stroke="#a8bccf" stroke-width="1" marker-end="url(#d6)" fill="none">
+            <path d="M150 43 L246 43"/>
+            <path d="M150 129 L246 129"/>
+            <path d="M150 215 L246 215"/>
+            <path d="M150 301 L246 301"/>
+            <path d="M150 383 L246 383"/>
+
+            <path d="M410 43 L410 102"/>
+            <path d="M330 152 L330 188"/>
+            <path d="M330 238 L330 274"/>
+            <path d="M330 324 L330 356"/>
+
+            <path d="M410 215 L496 215"/>
+            <path d="M575 66 L575 102"/>
+            <path d="M575 152 L575 188"/>
+
+            <path d="M85 66 L85 102"/>
+            <path d="M85 152 L85 188"/>
+            <path d="M85 324 L85 356"/>
+            <path d="M150 383 L246 383"/>
+          </g>
+
+          <!-- labels -->
+          <g font-size="9" fill="#8fa4b9">
+            <text x="176" y="38">owns</text>
+            <text x="418" y="75">1:1 绑定</text>
+            <text x="338" y="172">may_use</text>
+            <text x="338" y="258">生成方案</text>
+            <text x="420" y="208">关联</text>
+            <text x="582" y="86">contains</text>
+          </g>
+
+          <rect x="700" y="192" width="180" height="92" rx="6" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="716" y="214" fill="#8a5f0d" font-weight="600" font-size="10.5">两个设计要点</text>
+          <text x="716" y="234" fill="#a8813a" font-size="9.5">· 评价报告存 JSON，字段</text>
+          <text x="724" y="248" fill="#a8813a" font-size="9.5">可演进不必改表</text>
+          <text x="716" y="266" fill="#a8813a" font-size="9.5">· total_score 另存一列，</text>
+          <text x="724" y="280" fill="#a8813a" font-size="9.5">便于排序与统计</text>
+        </g>
+      </svg>
+      <figcaption><b>图 6-1</b>　核心实体关系。<code>interviews.evaluation</code> 是整份报告的存放处，同时另存 <code>total_score</code> 列供列表排序。</figcaption>
+    </figure>
+
+    <h3>6.1 evaluation JSON 里有什么</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:200px">字段</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td class="k">dimensions[]</td><td>四个维度的分数、档位、理由、证据</td></tr>
+          <tr><td class="k">qa_pairs[]</td><td>问答组、判定标签、统计</td></tr>
+          <tr><td class="k">execution</td><td>面试执行度（追问深度），不计入候选人分数</td></tr>
+          <tr><td class="k">risk_signals[]</td><td>风险信号</td></tr>
+          <tr><td class="k">summary / strengths / risks</td><td>总结、亮点、风险</td></tr>
+          <tr><td class="k">recommendation / confidence</td><td>推荐结论与置信度</td></tr>
+          <tr><td class="k">insufficient / notes</td><td>素材不足标记与原因说明</td></tr>
+          <tr><td class="k">prompt_version / rule_version</td><td>本次按哪版提示词与规则计算</td></tr>
+          <tr><td class="k">manual_override</td><td>修订次数、AI 原总分、history[]</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.2 为什么图状态不进 ER</h3>
+    <p><code>AsyncPostgresSaver</code> 启动时自动建四张表（<code>checkpoints</code> / <code>checkpoint_blobs</code> / <code>checkpoint_writes</code> / <code>checkpoint_migrations</code>），按 <code>thread_id = conversation_id</code> 存图的运行状态。</p>
+    <div class="callout">
+      <span class="h">两套数据，互不替代</span>
+      <p>会话历史在 <code>messages</code> 表——那是「说过什么」。图状态在 <code>checkpoints</code> 表——那是「图跑到哪一步、攒了哪些产物」。把两者合并是常见的错误设计：会话历史要长期保留供检索，图状态只需要保留到该线程结束。</p>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section id="s7">
+    <h2><span class="no">07</span>工程实践与踩坑</h2>
+    <div class="h2-rule"></div>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:180px">问题</th><th style="width:340px">现象</th><th>处理</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">转写格式五花八门</td>
+            <td>腾讯会议 docx 导出、第三方 ASR、人工稿的时间戳写法都不一样；正文里的「（10:30）」被误识别为说话人</td>
+            <td>多组正则 + 名字合法性校验（长度、标点、纯数字排除）；四种格式各有对应规则</td>
+          </tr>
+          <tr>
+            <td class="k">候选人身份对不上标签</td>
+            <td>填的「张三」在转写里是「说话人2」或英文名</td>
+            <td>先精确匹配，再用 SequenceMatcher 模糊匹配；仍不行抽样让模型在既有标签里指认；不推测</td>
+          </tr>
+          <tr>
+            <td class="k">同一份稿评分不稳定</td>
+            <td>temperature=0 也不保证确定；分数极差可达数分</td>
+            <td>固定 seed=42；提供 <code>score_drift.py</code> 量化；已知缺口写进 <code>known_gaps</code></td>
+          </tr>
+          <tr>
+            <td class="k">模型调用次数失控</td>
+            <td>逐组调用会让一次评价变成几十次请求，成本和延迟都不可接受</td>
+            <td>问答配对交给代码；判定一次看完整份分组结果；打分一次出全部维度。全流程 2 次调用</td>
+          </tr>
+          <tr>
+            <td class="k">总被追问「分数凭什么」</td>
+            <td>只有一个总分，无法复核</td>
+            <td>逐维理由 + 逐条引用原话 + 轮号可回溯；规则版本随结果落库</td>
+          </tr>
+          <tr>
+            <td class="k">改了提示词分数就变</td>
+            <td>不知道是规则变了还是模型变了</td>
+            <td>提示词与算分参数同源；<code>test_rule_render.py</code> 锁住渲染；<code>rule_version</code> 记入结果</td>
+          </tr>
+          <tr>
+            <td class="k">长转写超上下文</td>
+            <td>60 分钟面试转写可能几万字</td>
+            <td>判定用全文（24k 字以上只告警）；打分超 60k 截中段保留首尾；上限可配</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.1 三个值得复用的做法</h3>
+    <div class="grid g3">
+      <div class="card">
+        <div class="t"><span class="idx">01</span>能数出来的交给代码</div>
+        <p>配对、切分、统计、算分都用确定性代码。模型只做「需要语义理解」的判断，且输出限定在枚举标签内。这样即使模型换版本，分数口径也不变。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">02</span>口径与提示词同源</div>
+        <p>同一份 JSON 既生成提示词，又编译成算分常量。模型看到的阈值与代码用的阈值必然一致，不会出现「reason 说不错但分很低」。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">03</span>把缺陷写进配置</div>
+        <p><code>known_gaps</code> 记录已知失真场景与实测数据。使用者知道边界在哪，比给一个看起来精确的数字更可信。</p>
+      </div>
+    </div>
+
+  </section>
+</div>
+</main>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  var links = Array.prototype.slice.call(document.querySelectorAll('#side nav a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + '%';
+    var pos = h.scrollTop + 120, idx = 0;
+    for (var i = 0; i < secs.length; i++){ if (secs[i] && secs[i].offsetTop <= pos) idx = i; }
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

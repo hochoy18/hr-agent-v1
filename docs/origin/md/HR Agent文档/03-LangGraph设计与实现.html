@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 中的 LangGraph 设计与实现</title>
+<style>
+:root{
+  --navy:#003366;--navy-2:#0a2a4d;--blue:#1a6fc4;--blue-bg:#eef5fd;
+  --gold:#9a6f12;--gold-bg:#fdf6e6;--teal:#0e7c74;--teal-bg:#e9f6f4;
+  --red:#b03a2e;--red-bg:#fdeeec;
+  --ink:#101f2e;--body:#2f4257;--muted:#6d7f93;
+  --line:#e3e9f1;--bg:#f4f6fa;--card:#fff;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(16,31,46,.04),0 10px 30px rgba(16,31,46,.06);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--body);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--navy),var(--blue));z-index:99;transition:width .1s linear}
+#side{position:fixed;top:0;left:0;bottom:0;width:266px;background:#fff;border-right:1px solid var(--line);padding:26px 0 30px;overflow-y:auto;z-index:50}
+.brand{padding:0 24px 20px;border-bottom:1px solid var(--line)}
+.brand .mark{display:inline-flex;align-items:center;gap:9px;font-weight:700;color:var(--navy);letter-spacing:.4px;font-size:15px}
+.brand .dot{width:9px;height:9px;border-radius:2px;background:var(--navy);transform:rotate(45deg)}
+.brand .sub{margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+#side nav{padding:16px 12px}
+#side a{display:block;padding:6px 12px 6px 14px;font-size:13.3px;color:#4a5c70;text-decoration:none;border-left:2px solid transparent;border-radius:0 5px 5px 0;transition:.16s}
+#side a:hover{background:#f5f8fc;color:var(--navy)}
+#side a.on{background:var(--blue-bg);color:var(--navy);border-left-color:var(--navy);font-weight:600}
+#side a .n{display:inline-block;width:20px;color:#9aa9b9;font-family:var(--mono);font-size:11px}
+#side a.on .n{color:var(--blue)}
+.side-foot{padding:16px 22px 0;margin-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:#93a2b3;line-height:1.6}
+.side-foot b{color:#5c6d80;font-weight:600}
+main{margin-left:266px}
+.wrap{max-width:930px;margin:0 auto;padding:0 44px 110px}
+.hero{background:linear-gradient(150deg,#00294f 0%,#003366 45%,#0a4a7d 100%);color:#fff;padding:58px 0 46px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:46px 46px;pointer-events:none}
+.hero .wrap{position:relative;z-index:1;padding-bottom:0}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:2.4px;color:#8fc0ec;text-transform:uppercase;margin-bottom:18px}
+.hero h1{margin:0;font-size:38px;line-height:1.3;font-weight:700;letter-spacing:.5px}
+.hero .lead{margin:16px 0 0;font-size:16px;line-height:1.85;color:#c9dcef;max-width:740px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.meta span{font-size:12px;padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:100px;color:#cfe2f4;background:rgba(255,255,255,.05)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:-28px;position:relative;z-index:2;box-shadow:var(--shadow);overflow:hidden}
+.kpi{padding:20px 22px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font-size:24px;color:var(--navy);font-weight:700;letter-spacing:-.3px;font-family:var(--mono)}
+.kpi span{font-size:12px;color:var(--muted)}
+section{padding-top:54px}
+h2{font-size:25px;color:var(--ink);margin:0 0 6px;font-weight:700;display:flex;align-items:baseline;gap:12px}
+h2 .no{font-family:var(--mono);font-size:13px;color:#fff;background:var(--navy);padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600}
+.h2-rule{height:1px;background:linear-gradient(90deg,var(--navy),rgba(0,51,102,.08));margin:14px 0 26px}
+h3{font-size:17.5px;color:var(--navy-2);margin:34px 0 10px;font-weight:600;padding-left:11px;border-left:3px solid var(--blue)}
+h4{font-size:15px;color:var(--ink);margin:22px 0 8px;font-weight:600}
+p{margin:10px 0}
+strong{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:#eef2f7;color:#1d3b5c;padding:1.5px 5px;border-radius:4px}
+ul,ol{margin:10px 0;padding-left:22px}
+li{margin:6px 0}
+li::marker{color:var(--blue)}
+figure{margin:24px 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 20px 12px;box-shadow:var(--shadow)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+figcaption b{color:#4c5f74;font-weight:600}
+.tw{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:#f1f5fa;color:var(--navy);font-weight:600;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px}
+td{padding:10px 14px;border-bottom:1px solid #eef2f7;vertical-align:top;line-height:1.7}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fafcfe}
+td.k{color:var(--ink);font-weight:600;white-space:nowrap}
+.tnum{font-family:var(--mono);font-size:12.5px;color:#3c5470}
+.callout{margin:22px 0;padding:16px 20px 16px 18px;border-radius:0 9px 9px 0;border-left:4px solid var(--blue);background:var(--blue-bg);font-size:14px}
+.callout .h{display:block;font-weight:700;color:var(--navy);margin-bottom:6px;font-size:13px;letter-spacing:.6px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:#c8891c;background:var(--gold-bg)}
+.callout.warn .h{color:#8a5f0d}
+.callout.risk{border-left-color:var(--red);background:var(--red-bg)}
+.callout.risk .h{color:#8f2c22}
+.callout.ok{border-left-color:var(--teal);background:var(--teal-bg)}
+.callout.ok .h{color:#0a5f59}
+.grid{display:grid;gap:14px;margin:20px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+.card .t{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.card p{font-size:13.5px;margin:6px 0;color:#41556b;line-height:1.72}
+.card .idx{font-family:var(--mono);font-size:11px;color:#fff;background:var(--blue);border-radius:3px;padding:1px 5px}
+.card.flat{box-shadow:none;background:#fbfcfe}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:100px;background:#eef2f7;color:#4a6076;border:1px solid #e2e9f1}
+.tag.ok{background:var(--teal-bg);color:#0a5f59;border-color:#cfeae7}
+.tag.no{background:#fdeeec;color:#a3352a;border-color:#f6d8d4}
+.tag.mid{background:var(--gold-bg);color:#8a5f0d;border-color:#f0e0be}
+pre{margin:18px 0;background:#0f2438;border-radius:10px;overflow:auto;box-shadow:var(--shadow)}
+pre .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#0a1b2b;border-bottom:1px solid rgba(255,255,255,.07)}
+pre .bar i{width:8px;height:8px;border-radius:50%;background:#3d5a75}
+pre .bar span{margin-left:6px;font-family:var(--mono);font-size:11px;color:#7f9ab3;letter-spacing:.5px}
+pre code{display:block;padding:14px 16px;background:none;color:#d5e3f0;font-size:12.5px;line-height:1.75;white-space:pre}
+pre code .c{color:#6b8ba6}
+pre code .k{color:#8fc0ec}
+pre code .s{color:#a8d6a0}
+pre code .f{color:#e6c07b}
+.note{font-size:12.5px;color:var(--muted);margin-top:-8px}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.85;color:#3c5470;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:18px 0}
+.tree b{color:var(--navy);font-weight:600}
+.tree i{color:#93a4b6;font-style:normal}
+footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);font-size:12.5px;color:#8b9bab;line-height:1.9}
+footer b{color:#5c6d80}
+@media (max-width:1080px){
+  #side{display:none}main{margin-left:0}.wrap{padding:0 24px 80px}
+  .kpis{grid-template-columns:1fr 1fr}.kpi:nth-child(2){border-right:0}
+  .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--line)}
+  .g3,.g2{grid-template-columns:1fr}.hero h1{font-size:28px}
+}
+@media print{
+  #side,#progress{display:none}main{margin:0}body{background:#fff;font-size:10.5pt}
+  section{page-break-inside:avoid}figure,.tw,pre{box-shadow:none}
+  .hero{background:#003366 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<aside id="side">
+  <div class="brand">
+    <div class="mark"><span class="dot"></span>HR Agent 文档集</div>
+    <div class="sub">Doc 03 / 04 · LangGraph</div>
+  </div>
+  <nav>
+    <a href="#s0"><span class="n">00</span>迁移目标与兼容边界</a>
+    <a href="#s1"><span class="n">01</span>目录与分层</a>
+    <a href="#s2"><span class="n">02</span>主图结构</a>
+    <a href="#s3"><span class="n">03</span>状态设计</a>
+    <a href="#s4"><span class="n">04</span>路由决策</a>
+    <a href="#s5"><span class="n">05</span>意图子图</a>
+    <a href="#s6"><span class="n">06</span>人工确认机制</a>
+    <a href="#s7"><span class="n">07</span>持久化与记忆</a>
+    <a href="#s8"><span class="n">08</span>流式事件契约</a>
+    <a href="#s9"><span class="n">09</span>降级与容错</a>
+    <a href="#s10"><span class="n">10</span>评测与回归</a>
+    <a href="#s11"><span class="n">11</span>已知限制</a>
+  </nav>
+</aside>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">Graph Architecture · 文档 03 / 04</div>
+    <h1>LangGraph 设计与实现</h1>
+    <p class="lead">迁移的核心不是重写业务，而是把「状态、路由、确认、流式事件」四件事从 5800 行手写编排里抽出来，交给一套有原语的图框架。业务函数原样复用，对外契约一字未改。</p>
+    <div class="meta"><span>主图 + 意图子图</span><span>27 字段状态</span><span>interrupt 真暂停</span><span>PostgreSQL checkpoint</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><b>15</b><span>主图节点</span></div>
+    <div class="kpi"><b>12</b><span>条件边出口</span></div>
+    <div class="kpi"><b>27</b><span>AgentState 字段</span></div>
+    <div class="kpi"><b>5</b><span>SSE 事件类型</span></div>
+  </div>
+
+  <!-- 00 -->
+  <section id="s0">
+    <h2><span class="no">00</span>迁移目标与兼容边界</h2>
+    <div class="h2-rule"></div>
+
+    <h3>0.1 迁移前的问题</h3>
+    <p>迁移前，HR Agent 是纯手写编排：入口 <code>AgentService.chat()</code>，由 <code>agent_service.py</code> 加三个 mixin 组成，约 5800 行。意图识别、受控 ReAct 决策、工具选择、SSE 事件、人工确认全部手写，业务逻辑（JD、评分标准、简历、面试、试卷、删除、邮件）与编排逻辑混在同一个 service 里。</p>
+    <p>后果不是「跑不起来」，而是<strong>改不动</strong>：加一个确认步骤要动四五个地方；评测只能测到最终字符串；确认流程靠前端把 <code>confirmed_requirements</code> 再发一次，跨请求的状态靠消息表双写维持。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="t">迁移前</div>
+        <p>单函数 + 条件分支 → 工具调用 → 返回响应。<br>状态：service 实例属性 + 消息表。<br>确认：返回 <code>requires_confirmation</code>，前端回传。<br>流式：手写 async generator 逐段 yield。</p>
+      </div>
+      <div class="card">
+        <div class="t">迁移后</div>
+        <p>主图路由 + 意图子图。<br>状态：<code>AgentState</code> + PostgreSQL checkpoint。<br>确认：<code>interrupt()</code> 暂停，<code>Command(resume=)</code> 续跑。<br>流式：<code>astream(updates+custom)</code> 映射为 SSE。</p>
+      </div>
+    </div>
+
+    <h3>0.2 四条不可破坏的契约</h3>
+    <p>迁移期间最怕的不是写不出来，而是「顺手改了对外接口」。以下四项在迁移中保持不变，是这次改造能安全落地的原因：</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:190px">契约</th><th style="width:280px">位置</th><th>约束</th></tr></thead>
+        <tbody>
+          <tr><td class="k">chat() 签名</td><td><code>services/agent_service.py</code></td><td>评测进程内调用，参数与返回不可变</td></tr>
+          <tr><td class="k">AgentChatResponse</td><td><code>schemas/agent.py</code></td><td>intent / route / steps / artifacts / requires_confirmation / missing_fields 不变</td></tr>
+          <tr><td class="k">评测用例</td><td><code>evals/agent_cases/*.json</code></td><td>零改动；step id、artifact type 有硬断言</td></tr>
+          <tr><td class="k">SSE 事件词汇</td><td>前端 <code>consumeAgentStream</code></td><td><code>delta</code> / <code>progress</code> / <code>artifact</code> / <code>final</code> 兼容旧语义</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="h">迁移策略</span>
+      <p>用「绞杀者模式」：新图先跑通一条链路（JD 确认流），旧入口保留并指向新图；等评测集全绿，再逐条把意图搬到子图。整个过程对外只有一个入口，随时可回退。这不是技术洁癖，是为了让业务方在迁移期间感觉不到系统在换引擎。</p>
+    </div>
+
+    <h3>0.3 依赖版本</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:320px">包</th><th style="width:110px">版本</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td class="k">langgraph</td><td class="tnum">1.0.10</td><td>StateGraph / 条件边 / interrupt / astream</td></tr>
+          <tr><td class="k">langgraph-checkpoint</td><td class="tnum">3.0.1</td><td>checkpoint 协议</td></tr>
+          <tr><td class="k">langgraph-checkpoint-postgres</td><td class="tnum">3.0.1</td><td><code>AsyncPostgresSaver</code></td></tr>
+          <tr><td class="k">langgraph-prebuilt</td><td class="tnum">1.0.8</td><td>预置构造</td></tr>
+          <tr><td class="k">langchain</td><td class="tnum">1.0.8</td><td><code>create_agent</code> / <code>ToolStrategy</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section id="s1">
+    <h2><span class="no">01</span>目录与分层</h2>
+    <div class="h2-rule"></div>
+
+    <h3>1.1 代码组织</h3>
+    <div class="tree"><b>backend/app/agent/</b>
+├── <b>state.py</b>          AgentState（27 字段）+ artifacts 累积 reducer
+├── <b>graph.py</b>          主图与各意图子图的构建 / 编译
+├── <b>bridge.py</b>         AgentGraphService：HTTP 流式与非流式兼容调用
+├── <b>checkpoint.py</b>     AsyncPostgresSaver 工厂（lifespan 初始化 / 关闭）
+├── <b>llm.py</b>            ChatOpenAI 工厂（DashScope 兼容端点，chat / router 两套）
+├── <b>reasoning.py</b>      规则快通道 + ReAct 路由 + 本地兜底 + 记忆构建
+├── <b>routing_agent.py</b>  观察型 ReAct 路由器（create_agent + 只读工具）
+├── <b>nodes/</b>
+│   ├── routing.py    route_intent：记忆 / 决策 / dest_node
+│   ├── legacy.py     chat 节点与各子图共用工具（_respond / _emit_generator）
+│   ├── chat_agent.py chat 的 create_agent 子图
+│   ├── jd.py         jd_prepare → jd_confirm(interrupt) → jd_execute
+│   ├── skill.py      skill_draft → skill_send
+│   ├── editing.py    jd_edit / criteria_edit 各 4 节点
+│   ├── resources.py  resource_delete 3 节点
+│   ├── planning.py   单步准备（interview_plan / exam_generate / resume_screening）
+│   └── files.py      文件流直通（resume_exec / interview_exec / exam_exec）
+├── <b>tools/</b>
+│   ├── chat_tools.py   4 个只读查询（JD / 简历评分 / 面试方案 / 试卷）
+│   └── router_tools.py search_resources：路由期只读资源查询
+└── <b>chains/</b>              原 service mixin 的业务函数（core / editing / resources / types）</div>
+
+    <h3>1.2 分层调用关系</h3>
+    <figure>
+      <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="分层调用关系">
+        <defs><marker id="c1" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7d99b5"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="24" y="24" width="400" height="56" rx="7" fill="#fff" stroke="#d5e0ec"/>
+          <text x="44" y="47" fill="#123a63" font-size="12" font-weight="600">HTTP 端点</text>
+          <text x="44" y="66" fill="#7b8da1" font-size="11.5">agent_graph.py（对话/确认） · agent.py（文件流直通）</text>
+
+          <rect x="470" y="24" width="406" height="56" rx="7" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="490" y="47" fill="#003366" font-size="12" font-weight="600">AgentGraphService（bridge.py）</text>
+          <text x="490" y="66" fill="#4a6b8a" font-size="11.5">run_chat / resume / run_stream · checkpointer 或 None</text>
+
+          <line x1="424" y1="52" x2="466" y2="52" stroke="#7d99b5" stroke-width="1.1" marker-end="url(#c1)"/>
+
+          <rect x="24" y="116" width="852" height="56" rx="7" fill="#003366"/>
+          <text x="44" y="139" fill="#fff" font-size="12" font-weight="600">LangGraph 主图（graph.py）</text>
+          <text x="44" y="158" fill="#b9d4ec" font-size="11.5">route_intent → 条件边 → 意图子图 / 直通节点 → END</text>
+
+          <line x1="673" y1="80" x2="673" y2="112" stroke="#7d99b5" stroke-width="1.1" marker-end="url(#c1)"/>
+
+          <rect x="24" y="208" width="400" height="56" rx="7" fill="#fff" stroke="#d5e0ec"/>
+          <text x="44" y="231" fill="#123a63" font-size="12" font-weight="600">nodes/*</text>
+          <text x="44" y="250" fill="#7b8da1" font-size="11.5">通过 config["configurable"]["agent_service"] 取门面</text>
+
+          <rect x="470" y="208" width="406" height="56" rx="7" fill="#f6f9fc" stroke="#d5e0ec"/>
+          <text x="490" y="231" fill="#123a63" font-size="12" font-weight="600">AgentService（兼容门面）</text>
+          <text x="490" y="250" fill="#7b8da1" font-size="11.5">组合 chains 业务 mixin · 不再负责编排</text>
+
+          <line x1="224" y1="172" x2="224" y2="204" stroke="#7d99b5" stroke-width="1.1" marker-end="url(#c1)"/>
+          <line x1="424" y1="236" x2="466" y2="236" stroke="#7d99b5" stroke-width="1.1" marker-end="url(#c1)"/>
+
+          <rect x="24" y="288" width="852" height="30" rx="5" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="42" y="308" fill="#8a5f0d" font-size="11.5">再往下是各领域 Service / LLM / Dify / RAG —— 与编排无关，迁移期间一行未改。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 1-1</b>　分层调用关系。关键点：<code>AgentService</code> 从「编排者」降级为「业务门面」，<code>chat()</code> 委托给不带 checkpointer 的共享图。</figcaption>
+    </figure>
+
+    <div class="callout warn">
+      <span class="h">为什么不把 db session 放进 state</span>
+      <p><code>AsyncSession</code> 不可序列化，而 checkpoint 会把 state 写进 PostgreSQL。所以 <code>db</code>、<code>user_id</code>、<code>agent_service</code> 一律通过 <code>RunnableConfig["configurable"]</code> 传递。这条规则如果破坏，第一次 interrupt 就会在序列化阶段炸掉。</p>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section id="s2">
+    <h2><span class="no">02</span>主图结构</h2>
+    <div class="h2-rule"></div>
+
+    <p><code>build_graph(checkpointer)</code> 构建的是一张「分发图」：主图只做路由，每个意图是独立编译的子图，<code>compile()</code> 之后作为节点挂进主图。子图与主图共用 <code>AgentState</code> schema，channel 值自动透传。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 664" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LangGraph 主图">
+        <defs>
+          <marker id="c2" markerWidth="7" markerHeight="7" refX="5.8" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8ea6bd"/></marker>
+        </defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <!-- START -->
+          <circle cx="52" cy="300" r="24" fill="#003366"/>
+          <text x="52" y="305" text-anchor="middle" fill="#fff" font-size="10.5" font-weight="700">START</text>
+
+          <!-- route_intent -->
+          <rect x="96" y="272" width="150" height="56" rx="7" fill="#eef5fd" stroke="#1a6fc4" stroke-width="1.6"/>
+          <text x="112" y="295" fill="#003366" font-size="12.5" font-weight="700">route_intent</text>
+          <text x="112" y="313" fill="#4a6b8a" font-size="10.5">规则 → ReAct → 兜底</text>
+          <line x1="76" y1="300" x2="92" y2="300" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+
+          <!-- bus -->
+          <path d="M246 300 L280 300" stroke="#8ea6bd" stroke-width="1.2" fill="none"/>
+          <line x1="280" y1="62" x2="280" y2="568" stroke="#8ea6bd" stroke-width="1.2"/>
+
+          <!-- rows -->
+          <g font-size="12">
+            <!-- chat -->
+            <line x1="280" y1="62" x2="292" y2="62" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="44" width="540" height="36" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="310" y="67" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">chat</text>
+            <text x="378" y="67" fill="#4a6b8a" font-size="11">create_agent 工具循环（4 个只读查询工具）</text>
+
+            <!-- jd -->
+            <line x1="280" y1="108" x2="292" y2="108" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="90" width="540" height="36" rx="5" fill="#fff" stroke="#003366" stroke-width="1.4"/>
+            <text x="310" y="113" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">jd_prepare</text>
+            <text x="404" y="113" fill="#8ea6bd" font-size="11">→</text>
+            <text x="418" y="113" fill="#8a5f0d" font-size="11" font-weight="600" font-family="SF Mono, Menlo, monospace">jd_confirm</text>
+            <text x="504" y="113" fill="#c8891c" font-size="10.5">interrupt</text>
+            <text x="556" y="113" fill="#8ea6bd" font-size="11">⇢</text>
+            <text x="570" y="113" fill="#003366" font-size="11" font-weight="600" font-family="SF Mono, Menlo, monospace">jd_execute</text>
+            <text x="654" y="113" fill="#7b8da1" font-size="10.5">确认后生成 JD + 评分标准</text>
+
+            <!-- skill -->
+            <line x1="280" y1="154" x2="292" y2="154" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="136" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="159" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">skill_draft</text>
+            <text x="398" y="159" fill="#8ea6bd" font-size="11">⇢</text>
+            <text x="412" y="159" fill="#003366" font-size="11" font-weight="600" font-family="SF Mono, Menlo, monospace">skill_send</text>
+            <text x="498" y="159" fill="#7b8da1" font-size="10.5">响应式确认：确认表单作为新消息再发一次</text>
+
+            <!-- jd_edit -->
+            <line x1="280" y1="200" x2="292" y2="200" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="182" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="205" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">jd_edit</text>
+            <text x="380" y="205" fill="#5b7086" font-size="11">parse → locate → rewrite → save</text>
+            <text x="700" y="205" fill="#8a5f0d" font-size="10.5">完成即终止</text>
+
+            <!-- criteria -->
+            <line x1="280" y1="246" x2="292" y2="246" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="228" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="251" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">criteria_edit</text>
+            <text x="426" y="251" fill="#5b7086" font-size="11">parse → locate → rewrite → save</text>
+            <text x="700" y="251" fill="#8a5f0d" font-size="10.5">完成即终止</text>
+
+            <!-- delete -->
+            <line x1="280" y1="292" x2="292" y2="292" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="274" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="297" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">resource_delete</text>
+            <text x="428" y="297" fill="#5b7086" font-size="11">parse → resolve → execute</text>
+            <text x="660" y="297" fill="#b03a2e" font-size="10.5">写操作，必须二次确认</text>
+
+            <!-- planning -->
+            <line x1="280" y1="338" x2="292" y2="338" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="320" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="343" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">interview_plan</text>
+            <text x="428" y="343" fill="#5b7086" font-size="11">单步 prepare（解析 + 引导确认）</text>
+
+            <line x1="280" y1="384" x2="292" y2="384" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="366" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="389" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">exam_generate</text>
+            <text x="428" y="389" fill="#5b7086" font-size="11">单步 prepare</text>
+
+            <line x1="280" y1="430" x2="292" y2="430" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="412" width="540" height="36" rx="5" fill="#fff" stroke="#c9d8e8"/>
+            <text x="310" y="435" fill="#003366" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">resume_screening</text>
+            <text x="446" y="435" fill="#5b7086" font-size="11">单步 prepare</text>
+            <text x="640" y="435" fill="#7b8da1" font-size="10.5">真正执行由前端专用端点触发</text>
+
+            <!-- exec -->
+            <line x1="280" y1="476" x2="292" y2="476" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="458" width="540" height="36" rx="5" fill="#e9f6f4" stroke="#bfe3df"/>
+            <text x="310" y="481" fill="#0a5f59" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">resume_exec</text>
+            <text x="404" y="481" fill="#3f7d77" font-size="11">文件流直通：复用旧生成器，事件经 writer 透传</text>
+
+            <line x1="280" y1="522" x2="292" y2="522" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="504" width="540" height="36" rx="5" fill="#e9f6f4" stroke="#bfe3df"/>
+            <text x="310" y="527" fill="#0a5f59" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">interview_exec</text>
+            <text x="428" y="527" fill="#3f7d77" font-size="11">文件流直通</text>
+
+            <line x1="280" y1="568" x2="292" y2="568" stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c2)"/>
+            <rect x="296" y="550" width="540" height="36" rx="5" fill="#e9f6f4" stroke="#bfe3df"/>
+            <text x="310" y="573" fill="#0a5f59" font-size="12" font-weight="600" font-family="SF Mono, Menlo, monospace">exam_exec</text>
+            <text x="404" y="573" fill="#3f7d77" font-size="11">文件流直通（含 document-stream 带参考文档）</text>
+          </g>
+
+          <!-- to END -->
+          <g stroke="#8ea6bd" stroke-width="1.1" fill="none">
+            <line x1="836" y1="62" x2="862" y2="62"/><line x1="836" y1="108" x2="862" y2="108"/>
+            <line x1="836" y1="154" x2="862" y2="154"/><line x1="836" y1="200" x2="862" y2="200"/>
+            <line x1="836" y1="246" x2="862" y2="246"/><line x1="836" y1="292" x2="862" y2="292"/>
+            <line x1="836" y1="338" x2="862" y2="338"/><line x1="836" y1="384" x2="862" y2="384"/>
+            <line x1="836" y1="430" x2="862" y2="430"/><line x1="836" y1="476" x2="862" y2="476"/>
+            <line x1="836" y1="522" x2="862" y2="522"/><line x1="836" y1="568" x2="862" y2="568"/>
+            <line x1="862" y1="62" x2="862" y2="568"/>
+          </g>
+          <rect x="826" y="604" width="72" height="32" rx="5" fill="#f1f5fa" stroke="#c9d8e8"/>
+          <text x="862" y="625" text-anchor="middle" fill="#123a63" font-size="11" font-weight="600">END</text>
+          <line x1="862" y1="568" x2="862" y2="600" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c2)"/>
+
+          <!-- legend -->
+          <g font-size="10.5">
+            <rect x="24" y="600" width="12" height="12" fill="#eef5fd" stroke="#c9ddf3"/><text x="42" y="610" fill="#6d7f93">对话</text>
+            <rect x="86" y="600" width="12" height="12" fill="#fff" stroke="#003366" stroke-width="1.4"/><text x="104" y="610" fill="#6d7f93">确认式</text>
+            <rect x="164" y="600" width="12" height="12" fill="#e9f6f4" stroke="#bfe3df"/><text x="182" y="610" fill="#6d7f93">直通</text>
+            <text x="232" y="610" fill="#8a5f0d">实线 → 一定流转　⇢ 条件流转</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption><b>图 2-1</b>　主图全景。左侧 <code>route_intent</code> 通过一条总线扇出到 12 个出口；<code>jd</code> 分支在映射表里被改写为 <code>jd_prepare</code>，其余直接用 <code>dest_node</code> 名字。</figcaption>
+    </figure>
+
+    <h3>2.1 节点职责</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:160px">节点</th><th style="width:180px">文件</th><th>职责</th><th style="width:150px">结束本轮的方式</th></tr></thead>
+        <tbody>
+          <tr><td class="k">route_intent</td><td><code>nodes/routing.py</code></td><td>构建记忆、决策 intent、计算 <code>dest_node</code></td><td>总是继续</td></tr>
+          <tr><td class="k">chat</td><td><code>nodes/legacy.py</code></td><td><code>create_agent</code> 工具循环；失败回退原生 LLM 或规则</td><td>写 <code>final_response</code></td></tr>
+          <tr><td class="k">jd_prepare</td><td><code>nodes/jd.py</code></td><td>解析招聘需求、计算缺失字段、构造确认 payload</td><td>继续</td></tr>
+          <tr><td class="k">jd_confirm</td><td><code>nodes/jd.py</code></td><td>有 thread_id 时 <code>interrupt</code> 暂停；否则返回确认响应</td><td>中断或继续</td></tr>
+          <tr><td class="k">jd_execute</td><td><code>nodes/jd.py</code></td><td>确认后执行 JD → 评分标准 → 保存链</td><td>写 <code>final_response</code></td></tr>
+          <tr><td class="k">skill_draft</td><td><code>nodes/skill.py</code></td><td>生成邮件草稿 + 确认 artifact；确认回传轮跳过</td><td>写 <code>final_response</code></td></tr>
+          <tr><td class="k">skill_send</td><td><code>nodes/skill.py</code></td><td><code>confirmed_requirements.action</code> 命中后执行发送</td><td>写 <code>final_response</code></td></tr>
+          <tr><td class="k">jd_edit_parse/locate/rewrite/save</td><td><code>nodes/editing.py</code></td><td>解析 → 定位 → 改写 → 落库</td><td>locate/rewrite/save 可提前结束</td></tr>
+          <tr><td class="k">criteria_edit_*</td><td><code>nodes/editing.py</code></td><td>同上，针对评分标准</td><td>同上</td></tr>
+          <tr><td class="k">delete_parse/resolve/execute</td><td><code>nodes/resources.py</code></td><td>解析删除请求 → 定位确认 → 执行删除</td><td>resolve/execute 可结束</td></tr>
+          <tr><td class="k">*_prepare</td><td><code>nodes/planning.py</code></td><td>单步解析与引导确认，真正执行由前端专用端点触发</td><td>写 <code>final_response</code></td></tr>
+          <tr><td class="k">*_exec</td><td><code>nodes/files.py</code></td><td>复用旧流式生成器，事件经 stream writer 透传</td><td>写 <code>final_response</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.2 条件边规则</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:230px">条件边</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td class="k">route_intent → *</td><td><code>dest_node == "jd"</code> 映射到 <code>jd_prepare</code>，其余直接使用 <code>dest_node</code></td></tr>
+          <tr><td class="k">jd_confirm 之后</td><td><code>confirmed_requirements</code> 非空 → <code>jd_execute</code>；否则 <code>END</code></td></tr>
+          <tr><td class="k">skill_draft 之后</td><td><code>confirmed_requirements</code> 非空 → <code>skill_send</code>；否则 <code>END</code></td></tr>
+          <tr><td class="k">顺序子图内部</td><td><code>end_after</code> 中的节点写入 <code>final_response</code> → <code>END</code>，否则进入下一节点</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/graph.py · 条件边</span></div><code><span class="k">def</span> <span class="f">_after_jd_confirm</span>(state):
+    <span class="c"># confirmed_requirements 非空 = 用户已确认（interrupt resume / 兼容回传），继续执行；</span>
+    <span class="c"># 否则 jd_confirm 本轮产出的是确认请求响应，直接结束。不读 final_response：</span>
+    <span class="c"># checkpoint 跨轮残留的旧值会误判</span>
+    <span class="k">if</span> state.get(<span class="s">"confirmed_requirements"</span>):
+        <span class="k">return</span> <span class="s">"jd_execute"</span>
+    <span class="k">return</span> END</code></pre>
+
+    <div class="callout">
+      <span class="h">这个注释值钱</span>
+      <p>最初的条件边是判 <code>final_response</code> 是否存在。问题在于 checkpoint 会跨轮保留上一轮的值，新一轮进来时旧 <code>final_response</code> 还在，条件边就会误判成「已结束」。改成判 <code>confirmed_requirements</code> 才是本轮语义。这类 bug 只在多轮会话里出现，单轮测试发现不了。</p>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section id="s3">
+    <h2><span class="no">03</span>状态设计</h2>
+    <div class="h2-rule"></div>
+
+    <p><code>AgentState</code> 有 27 个字段，分组后其实只有六类。设计上的关键决策不在字段多少，而在<strong>哪些字段跨轮累积、哪些每轮覆盖</strong>。</p>
+
+    <h3>3.1 字段分组</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:80px">分组</th><th style="width:420px">字段</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td class="k">输入</td><td><code>user_message</code> · <code>attachments</code> · <code>confirmed_requirements</code> · <code>auto_execute</code> · <code>conversation_id</code></td><td>每轮写入</td></tr>
+          <tr><td class="k">路由</td><td><code>intent</code> · <code>route</code> · <code>agent_plan</code> · <code>memory_context</code> · <code>dest_node</code></td><td>由 <code>route_intent</code> 产出</td></tr>
+          <tr><td class="k">过程</td><td><code>steps</code></td><td>普通 channel，每轮覆盖</td></tr>
+          <tr><td class="k">产物</td><td><code>artifacts</code></td><td><code>Annotated[..., add_artifacts]</code> 跨轮累积，最多 50 条</td></tr>
+          <tr><td class="k">终态</td><td><code>final_response</code></td><td>完整 <code>AgentChatResponse.model_dump()</code></td></tr>
+          <tr><td class="k">中间态</td><td><code>parsed_requirements</code> · <code>jd_missing_fields</code> · <code>jd_interrupt_payload</code> · <code>edit_*</code> · <code>delete_*</code></td><td>仅子图内部使用，同轮互斥共用</td></tr>
+          <tr><td class="k">直通</td><td><code>preset_intent</code></td><td>文件流端点跳过路由决策</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>3.2 artifacts 的跨轮累积</h3>
+    <p>「改改刚才那个 JD」能工作，靠的就是这个 reducer。默认 channel 是「后写覆盖」，这里换成「追加 + 保留最近 50 条」：</p>
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/state.py</span></div><code><span class="k">def</span> <span class="f">add_artifacts</span>(left, right):
+    <span class="s">"""artifacts 累积 reducer：跨轮保留全部产物，供编辑/删除链路反查。"""</span>
+    merged = list(left <span class="k">or</span> [])
+    <span class="k">for</span> item <span class="k">in</span> (right <span class="k">or</span> []):
+        merged.append(item)
+    <span class="c"># 只保留有限条数，避免长会话 checkpoint 膨胀</span>
+    <span class="k">return</span> merged[-50:]
+
+<span class="k">class</span> <span class="f">AgentState</span>(TypedDict, total=<span class="k">False</span>):
+    artifacts: Annotated[List[Dict[str, Any]], add_artifacts]</code></pre>
+
+    <figure>
+      <svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="artifacts 跨轮累积">
+        <defs><marker id="c3" markerWidth="7" markerHeight="7" refX="5.8" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <g font-size="11">
+            <text x="24" y="26" fill="#6d7f93" letter-spacing="1">第 1 轮</text>
+            <rect x="24" y="38" width="180" height="44" rx="6" fill="#fff" stroke="#d5e0ec"/>
+            <text x="38" y="58" fill="#123a63" font-weight="600">生成 JD</text>
+            <text x="38" y="74" fill="#7b8da1">artifact: jd</text>
+
+            <text x="24" y="112" fill="#6d7f93" letter-spacing="1">第 2 轮</text>
+            <rect x="24" y="124" width="180" height="44" rx="6" fill="#fff" stroke="#d5e0ec"/>
+            <text x="38" y="144" fill="#123a63" font-weight="600">修改刚才那个</text>
+            <text x="38" y="160" fill="#7b8da1">无新产物</text>
+
+            <text x="24" y="198" fill="#6d7f93" letter-spacing="1">第 3 轮</text>
+            <rect x="24" y="182" width="180" height="44" rx="6" fill="#fff" stroke="#d5e0ec"/>
+            <text x="38" y="202" fill="#123a63" font-weight="600">再生成一版</text>
+            <text x="38" y="218" fill="#7b8da1">artifact: jd</text>
+          </g>
+
+          <!-- state bars -->
+          <g font-size="10.5">
+            <rect x="300" y="38" width="120" height="44" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="360" y="64" text-anchor="middle" fill="#003366">[jd#1]</text>
+
+            <rect x="300" y="124" width="120" height="44" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="360" y="150" text-anchor="middle" fill="#003366">[jd#1]</text>
+
+            <rect x="300" y="182" width="120" height="44" rx="5" fill="#eef5fd" stroke="#c9ddf3"/>
+            <text x="360" y="208" text-anchor="middle" fill="#003366">[jd#1, jd#2]</text>
+          </g>
+
+          <g stroke="#8ea6bd" stroke-width="1" marker-end="url(#c3)">
+            <line x1="204" y1="60" x2="296" y2="60"/>
+            <line x1="204" y1="146" x2="296" y2="146"/>
+            <line x1="204" y1="204" x2="296" y2="204"/>
+          </g>
+
+          <g stroke="#1a6fc4" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#c3)">
+            <path d="M420 60 L480 60 L480 146 L420 146" fill="none"/>
+            <path d="M420 146 L480 146 L480 204 L420 204" fill="none"/>
+          </g>
+
+          <rect x="520" y="70" width="352" height="140" rx="8" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="538" y="94" fill="#123a63" font-size="11.5" font-weight="600">产物反查优先级</text>
+          <text x="538" y="116" fill="#4c5f74" font-size="11">1. state.artifacts（checkpoint 跨轮累积）</text>
+          <text x="538" y="138" fill="#4c5f74" font-size="11">2. Message.context.agent_response（旧路径兜底）</text>
+          <text x="538" y="166" fill="#8a5f0d" font-size="11">编辑 / 删除链路优先读图状态，</text>
+          <text x="538" y="184" fill="#8a5f0d" font-size="11">不依赖前端双写是否成功。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 3-1</b>　artifacts 跨轮累积。第 2 轮没有新产物也不会清空列表，「刚才那个」始终能定位到最近一次产物。</figcaption>
+    </figure>
+
+    <h3>3.3 三个关键决策</h3>
+    <div class="grid g3">
+      <div class="card">
+        <div class="t">不用 add_messages</div>
+        <p>会话连续性靠每轮注入 <code>memory_context</code> 文本，而不是让 LangGraph 累积消息。原因：与旧文本记忆语义冲突，且 checkpoint 会无限膨胀。</p>
+      </div>
+      <div class="card">
+        <div class="t">db / user 不进 state</div>
+        <p><code>AsyncSession</code> 不可序列化，统一走 <code>configurable</code>。state 里只放可 JSON 化的数据。</p>
+      </div>
+      <div class="card">
+        <div class="t">steps 每轮覆盖</div>
+        <p>意图节点产出完整 step 列表，评测按 step id / status 断言。累积会导致上一轮的步骤混进本轮界面。</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="h">跨轮残留是这套设计的主要 bug 来源</span>
+      <p>新消息进来时，必须显式清零 <code>agent_plan</code>、<code>preset_intent</code>、<code>final_response</code>。否则 <code>route_intent</code> 会复用上一轮 checkpoint 里的计划（例如上轮 intent=jd），直接跳过本轮意图决策。这段清零逻辑写在 <code>bridge.run_stream()</code> 里，注释也标了原因：</p>
+<pre style="margin:10px 0 0"><code><span class="c"># 新消息必须显式清零跨轮残留的 channel</span>
+invoke_input = { ..., <span class="s">"agent_plan"</span>: <span class="k">None</span>, <span class="s">"preset_intent"</span>: preset_intent, <span class="s">"final_response"</span>: <span class="k">None</span> }</code></pre>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="s4">
+    <h2><span class="no">04</span>路由决策</h2>
+    <div class="h2-rule"></div>
+
+    <p>路由是整个系统的入口判断，也是成本最敏感的地方——每条消息都要过一次。方案是两级：<strong>规则快通道</strong>（毫秒级、零模型调用）优先，判不出来再走<strong>观察型 ReAct</strong>（可调只读工具，再输出结构化决策）。</p>
+
+    <h3>4.1 route_intent 节点流程</h3>
+    <figure>
+      <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="路由决策流程">
+        <defs><marker id="c4" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="40" y="16" width="300" height="44" rx="22" fill="#003366"/>
+          <text x="190" y="44" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="600">route_intent 进入</text>
+          <line x1="190" y1="60" x2="190" y2="82" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+
+          <rect x="40" y="86" width="300" height="48" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="56" y="108" fill="#8a5f0d" font-size="11.5" font-weight="600">preset_intent 存在？</text>
+          <text x="56" y="124" fill="#a8813a" font-size="10">文件流端点跳过路由</text>
+          <text x="196" y="80" fill="#93a4b6" font-size="9.5">否</text>
+
+          <line x1="190" y1="134" x2="190" y2="156" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="160" width="300" height="42" rx="6" fill="#fff" stroke="#d5e0ec"/>
+          <text x="56" y="186" fill="#123a63" font-size="11.5">① 注入图产物 artifacts</text>
+
+          <line x1="190" y1="202" x2="190" y2="214" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="218" width="300" height="42" rx="6" fill="#fff" stroke="#d5e0ec"/>
+          <text x="56" y="244" fill="#123a63" font-size="11.5">② 构建会话记忆（≤6000 字）</text>
+
+          <line x1="190" y1="260" x2="190" y2="272" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="276" width="300" height="48" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="56" y="298" fill="#8a5f0d" font-size="11.5" font-weight="600">确认信息已回传？</text>
+          <text x="56" y="314" fill="#a8813a" font-size="10">confirmed_requirements</text>
+
+          <line x1="190" y1="324" x2="190" y2="336" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="340" width="300" height="48" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="56" y="362" fill="#8a5f0d" font-size="11.5" font-weight="600">规则快通道命中？</text>
+          <text x="56" y="378" fill="#a8813a" font-size="10">关键词 / 附件格式 / 上一轮产物</text>
+
+          <line x1="190" y1="388" x2="190" y2="400" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="404" width="300" height="96" rx="7" fill="#003366"/>
+          <text x="56" y="428" fill="#fff" font-size="12" font-weight="600">④ 观察型 ReAct 路由</text>
+          <text x="56" y="448" fill="#c9dcef" font-size="10.5">create_agent + search_resources</text>
+          <text x="56" y="466" fill="#c9dcef" font-size="10.5">可先查「刚才那个」指向的真实资源</text>
+          <text x="56" y="486" fill="#b9d4ec" font-size="10.5">输出 RouterDecision（mode/action/intent）</text>
+
+          <line x1="190" y1="500" x2="190" y2="520" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <rect x="40" y="524" width="300" height="44" rx="6" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="56" y="551" fill="#003366" font-size="11.5" font-weight="600">⑤ 计算 dest_node → 条件边分发</text>
+
+          <!-- 右侧出口 -->
+          <line x1="340" y1="110" x2="396" y2="110" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <text x="348" y="103" fill="#8a5f0d" font-size="10">是</text>
+          <rect x="400" y="86" width="470" height="48" rx="6" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="416" y="107" fill="#0a5f59" font-size="11.5" font-weight="600">直接写 dest_node</text>
+          <text x="416" y="124" fill="#3f7d77" font-size="10">跳过记忆构建与模型调用，零成本</text>
+
+          <line x1="340" y1="300" x2="396" y2="300" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <text x="348" y="293" fill="#8a5f0d" font-size="10">是</text>
+          <rect x="400" y="276" width="470" height="48" rx="6" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="416" y="297" fill="#0a5f59" font-size="11.5" font-weight="600">跳过规划，直通 skill / jd</text>
+          <text x="416" y="314" fill="#3f7d77" font-size="10">确认回传轮不再重新识别意图</text>
+
+          <line x1="340" y1="364" x2="396" y2="364" stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c4)"/>
+          <text x="348" y="357" fill="#8a5f0d" font-size="10">是</text>
+          <rect x="400" y="340" width="470" height="48" rx="6" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="416" y="361" fill="#0a5f59" font-size="11.5" font-weight="600">产出 plan（规则优先）</text>
+          <text x="416" y="378" fill="#3f7d77" font-size="10">plan.source = rule_intent 等，不消耗模型调用</text>
+
+          <line x1="340" y1="452" x2="396" y2="452" stroke="#c8891c" stroke-width="1.1" marker-end="url(#c4)"/>
+          <text x="348" y="445" fill="#8a5f0d" font-size="10">失败</text>
+          <rect x="400" y="404" width="470" height="96" rx="6" fill="#fff" stroke="#f0e0be"/>
+          <text x="416" y="428" fill="#8a5f0d" font-size="11.5" font-weight="600">回退关键词规则</text>
+          <text x="416" y="450" fill="#5b7086" font-size="10.5">异常 / 超时 / 结构化决策缺失 / intent 非法</text>
+          <text x="416" y="470" fill="#5b7086" font-size="10.5">→ classify_agent_intent()</text>
+          <text x="416" y="490" fill="#a8813a" font-size="10">plan.source = fallback，路由始终有结果</text>
+        </g>
+      </svg>
+      <figcaption><b>图 4-1</b>　route_intent 决策流程。最短路径（preset_intent）不查库、不调模型；最长路径（规则未命中 + ReAct + 兜底）也只多一次模型调用。</figcaption>
+    </figure>
+
+    <h3>4.2 规则快通道</h3>
+    <p>规则不是「if 关键词」，它用三类特征组合判断，命中即返回，不进入模型：</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:140px">特征</th><th style="width:340px">例子</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td class="k">关键词</td><td>删除 / 删掉 / 移除 / 清理 + 资源名词</td><td>优先识别高危动作，避免被别的意图抢走</td></tr>
+          <tr><td class="k">附件格式</td><td>pdf/doc/docx/txt/md + 评分、筛选、简历</td><td>「上传了简历说要评分」直接判 <code>resume_screening</code></td></tr>
+          <tr><td class="k">上一轮产物</td><td><code>artifacts</code> 里有 JD，说「改一下」</td><td>判断这是不是「改刚才那个」，走 <code>jd_edit</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="h">规则顺序是有讲究的</span>
+      <p>删除规则必须排在通用意图之前，否则「删掉刚才那个 JD」里的「JD」会让它被判成 <code>jd</code>。反过来，<strong>继承删除候选</strong>的规则必须排在通用意图之后，否则「生成一个 JD：张三」这种含候选名的正常请求会被抢进删除流程。这个先后顺序在 <code>reasoning.py</code> 里有明确注释。</p>
+    </div>
+
+    <h3>4.3 观察型 ReAct 路由</h3>
+    <p>规则判不出来时，交给一个「只选路、不写数据」的 agent。它可以先调用 <code>search_resources</code> 观察当前用户最近的资源（JD、评分标准、简历、面试、试卷），再输出结构化决策。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 356" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ReAct 路由循环">
+        <defs><marker id="c5" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <rect x="16" y="70" width="130" height="64" rx="7" fill="#fff" stroke="#d5e0ec"/>
+          <text x="81" y="96" text-anchor="middle" fill="#123a63" font-size="11.5" font-weight="600">用户消息</text>
+          <text x="81" y="113" text-anchor="middle" fill="#7b8da1" font-size="10">+ 附件 · 记忆</text>
+          <text x="81" y="127" text-anchor="middle" fill="#7b8da1" font-size="10">+ 已累积产物数</text>
+
+          <rect x="176" y="56" width="160" height="92" rx="8" fill="#003366"/>
+          <text x="256" y="80" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Router LLM</text>
+          <text x="256" y="100" text-anchor="middle" fill="#b9d4ec" font-size="10">temperature = 0</text>
+          <text x="256" y="118" text-anchor="middle" fill="#b9d4ec" font-size="10">max_tokens = 800</text>
+          <text x="256" y="136" text-anchor="middle" fill="#b9d4ec" font-size="10">并行工具调用关闭</text>
+
+          <rect x="456" y="26" width="200" height="68" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="472" y="48" fill="#123a63" font-size="11.5" font-weight="600">search_resources（只读）</text>
+          <text x="472" y="66" fill="#7b8da1" font-size="10">按类型查最近 JD / 评分标准 /</text>
+          <text x="472" y="82" fill="#7b8da1" font-size="10">简历 / 面试 / 试卷</text>
+
+          <rect x="150" y="186" width="220" height="68" rx="7" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="168" y="208" fill="#0a5f59" font-size="11.5" font-weight="600">RouterDecision（结构化）</text>
+          <text x="168" y="228" fill="#3f7d77" font-size="10">mode / action / intent /</text>
+          <text x="168" y="244" fill="#3f7d77" font-size="10">thought / confidence / reply</text>
+
+          <rect x="430" y="176" width="190" height="88" rx="7" fill="#fff" stroke="#d5e0ec"/>
+          <text x="448" y="200" fill="#003366" font-size="11.5" font-weight="600">动作空间</text>
+          <text x="448" y="220" fill="#4a6b8a" font-size="10.5">chat —— 普通回复</text>
+          <text x="448" y="238" fill="#4a6b8a" font-size="10.5">use_tool —— 调业务工具</text>
+          <text x="448" y="256" fill="#4a6b8a" font-size="10.5">ask_user —— 追问缺失条件</text>
+
+          <rect x="150" y="282" width="270" height="60" rx="6" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="166" y="304" fill="#8a5f0d" font-size="11" font-weight="600">ReAct 失败 / 超时 / 决策缺失</text>
+          <text x="166" y="324" fill="#a8813a" font-size="10">→ 关键词规则兜底（source=fallback）</text>
+
+          <rect x="440" y="282" width="444" height="60" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="456" y="304" fill="#3c5470" font-size="10.5">约束：模型只能在 tool_registry 声明的 intent 里选；</text>
+          <text x="456" y="324" fill="#3c5470" font-size="10.5">删除 / 发送 / 落库不在它的能力范围内。</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c5)">
+            <line x1="146" y1="102" x2="172" y2="102"/>
+            <line x1="336" y1="58" x2="452" y2="58"/>
+            <line x1="452" y1="90" x2="340" y2="90"/>
+            <line x1="256" y1="148" x2="256" y2="182"/>
+            <line x1="370" y1="220" x2="426" y2="220"/>
+          </g>
+          <line x1="260" y1="254" x2="260" y2="278" stroke="#c8891c" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#c5)"/>
+
+          <text x="394" y="50" text-anchor="middle" fill="#6d7f93" font-size="10">① tool call</text>
+          <text x="396" y="108" text-anchor="middle" fill="#6d7f93" font-size="10">② observation</text>
+          <text x="266" y="168" fill="#6d7f93" font-size="10">③ 输出结构化决策</text>
+          <text x="392" y="212" text-anchor="middle" fill="#6d7f93" font-size="10">④</text>
+        </g>
+      </svg>
+      <figcaption><b>图 4-2</b>　观察型 ReAct 路由循环。它的价值在于指代消解：用户说「上次那个 JD」，模型能先查再判，而不是猜。</figcaption>
+    </figure>
+
+    <h3>4.4 结构化决策的约束</h3>
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/routing_agent.py</span></div><code><span class="k">class</span> <span class="f">RouterDecision</span>(BaseModel):
+    mode: Literal[<span class="s">"chat"</span>, <span class="s">"tool"</span>]
+    action: Literal[<span class="s">"chat"</span>, <span class="s">"use_tool"</span>, <span class="s">"ask_user"</span>]
+    intent: str = Field(..., min_length=1)
+    thought: str = Field(..., min_length=1)      <span class="c"># 一句推理摘要，不展开内部推理</span>
+    observation: str = <span class="s">""</span>
+    confidence: Optional[float] = Field(<span class="k">None</span>, ge=0.0, le=1.0)
+    reply: Optional[str] = <span class="k">None</span>
+
+    <span class="c">@model_validator(mode="after")</span>
+    <span class="k">def</span> <span class="f">_check_action_mode</span>(self):
+        expected = <span class="s">"chat"</span> <span class="k">if</span> self.action == <span class="s">"chat"</span> <span class="k">else</span> <span class="s">"tool"</span>
+        <span class="k">if</span> self.mode != expected:
+            <span class="k">raise</span> ValueError(<span class="s">f"mode={self.mode} 与 action={self.action} 不一致"</span>)
+        <span class="k">return</span> self</code></pre>
+    <p>这个 validator 看着像小题大做，实际拦住了一类真实错误：模型输出 <code>mode=chat</code> 但 <code>action=use_tool</code>，下游按 mode 分支就会当成闲聊，用户的任务被静默丢弃。结构化输出不等于语义自洽，得自己校验。</p>
+
+    <h3>4.5 回退链</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:240px">触发条件</th><th>行为</th><th style="width:130px">plan.source</th></tr></thead>
+        <tbody>
+          <tr><td class="k">规则快通道命中</td><td>直接返回，不调模型</td><td><code>rule_intent</code> 等</td></tr>
+          <tr><td class="k">LLM_API_KEY 未配置</td><td>跳过 ReAct，走关键词规则</td><td><code>fallback</code></td></tr>
+          <tr><td class="k">ReAct 超时 / 异常</td><td>记 warning，回退关键词规则</td><td><code>fallback</code></td></tr>
+          <tr><td class="k">结构化决策缺失</td><td>按 <code>AGENT_ROUTER_MAX_ATTEMPTS</code> 重试；仍失败回退</td><td><code>fallback</code></td></tr>
+          <tr><td class="k">产出的 intent 非法</td><td>记 info，回退关键词规则</td><td><code>fallback</code></td></tr>
+          <tr><td class="k">AGENT_ROUTER_MODE 非法值</td><td>按 <code>rule</code> 处理并打一次 warning</td><td><code>fallback</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">只在「结构化决策缺失」时重试，不重试超时。超时说明模型侧已慢，重试只会让用户多等一倍。</div>
+  </section>
+
+  <!-- 05 -->
+  <section id="s5">
+    <h2><span class="no">05</span>意图子图</h2>
+    <div class="h2-rule"></div>
+
+    <p>每个意图都是独立编译的子图，<code>compile()</code> 后当节点挂进主图。子图类型只有四种：确认式（jd / skill）、多步编辑（edit / delete）、单步准备（planning）、文件直通（exec）。</p>
+
+    <h3>5.1 JD：三个节点，一次确认</h3>
+    <figure>
+      <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JD 确认流时序">
+        <defs><marker id="c6" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5c86b8"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <!-- 参与者 -->
+          <rect x="55" y="20" width="110" height="34" rx="6" fill="#003366"/>
+          <text x="110" y="42" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">前端</text>
+          <rect x="315" y="20" width="130" height="34" rx="6" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="380" y="42" text-anchor="middle" fill="#003366" font-size="11" font-weight="600">jd_prepare</text>
+          <rect x="545" y="20" width="130" height="34" rx="6" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="610" y="42" text-anchor="middle" fill="#8a5f0d" font-size="11" font-weight="600">jd_confirm</text>
+          <rect x="745" y="20" width="130" height="34" rx="6" fill="#e9f6f4" stroke="#bfe3df"/>
+          <text x="810" y="42" text-anchor="middle" fill="#0a5f59" font-size="11" font-weight="600">jd_execute</text>
+
+          <g stroke="#cfdae6" stroke-width="1" stroke-dasharray="4 4">
+            <line x1="110" y1="54" x2="110" y2="404"/>
+            <line x1="380" y1="54" x2="380" y2="404"/>
+            <line x1="610" y1="54" x2="610" y2="404"/>
+            <line x1="810" y1="54" x2="810" y2="404"/>
+          </g>
+
+          <g stroke="#5c86b8" stroke-width="1.2" fill="none">
+            <line x1="110" y1="96" x2="376" y2="96" marker-end="url(#c6)"/>
+            <line x1="380" y1="136" x2="114" y2="136" marker-end="url(#c6)"/>
+            <line x1="380" y1="180" x2="606" y2="180" marker-end="url(#c6)"/>
+            <line x1="610" y1="224" x2="114" y2="224" marker-end="url(#c6)"/>
+            <line x1="110" y1="268" x2="606" y2="268" marker-end="url(#c6)"/>
+            <line x1="610" y1="312" x2="806" y2="312" marker-end="url(#c6)"/>
+            <line x1="810" y1="356" x2="114" y2="356" marker-end="url(#c6)"/>
+          </g>
+
+          <g font-size="10" fill="#3c5470" text-anchor="middle">
+            <text x="245" y="90">POST /graph/chat（生成前端 JD）</text>
+            <text x="247" y="130">progress · delta（解析中）</text>
+            <text x="493" y="174">state：解析结果 + 确认 payload</text>
+            <text x="362" y="218">interrupt + final(requires_confirmation)</text>
+            <text x="358" y="262">POST /graph/resume { value }</text>
+            <text x="708" y="306">confirmed_requirements 非空 → 继续</text>
+            <text x="462" y="350">final（JD + 评分标准）</text>
+          </g>
+
+          <g font-size="9.5" fill="#8a5f0d">
+            <text x="622" y="196">真暂停：图停在 checkpoint</text>
+            <text x="622" y="284">从断点继续，不重跑解析</text>
+          </g>
+
+          <rect x="55" y="380" width="820" height="28" rx="5" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="70" y="398" fill="#8a5f0d" font-size="10">两次 HTTP 请求之间没有共享内存，图状态保存在 checkpoints（thread_id = conversation_id）。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 5-1</b>　JD 确认流。注意暂停点在 <code>jd_confirm</code>，解析在 <code>jd_prepare</code> 已完成——这是为了避开 interrupt 恢复时节点重跑导致的重复解析。</figcaption>
+    </figure>
+
+    <h3>5.2 为什么把解析和确认拆成两个节点</h3>
+    <div class="callout risk">
+      <span class="h">LangGraph 的 interrupt 语义</span>
+      <p><code>interrupt()</code> 恢复时，<strong>节点内此前的状态写入会被丢弃，整个节点从头重跑</strong>。如果把「LLM 解析需求」和「interrupt 等待确认」放在同一个节点：resume 后解析会重跑一次，模型输出可能与上次不同，用户确认的字段和最终执行的字段就对不上了。</p>
+      <p>拆开后：<code>jd_prepare</code> 完成解析并写入 state → <code>jd_confirm</code> 只做 interrupt → resume 时只重跑一个不含 LLM 的节点，结果稳定。</p>
+    </div>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/nodes/jd.py · jd_confirm</span></div><code><span class="k">async def</span> <span class="f">jd_confirm</span>(state, config):
+    <span class="k">if</span> state.get(<span class="s">"confirmed_requirements"</span>):
+        <span class="k">return</span> {}                       <span class="c"># 已是确认回传轮，空过</span>
+
+    payload = state.get(<span class="s">"jd_interrupt_payload"</span>) <span class="k">or</span> {}
+    <span class="k">if not</span> config.get(<span class="s">"configurable"</span>, {}).get(<span class="s">"thread_id"</span>):
+        <span class="c"># 兼容门面（无 checkpointer / 评测）：以普通响应结束本轮</span>
+        <span class="k">return</span> {<span class="s">"final_response"</span>: {**payload, <span class="s">"requires_confirmation"</span>: <span class="k">True</span>}, ...}
+
+    <span class="c"># 有 thread_id：真暂停，resume 值即旧 confirmed_requirements 结构</span>
+    resume_value = interrupt(payload)
+    <span class="k">return</span> {<span class="s">"confirmed_requirements"</span>: resume_value <span class="k">if</span> isinstance(resume_value, dict) <span class="k">else</span> {}}</code></pre>
+
+    <p class="note">判定条件是 <code>configurable.thread_id</code> 是否为空，而不是 checkpointer 是否存在。评测用例不传 conversation_id，所以自然走兼容分支，不会卡在 interrupt 上。</p>
+
+    <h3>5.3 Skill：两个节点，响应式确认</h3>
+    <p>邮件类 Skill 不用 <code>interrupt</code>，而是把确认表单作为<strong>新消息</strong>再发一次。原因很实际：前端已经在用「确认卡 + 重新提交」的交互，改成 interrupt 要同时改 UI 与消息落库逻辑，收益不足以支撑这次改动。</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:150px">节点</th><th>行为</th></tr></thead>
+        <tbody>
+          <tr><td class="k">skill_draft</td><td>生成邮件草稿 + 确认 artifact，写 <code>final_response</code> 结束本轮。若本轮是确认回传轮（<code>confirmed_requirements</code> 非空），空过</td></tr>
+          <tr><td class="k">skill_send</td><td><code>confirmed_requirements.action</code> 命中 <code>send_email</code> 后执行发送</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>条件边因此写成「<code>confirmed_requirements</code> 非空 → <code>skill_send</code>，否则 END」。与 JD 的条件边同构，但语义不同：JD 是 resume 带回来的值，Skill 是新消息带进来的值。</p>
+
+    <h3>5.4 多步编辑：完成即终止</h3>
+    <p>编辑与删除链路有四到三个节点，但不是每个节点都必须走完。缺修改要求、多候选、资源定位失败时，应该<strong>停下来问</strong>，而不是继续往下执行写操作。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="顺序子图完成即终止">
+        <defs><marker id="c7" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker>
+        <marker id="c7r" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c8891c"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <!-- 主链 -->
+          <rect x="30" y="74" width="140" height="56" rx="7" fill="#fff" stroke="#c9d8e8"/>
+          <text x="100" y="100" text-anchor="middle" fill="#123a63" font-size="11.5" font-weight="600">parse</text>
+          <text x="100" y="118" text-anchor="middle" fill="#7b8da1" font-size="10.5">解析诉求</text>
+
+          <rect x="220" y="74" width="150" height="56" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="295" y="100" text-anchor="middle" fill="#8a5f0d" font-size="11.5" font-weight="600">locate</text>
+          <text x="295" y="118" text-anchor="middle" fill="#a8813a" font-size="10.5">定位目标资源</text>
+
+          <rect x="420" y="74" width="150" height="56" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="495" y="100" text-anchor="middle" fill="#8a5f0d" font-size="11.5" font-weight="600">rewrite</text>
+          <text x="495" y="118" text-anchor="middle" fill="#a8813a" font-size="10.5">改写内容</text>
+
+          <rect x="620" y="74" width="150" height="56" rx="7" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="695" y="100" text-anchor="middle" fill="#8a5f0d" font-size="11.5" font-weight="600">save</text>
+          <text x="695" y="118" text-anchor="middle" fill="#a8813a" font-size="10.5">落库</text>
+
+          <g stroke="#8ea6bd" stroke-width="1.2" marker-end="url(#c7)">
+            <line x1="170" y1="102" x2="216" y2="102"/>
+            <line x1="370" y1="102" x2="416" y2="102"/>
+            <line x1="570" y1="102" x2="616" y2="102"/>
+          </g>
+
+          <!-- 可终止括号 -->
+          <g stroke="#c8891c" stroke-width="1" stroke-dasharray="4 3" fill="none">
+            <path d="M220 70 L220 54 L750 54"/>
+            <path d="M420 70 L420 54"/>
+            <path d="M620 70 L620 54"/>
+          </g>
+          <text x="220" y="40" fill="#8a5f0d" font-size="10.5">locate / rewrite / save 写入 final_response 即结束本轮（可终止节点）</text>
+
+          <!-- 到 END -->
+          <path d="M750 54 L840 54 L840 172" stroke="#c8891c" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#c7r)"/>
+          <rect x="800" y="176" width="80" height="40" rx="5" fill="#f1f5fa" stroke="#c9d8e8"/>
+          <text x="840" y="201" text-anchor="middle" fill="#123a63" font-size="11" font-weight="600">END</text>
+
+          <!-- 说明 -->
+          <rect x="30" y="186" width="740" height="70" rx="6" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="46" y="208" fill="#3c5470" font-size="10.5">实现：_sequential_subgraph(steps, end_after) 逐个 add_node，在 end_after 集合里的节点后挂条件边。</text>
+          <text x="46" y="226" fill="#3c5470" font-size="10.5">条件：读 state["final_response"]，有则 END，无则进入下一节点。</text>
+          <text x="46" y="246" fill="#8a5f0d" font-size="10.5">作用：中途需要追问或报错时本轮就此停下，不会继续跑后面的写操作。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 5-2</b>　「顺序链 + 完成即终止」模式。<code>locate</code> / <code>rewrite</code> / <code>save</code> 都可能是终点，取决于它是否已经产出了要回给用户的响应。</figcaption>
+    </figure>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/graph.py</span></div><code><span class="k">def</span> <span class="f">_sequential_subgraph</span>(steps, end_after):
+    builder = StateGraph(AgentState)
+    <span class="k">for</span> name, node_fn <span class="k">in</span> steps:
+        builder.add_node(name, node_fn)
+    builder.add_edge(START, steps[0][0])
+    <span class="k">for</span> index, (name, _) <span class="k">in</span> enumerate(steps):
+        <span class="k">if</span> name <span class="k">not in</span> end_after:
+            builder.add_edge(name, steps[index + 1][0])   <span class="c"># 不可终止：直接连下一节点</span>
+            <span class="k">continue</span>
+        nxt = steps[index + 1][0]
+        builder.add_conditional_edges(
+            name,
+            <span class="k">lambda</span> state, nxt=nxt: END <span class="k">if</span> state.get(<span class="s">"final_response"</span>) <span class="k">else</span> nxt,
+            {nxt: nxt, END: END},
+        )
+    <span class="k">return</span> builder.compile()</code></pre>
+
+    <h3>5.5 单步准备与文件直通</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="t">单步 prepare</div>
+        <p><code>interview_plan</code> / <code>exam_generate</code> / <code>resume_screening</code> 在图上只有一个节点：解析需求、算缺失字段、给出引导。<strong>真正执行不在图里</strong>，由前端调用专用端点（带文件）触发 <code>preset_intent</code> 直通。</p>
+        <p>原因：这些任务需要上传文件，走图反而多一次转发；而对话入口只负责「告诉他下一步去哪」。</p>
+      </div>
+      <div class="card">
+        <div class="t">文件直通</div>
+        <p><code>resume_exec</code> / <code>interview_exec</code> / <code>exam_exec</code> 复用旧的流式生成器，事件通过 <code>get_stream_writer()</code> 透传。入口带 <code>preset_intent</code>，跳过路由决策——避免大文件上传后再多跑一次模型。</p>
+        <p>一条链路两种入口：对话入口和文件流入口走同一张图，后者只是抄近道。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section id="s6">
+    <h2><span class="no">06</span>人工确认机制</h2>
+    <div class="h2-rule"></div>
+
+    <p>三种确认模式并存，按意图选择。这不是历史包袱，而是<strong>按交互形态做的匹配</strong>：确认内容不同，前端呈现方式就不同。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:200px">意图</th><th style="width:260px">机制</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">jd</td>
+            <td>LangGraph <code>interrupt</code> + <code>Command(resume=)</code></td>
+            <td>HTTP 路径 <code>thread_id</code> 非空，<code>jd_confirm</code> 暂停图；前端 POST <code>/agent/graph/resume</code> 恢复。resume 值即旧 <code>confirmed_requirements</code> 结构</td>
+          </tr>
+          <tr>
+            <td class="k">email_notification 等 skill</td>
+            <td>不开 interrupt</td>
+            <td>前端把确认表单作为<strong>新消息</strong>再发一次 <code>graphChat</code>；路由识别 <code>confirmed_requirements.action</code> 后直通 <code>skill_send</code>，<code>skill_draft</code> 自动跳过</td>
+          </tr>
+          <tr>
+            <td class="k">jd_edit / criteria_edit / resource_delete</td>
+            <td>同轮多节点 + 引导响应</td>
+            <td>多候选、缺修改要求、缺资源类型时直接产出 <code>final_response</code> 结束本轮，由用户补充信息后开启下一轮</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.1 恢复流程</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="t">有 checkpointer（正常路径）</div>
+        <p>图停在 <code>jd_confirm</code>，state 写入 checkpoint。前端拿到 <code>interrupt</code> 事件与 <code>thread_id</code>，渲染确认表单；提交时 POST <code>/agent/graph/resume</code>，后端以 <code>Command(resume=value)</code> 继续，图从断点往下走到 <code>jd_execute</code>。</p>
+      </div>
+      <div class="card">
+        <div class="t">无 checkpointer（评测 / 兼容）</div>
+        <p>不能 interrupt。<code>jd_confirm</code> 检测 <code>thread_id</code> 为空，直接返回 <code>requires_confirmation=True</code> 的普通响应；前端按旧契约回传 <code>confirmed_requirements</code>，走 <code>/agent/stream</code> 带 <code>preset_intent=jd</code> 执行。</p>
+      </div>
+    </div>
+
+    <div class="callout ok">
+      <span class="h">为什么这个兼容分支值钱</span>
+      <p>评测集不传 <code>conversation_id</code>，因此天然走兼容分支，不会卡在 interrupt 上等到超时。这意味着<strong>同一张图既能跑交互式确认，又能跑无状态批处理</strong>，评测与生产共用一套代码路径，测出来的结果才有意义。</p>
+    </div>
+
+    <h3>6.2 前端对接要点</h3>
+    <ul>
+      <li><code>agentThreadId</code> 与 <code>conversation_id</code> 同值，从 SSE 事件的 <code>thread_id</code> 更新。</li>
+      <li>普通对话走 <code>graphChat</code>；JD 确认在 <code>useResume &amp;&amp; agentThreadId</code> 时走 <code>graphResume</code>，否则回退旧 <code>/agent/stream</code>。</li>
+      <li>确认卡提交时把 <code>confirmed_requirements</code> 作为 <code>value</code> 传给 resume；邮件确认则作为新消息再次 <code>graphChat</code>。</li>
+      <li><code>final</code> 事件仍完整落库到 conversation message，保证刷新后可恢复。</li>
+    </ul>
+  </section>
+
+  <!-- 07 -->
+  <section id="s7">
+    <h2><span class="no">07</span>持久化与记忆</h2>
+    <div class="h2-rule"></div>
+
+    <h3>7.1 Checkpointer</h3>
+    <p><code>AsyncPostgresSaver</code> 使用独立的 <code>psycopg_pool.AsyncConnectionPool</code>（业务侧仍是 asyncpg，两套池并存）。应用启动时 <code>init_checkpointer()</code> 执行幂等 <code>setup()</code> 建表，关闭时释放池。</p>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>backend/app/agent/checkpoint.py</span></div><code>_pool = AsyncConnectionPool(
+    conninfo=settings.DATABASE_URL,
+    min_size=1,
+    max_size=settings.DATABASE_POOL_SIZE,
+    kwargs={<span class="s">"autocommit"</span>: <span class="k">True</span>, <span class="s">"prepare_threshold"</span>: 0},
+    open=<span class="k">False</span>,
+)
+<span class="k">await</span> _pool.open(wait=<span class="k">True</span>, timeout=30)
+_checkpointer = AsyncPostgresSaver(_pool)
+<span class="k">await</span> _checkpointer.setup()      <span class="c"># 幂等建表：checkpoints / blobs / writes / migrations</span></code></pre>
+
+    <div class="callout warn">
+      <span class="h">初始化失败会阻止应用启动</span>
+      <p><code>main.py</code> lifespan 里 <code>init_checkpointer()</code> 抛异常会导致启动失败。这是有意的：checkpointer 不可用时，所有确认类功能都会退化，与其带病运行，不如启动就报错。</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="checkpoint 跨请求恢复">
+        <defs><marker id="c8" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+          <text x="24" y="26" fill="#6d7f93" font-size="11" letter-spacing="1">请求 1（POST /graph/chat）</text>
+          <text x="470" y="26" fill="#6d7f93" font-size="11" letter-spacing="1">请求 2（POST /graph/resume）</text>
+
+          <rect x="24" y="38" width="380" height="80" rx="8" fill="#fff" stroke="#d5e0ec"/>
+          <text x="42" y="62" fill="#123a63" font-size="11.5" font-weight="600">图执行到 jd_confirm</text>
+          <text x="42" y="82" fill="#7b8da1" font-size="11">interrupt(payload) → 暂停</text>
+          <text x="42" y="100" fill="#7b8da1" font-size="11">SSE 返回 interrupt + final</text>
+
+          <rect x="470" y="38" width="406" height="80" rx="8" fill="#fff" stroke="#d5e0ec"/>
+          <text x="488" y="62" fill="#123a63" font-size="11.5" font-weight="600">Command(resume=value)</text>
+          <text x="488" y="82" fill="#7b8da1" font-size="11">从 jd_confirm 之后继续</text>
+          <text x="488" y="100" fill="#7b8da1" font-size="11">jd_execute → END → final</text>
+
+          <rect x="180" y="150" width="540" height="76" rx="8" fill="#003366"/>
+          <text x="200" y="174" fill="#fff" font-size="11.5" font-weight="600">PostgreSQL · checkpoints（thread_id = conversation_id）</text>
+          <text x="200" y="196" fill="#b9d4ec" font-size="11">jd_interrupt_payload · parsed_requirements · artifacts[50] · steps · final_response</text>
+          <text x="200" y="214" fill="#8fc0ec" font-size="10.5">跨越两次 HTTP 请求，不依赖前端保留上下文</text>
+
+          <g stroke="#5c86b8" stroke-width="1.2" marker-end="url(#c8)">
+            <line x1="214" y1="118" x2="214" y2="146"/>
+            <line x1="680" y1="146" x2="680" y2="122"/>
+          </g>
+
+          <rect x="24" y="246" width="852" height="26" rx="5" fill="#fdf6e6" stroke="#f0e0be"/>
+          <text x="42" y="264" fill="#8a5f0d" font-size="11">会话历史仍在业务表 messages：一个是「说过什么」，一个是「图跑到哪一步、攒了哪些产物」，互不替代。</text>
+        </g>
+      </svg>
+      <figcaption><b>图 7-1</b>　跨请求恢复。两次 HTTP 请求之间没有共享内存，只有 checkpointer 里的状态。</figcaption>
+    </figure>
+
+    <h3>7.2 记忆</h3>
+    <p><code>build_conversation_memory()</code> 读取最近 12 条消息（多取 3 条用于过滤当前消息），拼成「用户: … / 助手: …」文本，每段截 900 字符，总长截到 6000 字符。</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:200px">用途</th><th>为什么需要记忆</th></tr></thead>
+        <tbody>
+          <tr><td class="k">路由决策</td><td>「上次那个」需要历史才能判断指向</td></tr>
+          <tr><td class="k">chat 对话</td><td>作为额外 <code>SystemMessage</code> 注入，子图本身不持久化消息</td></tr>
+          <tr><td class="k">需求解析</td><td>多轮补全字段时，后一轮要能看到前一轮说了什么</td></tr>
+          <tr><td class="k">编辑定位</td><td>「改成 3 年经验」要知道改的是哪个 JD</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">截断取尾部而非头部：近期上下文比早期更重要。代价是长会话早期信息会丢，这是已知限制。</p>
+
+    <h3>7.3 产物反查</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:60px">优先级</th><th style="width:320px">来源</th><th>场景</th></tr></thead>
+        <tbody>
+          <tr><td class="tnum">1</td><td><code>state.artifacts</code></td><td>checkpoint 跨轮累积；<code>route_intent</code> 注入到 service 的 <code>_graph_artifacts</code></td></tr>
+          <tr><td class="tnum">2</td><td><code>Message.context.agent_response</code></td><td>图状态为空时回退；兼容旧前端双写路径</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>这样「改改刚才那个 JD」「删掉刚才那个」在 thread 内可以直接从图状态定位，不依赖前端双写是否成功。等阶段 4 清理完成后，第二优先级可以下线。</p>
+  </section>
+
+  <!-- 08 -->
+  <section id="s8">
+    <h2><span class="no">08</span>流式事件契约</h2>
+    <div class="h2-rule"></div>
+
+    <p><code>bridge.run_stream()</code> 用 <code>astream(stream_mode=["updates","custom"], subgraphs=True)</code>，把图的事件流映射成前端认识的 SSE。</p>
+
+    <figure>
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="事件流映射">
+        <defs><marker id="c9" markerWidth="7" markerHeight="7" refX="5.8" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8ea6bd"/></marker></defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="11">
+          <rect x="20" y="30" width="240" height="230" rx="8" fill="#fbfcfe" stroke="#e3e9f1"/>
+          <text x="38" y="54" fill="#003366" font-size="11.5" font-weight="600">LangGraph astream</text>
+          <text x="38" y="76" fill="#5b7086">updates</text>
+          <text x="38" y="96" fill="#8fa4b9" font-size="10">节点完成 → 节点名 + 增量 state</text>
+          <text x="38" y="124" fill="#5b7086">custom</text>
+          <text x="38" y="144" fill="#8fa4b9" font-size="10">get_stream_writer() 写入</text>
+          <text x="38" y="164" fill="#8fa4b9" font-size="10">包装为 {"agent_event": {...}}</text>
+          <text x="38" y="192" fill="#5b7086">subgraphs=True</text>
+          <text x="38" y="212" fill="#8fa4b9" font-size="10">子图事件冒泡到父图</text>
+          <text x="38" y="232" fill="#8fa4b9" font-size="10">节点名带命名空间 jd_edit:locate</text>
+
+          <rect x="330" y="30" width="200" height="230" rx="8" fill="#eef5fd" stroke="#c9ddf3"/>
+          <text x="348" y="54" fill="#003366" font-size="11.5" font-weight="600">bridge 映射</text>
+          <text x="348" y="82" fill="#4a6b8a">updates → progress</text>
+          <text x="348" y="104" fill="#8fa4b9" font-size="10">跳过 __ 开头的内部 channel</text>
+          <text x="348" y="130" fill="#4a6b8a">custom → 透传</text>
+          <text x="348" y="152" fill="#8fa4b9" font-size="10">丢弃节点内发的 final</text>
+          <text x="348" y="178" fill="#4a6b8a">__interrupt__ → interrupt</text>
+          <text x="348" y="200" fill="#8fa4b9" font-size="10">aget_state 读 payload</text>
+          <text x="348" y="226" fill="#4a6b8a">结束后读 state</text>
+          <text x="348" y="246" fill="#8fa4b9" font-size="10">final 有且仅有一个</text>
+
+          <rect x="600" y="30" width="276" height="230" rx="8" fill="#fff" stroke="#d5e0ec"/>
+          <text x="618" y="54" fill="#003366" font-size="11.5" font-weight="600">SSE</text>
+          <g font-size="10.5">
+            <rect x="618" y="66" width="240" height="26" rx="4" fill="#f6f9fc" stroke="#e3e9f1"/><text x="630" y="83" fill="#123a63" font-family="SF Mono, Menlo, monospace">progress</text>
+            <rect x="618" y="98" width="240" height="26" rx="4" fill="#f6f9fc" stroke="#e3e9f1"/><text x="630" y="115" fill="#123a63" font-family="SF Mono, Menlo, monospace">delta</text>
+            <rect x="618" y="130" width="240" height="26" rx="4" fill="#f6f9fc" stroke="#e3e9f1"/><text x="630" y="147" fill="#123a63" font-family="SF Mono, Menlo, monospace">artifact</text>
+            <rect x="618" y="162" width="240" height="26" rx="4" fill="#fdf6e6" stroke="#f0e0be"/><text x="630" y="179" fill="#8a5f0d" font-family="SF Mono, Menlo, monospace">interrupt</text>
+            <rect x="618" y="194" width="240" height="26" rx="4" fill="#e9f6f4" stroke="#bfe3df"/><text x="630" y="211" fill="#0a5f59" font-family="SF Mono, Menlo, monospace">final</text>
+            <rect x="618" y="226" width="240" height="26" rx="4" fill="#fdeeec" stroke="#f6d8d4"/><text x="630" y="243" fill="#a3352a" font-family="SF Mono, Menlo, monospace">error</text>
+          </g>
+
+          <g stroke="#8ea6bd" stroke-width="1.1" marker-end="url(#c9)">
+            <line x1="260" y1="145" x2="326" y2="145"/>
+            <line x1="530" y1="145" x2="596" y2="145"/>
+          </g>
+        </g>
+      </svg>
+      <figcaption><b>图 8-1</b>　事件流映射。五类业务事件加一个错误事件，前端只需按 <code>type</code> 分发。</figcaption>
+    </figure>
+
+    <h3>8.1 三个容易出错的地方</h3>
+    <div class="grid g3">
+      <div class="card">
+        <div class="t"><span class="idx">01</span>双 final</div>
+        <p>节点内如果发了 <code>final</code> custom 事件，bridge 会丢弃它。终态统一从流结束后的 <code>state.final_response</code> 产出，否则前端会落两次库。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">02</span>子图命名空间</div>
+        <p><code>ns</code> 非空时要拼成 <code>jd_edit:locate</code>。前端步骤条按这个名字匹配，拼错就只显示「执行中」不显示具体步骤。</p>
+      </div>
+      <div class="card">
+        <div class="t"><span class="idx">03</span>伪流式</div>
+        <p>整轮没有真实增量时，<code>_stream_text()</code> 按 6 字符切分 <code>final.message</code> 模拟流式，保持旧前端体验。这是兜底，不是常态。</p>
+      </div>
+    </div>
+
+    <h3>8.2 事件载荷</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:110px">事件</th><th style="width:230px">触发</th><th>载荷</th></tr></thead>
+        <tbody>
+          <tr><td class="k">progress</td><td>节点完成</td><td><code>node</code>（子图带命名空间）、<code>steps</code></td></tr>
+          <tr><td class="k">delta</td><td>节点内 writer</td><td><code>delta</code> 文本增量</td></tr>
+          <tr><td class="k">artifact</td><td>旧生成器事件透传</td><td>沿用旧词汇，前端无需改</td></tr>
+          <tr><td class="k">interrupt</td><td>捕获 <code>__interrupt__</code></td><td><code>thread_id</code>、<code>payload.artifacts</code>、<code>payload.missing_fields</code></td></tr>
+          <tr><td class="k">final</td><td>流结束</td><td>完整 <code>AgentChatResponse</code> + <code>thread_id</code></td></tr>
+          <tr><td class="k">error</td><td>异常 / 无 final</td><td><code>error</code> 描述</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section id="s9">
+    <h2><span class="no">09</span>降级与容错</h2>
+    <div class="h2-rule"></div>
+
+    <p>这张表是整个设计的「保险单」。每一条都对应一个真实发生过的失败场景，不是理论推演。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:240px">场景</th><th style="width:330px">当前行为</th><th>位置</th></tr></thead>
+        <tbody>
+          <tr><td class="k">未配置 LLM_API_KEY</td><td>chat 不构建 create_agent，回退原生 LLM 或规则；路由直接回退关键词</td><td><code>chat_agent._build_agent</code> · <code>legacy.chat_node</code> · <code>reasoning.plan_agent_action</code></td></tr>
+          <tr><td class="k">create_agent 构建/调用异常</td><td>捕获后回退原生 LLM（流式）或规则回复</td><td><code>legacy.py</code></td></tr>
+          <tr><td class="k">ReAct 路由异常/超时</td><td>记 warning，回退关键词/附件规则</td><td><code>reasoning.plan_agent_action</code></td></tr>
+          <tr><td class="k">结构化决策缺失</td><td>按 <code>AGENT_ROUTER_MAX_ATTEMPTS</code> 重试；仍缺失回退</td><td><code>routing_agent.run_router_agent</code></td></tr>
+          <tr><td class="k">ReAct 产出 intent 非法</td><td>记 info，回退关键词规则</td><td><code>reasoning.plan_agent_action</code></td></tr>
+          <tr><td class="k">路由模式配置非法</td><td>按 <code>rule</code> 处理，打一次 warning</td><td><code>reasoning.router_mode</code></td></tr>
+          <tr><td class="k">JD/编辑/删除字段解析失败</td><td>沿用业务层的正则/规则兜底</td><td><code>chains/*</code></td></tr>
+          <tr><td class="k">无 checkpointer（评测门面）</td><td>JD 确认返回 <code>requires_confirmation</code>；resume 降级为一次 run_chat</td><td><code>nodes/jd.py</code> · <code>agent_graph.py</code></td></tr>
+          <tr><td class="k">checkpointer 初始化失败</td><td>抛异常，应用启动失败</td><td><code>main.py</code></td></tr>
+          <tr><td class="k">流式生成失败</td><td>业务层回退同步生成</td><td><code>chains/*</code></td></tr>
+          <tr><td class="k">图未产出 final_response</td><td>SSE 发 <code>error</code> 事件</td><td><code>bridge.py</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout risk">
+      <span class="h">降级链的盲区</span>
+      <p>降级本身不可观测。<code>legacy.py</code> 里那个宽 <code>except</code> 只打 warning，没有计数、没有 request_id 贯穿、没有告警。这意味着<strong>模型一直在失败、系统一直在用规则兜底，但没人知道</strong>——用户会感觉「AI 变笨了」，运维却看不到异常。这是当前最该补的一项。</p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section id="s10">
+    <h2><span class="no">10</span>评测与回归</h2>
+    <div class="h2-rule"></div>
+
+    <p>评测层是这次迁移的事实回归边界。它的设计有个巧思：<strong>走的是同一条代码路径，但不是同一个运行形态</strong>。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="t">怎么跑</div>
+        <p><code>agent_eval_runner._call_agent()</code> 在进程内构造 <code>AgentService(db)</code>，调用 <code>chat()</code>。因为 <code>chat()</code> 委托给不带 checkpointer 的共享图，且用例不传 <code>conversation_id</code>，所以不会触发 interrupt 分支。</p>
+      </div>
+      <div class="card">
+        <div class="t">校验什么</div>
+        <p>intent、route、requires_confirmation、missing_fields、steps（id/status）、artifacts（type），以及响应签名稳定性。不断言自然语言字符串——那是模型措辞，不是行为。</p>
+      </div>
+    </div>
+
+    <h3>10.1 最近一次基线</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:240px">指标</th><th style="width:140px">数值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td class="k">用例总数</td><td class="tnum">16</td><td>覆盖基础对话、JD、编辑、删除、规划契约</td></tr>
+          <tr><td class="k">通过率</td><td class="tnum">93.75%</td><td>15 通过 / 1 失败</td></tr>
+          <tr><td class="k">平均规则分</td><td class="tnum">0.9688</td><td>结构化字段匹配度</td></tr>
+          <tr><td class="k">签名稳定性</td><td class="tnum">1.0</td><td>响应结构完全一致</td></tr>
+          <tr><td class="k">平均延迟</td><td class="tnum">4,557 ms</td><td>含真实模型调用</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">数据取自 <code>backend/evals/reports/agent_eval_latest.json</code>（生成于 2026-11-05）。评测会真实调用模型，指标随模型版本波动，应看趋势而非单次数值。</p>
+
+<pre><div class="bar"><i></i><i></i><i></i><span>回归命令</span></div><code>python scripts/run_agent_evals.py \
+  --baseline evals/reports/agent_eval_latest.json \
+  --fail-on-regression --fail-on-failed-cases</code></pre>
+
+    <h3>10.2 为什么评测能绕过 interrupt</h3>
+    <div class="callout">
+      <span class="h">判据是 thread_id，不是 checkpointer</span>
+      <p>如果判据写成「有没有 checkpointer」，评测环境一旦配上 checkpointer 就会卡在 interrupt 上等超时。改成判 <code>configurable.thread_id</code> 为空，评测用例天然不传 conversation_id，就自动走兼容分支——<strong>行为正确，而且不需要为测试写开关</strong>。</p>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section id="s11">
+    <h2><span class="no">11</span>已知限制</h2>
+    <div class="h2-rule"></div>
+
+    <p>这一节照实写。一个架构文档如果只说优点，接手的人会在第三周开始骂人。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th style="width:200px">限制</th><th style="width:340px">现状</th><th>建议</th></tr></thead>
+        <tbody>
+          <tr><td class="k">请求级图重编译</td><td>每次请求 <code>AgentGraphService(...)</code> 都 <code>build_graph()</code>；<code>get_shared_graph()</code> 已定义但未使用</td><td>按 checkpointer 缓存编译结果</td></tr>
+          <tr><td class="k">chat 模型缺生产配置</td><td><code>get_chat_model()</code> 未设 timeout / max_tokens；create_agent 循环未配 <code>recursion_limit</code></td><td>与路由侧对齐，防工具循环跑飞</td></tr>
+          <tr><td class="k">记忆是文本截断</td><td>6000 字符尾部截断，长会话丢早期上下文</td><td>引入摘要或分层记忆</td></tr>
+          <tr><td class="k">降级不可观测</td><td>只有一个 warning 日志</td><td>降级计数 + request_id + 告警</td></tr>
+          <tr><td class="k">无 tracing</td><td>缺 LangSmith / OTel，token 用量与工具耗时未记录</td><td>先接 OTel，再谈成本优化</td></tr>
+          <tr><td class="k">checkpoint 无清理策略</td><td>长会话状态持续增长</td><td>按最后访问时间归档或清理</td></tr>
+          <tr><td class="k">阶段 4 未完成</td><td>旧命名与注释仍在；<code>/agent/stream</code> 保留为降级入口；三个业务 mixin 仍在（已移到 chains/）</td><td>清理前先确认评测与前端都不再依赖旧通道</td></tr>
+          <tr><td class="k">chat 无法跨能力写</td><td>「帮我删掉刚才那个 JD」不能由 chat 直接完成，必须路由到 <code>resource_delete</code></td><td>这是有意的安全设计，不建议放开</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+</div>
+</main>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  var links = Array.prototype.slice.call(document.querySelectorAll('#side nav a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + '%';
+    var pos = h.scrollTop + 120, idx = 0;
+    for (var i = 0; i < secs.length; i++){ if (secs[i] && secs[i].offsetTop <= pos) idx = i; }
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

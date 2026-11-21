@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="gMfjTQaKiZsqzUbXxrVVgx">
+<head data-page-node-id="mk1IfF7qHx5V9LbMeVGZUF">
+<meta charset="UTF-8" data-page-node-id="i8qmHilpOenIrv8IBAuV24">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="Qib1KxCKbFNDFPIVsWXopr">
+<title>HR Agent 项目介绍 · 业务背景 / 痛点 / 需求 / 选型</title>
+<style>
+:root{
+  --navy:#003366;--navy-2:#0a2a4d;--blue:#1a6fc4;--blue-bg:#eef5fd;
+  --gold:#9a6f12;--gold-bg:#fdf6e6;--teal:#0e7c74;--teal-bg:#e9f6f4;
+  --red:#b03a2e;--red-bg:#fdeeec;
+  --ink:#101f2e;--body:#2f4257;--muted:#6d7f93;
+  --line:#e3e9f1;--bg:#f4f6fa;--card:#fff;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(16,31,46,.04),0 10px 30px rgba(16,31,46,.06);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--body);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+/* ---------- progress ---------- */
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--navy),var(--blue));z-index:99;transition:width .1s linear}
+
+/* ---------- sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:266px;background:#fff;border-right:1px solid var(--line);
+  padding:26px 0 30px;overflow-y:auto;z-index:50}
+.brand{padding:0 24px 20px;border-bottom:1px solid var(--line)}
+.brand .mark{display:inline-flex;align-items:center;gap:9px;font-weight:700;color:var(--navy);letter-spacing:.4px;font-size:15px}
+.brand .dot{width:9px;height:9px;border-radius:2px;background:var(--navy);transform:rotate(45deg)}
+.brand .sub{margin-top:8px;font-size:11.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+#side nav{padding:16px 12px}
+#side a{display:block;padding:7px 12px 7px 14px;font-size:13.5px;color:#4a5c70;text-decoration:none;
+  border-left:2px solid transparent;border-radius:0 5px 5px 0;transition:.16s}
+#side a:hover{background:#f5f8fc;color:var(--navy)}
+#side a.on{background:var(--blue-bg);color:var(--navy);border-left-color:var(--navy);font-weight:600}
+#side a .n{display:inline-block;width:20px;color:#9aa9b9;font-family:var(--mono);font-size:11px}
+#side a.on .n{color:var(--blue)}
+.side-foot{padding:16px 22px 0;margin-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:#93a2b3;line-height:1.6}
+.side-foot b{color:#5c6d80;font-weight:600}
+
+/* ---------- main ---------- */
+main{margin-left:266px}
+.wrap{max-width:930px;margin:0 auto;padding:0 44px 110px}
+
+/* ---------- hero ---------- */
+.hero{background:linear-gradient(150deg,#00294f 0%,#003366 45%,#0a4a7d 100%);color:#fff;
+  padding:58px 0 46px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:46px 46px;pointer-events:none}
+.hero .wrap{position:relative;z-index:1;padding-bottom:0}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:2.4px;color:#8fc0ec;text-transform:uppercase;margin-bottom:18px}
+.hero h1{margin:0;font-size:40px;line-height:1.28;font-weight:700;letter-spacing:.5px}
+.hero .lead{margin:16px 0 0;font-size:16px;line-height:1.85;color:#c9dcef;max-width:730px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.meta span{font-size:12px;padding:5px 11px;border:1px solid rgba(255,255,255,.22);border-radius:100px;color:#cfe2f4;background:rgba(255,255,255,.05)}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:#fff;border:1px solid var(--line);
+  border-radius:12px;margin-top:-28px;position:relative;z-index:2;box-shadow:var(--shadow);overflow:hidden}
+.kpi{padding:20px 22px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi b{display:block;font-size:26px;color:var(--navy);font-weight:700;letter-spacing:-.3px;font-family:var(--mono)}
+.kpi span{font-size:12px;color:var(--muted);letter-spacing:.3px}
+
+/* ---------- sections ---------- */
+section{padding-top:54px}
+h2{font-size:25px;color:var(--ink);margin:0 0 6px;font-weight:700;letter-spacing:.2px;
+  display:flex;align-items:baseline;gap:12px}
+h2 .no{font-family:var(--mono);font-size:13px;color:#fff;background:var(--navy);padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600}
+.h2-rule{height:1px;background:linear-gradient(90deg,var(--navy),rgba(0,51,102,.08));margin:14px 0 26px}
+h3{font-size:17.5px;color:var(--navy-2);margin:34px 0 10px;font-weight:600;padding-left:11px;border-left:3px solid var(--blue)}
+h4{font-size:15px;color:var(--ink);margin:22px 0 8px;font-weight:600}
+p{margin:10px 0}
+a{color:var(--blue)}
+strong{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:.88em;background:#eef2f7;color:#1d3b5c;padding:1.5px 5px;border-radius:4px}
+ul,ol{margin:10px 0;padding-left:22px}
+li{margin:6px 0}
+li::marker{color:var(--blue)}
+
+/* ---------- figure ---------- */
+figure{margin:24px 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 20px 12px;box-shadow:var(--shadow)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted);letter-spacing:.2px}
+figcaption b{color:#4c5f74;font-weight:600}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:#f1f5fa;color:var(--navy);font-weight:600;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px;letter-spacing:.2px}
+td{padding:10px 14px;border-bottom:1px solid #eef2f7;vertical-align:top;line-height:1.7}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fafcfe}
+td.k{color:var(--ink);font-weight:600;white-space:nowrap}
+.tnum{font-family:var(--mono);font-size:12.5px;color:#3c5470}
+
+/* ---------- callout ---------- */
+.callout{margin:22px 0;padding:16px 20px 16px 18px;border-radius:0 9px 9px 0;border-left:4px solid var(--blue);
+  background:var(--blue-bg);font-size:14px}
+.callout .h{display:block;font-weight:700;color:var(--navy);margin-bottom:6px;font-size:13px;letter-spacing:.6px}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{border-left-color:#c8891c;background:var(--gold-bg)}
+.callout.warn .h{color:#8a5f0d}
+.callout.risk{border-left-color:var(--red);background:var(--red-bg)}
+.callout.risk .h{color:#8f2c22}
+.callout.ok{border-left-color:var(--teal);background:var(--teal-bg)}
+.callout.ok .h{color:#0a5f59}
+
+/* ---------- cards ---------- */
+.grid{display:grid;gap:14px;margin:20px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+.card .t{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.card p{font-size:13.5px;margin:6px 0;color:#41556b;line-height:1.72}
+.card .idx{font-family:var(--mono);font-size:11px;color:#fff;background:var(--blue);border-radius:3px;padding:1px 5px}
+.card.flat{box-shadow:none;background:#fbfcfe}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:100px;letter-spacing:.3px;
+  background:#eef2f7;color:#4a6076;border:1px solid #e2e9f1}
+.tag.p0{background:#fdeeec;color:#a3352a;border-color:#f6d8d4}
+.tag.p1{background:var(--gold-bg);color:#8a5f0d;border-color:#f0e0be}
+.tag.p2{background:#eef2f7;color:#5b7086;border-color:#e2e9f1}
+.tag.ok{background:var(--teal-bg);color:#0a5f59;border-color:#cfeae7}
+
+/* ---------- flow list ---------- */
+.flow{display:flex;align-items:stretch;gap:0;margin:22px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.flow .st{flex:1;padding:16px 16px 14px;position:relative}
+.flow .st+.st{border-left:1px solid var(--line)}
+.flow .st b{display:block;font-size:13.5px;color:var(--navy);margin-bottom:4px}
+.flow .st span{font-size:12.5px;color:var(--muted);line-height:1.6;display:block}
+.flow .st em{position:absolute;top:14px;right:12px;font-style:normal;font-family:var(--mono);font-size:11px;color:#b6c3d1}
+
+/* ---------- timeline ---------- */
+.tl{margin:24px 0;border-left:2px solid #d8e3ef;padding-left:0}
+.tl .item{position:relative;padding:0 0 22px 26px}
+.tl .item::before{content:"";position:absolute;left:-7px;top:7px;width:12px;height:12px;border-radius:50%;
+  background:#fff;border:2px solid var(--blue)}
+.tl .item.hi::before{background:var(--navy);border-color:var(--navy)}
+.tl .ver{font-family:var(--mono);font-size:12px;color:var(--blue);letter-spacing:1px}
+.tl .item b{display:block;color:var(--ink);font-size:14.5px;margin:2px 0 3px}
+.tl .item span{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* ---------- quote ---------- */
+.quote{margin:22px 0;padding:18px 24px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);
+  border-radius:0 10px 10px 0;font-size:15px;color:#31485f;font-style:normal;line-height:1.85}
+.quote b{color:var(--navy)}
+
+footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);font-size:12.5px;color:#8b9bab;line-height:1.9}
+footer b{color:#5c6d80}
+
+@media (max-width:1080px){
+  #side{display:none}
+  main{margin-left:0}
+  .wrap{padding:0 24px 80px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi:nth-child(2){border-right:0}
+  .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--line)}
+  .g3,.g4,.g2{grid-template-columns:1fr}
+  .flow{flex-direction:column}
+  .flow .st+.st{border-left:0;border-top:1px solid var(--line)}
+  .hero h1{font-size:30px}
+}
+@media print{
+  #side,#progress{display:none}
+  main{margin:0}
+  body{background:#fff;font-size:11pt}
+  section{page-break-inside:avoid}
+  figure,.tw{box-shadow:none}
+  .hero{background:#003366 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body data-page-node-id="M2c59jPRLTVCWWPcsiAbkQ">
+<div id="progress" data-page-node-id="BxrfICgo6JH0GjGWQkGhUO"></div>
+
+<aside id="side" data-page-node-id="tBr1xxj3NWf6MiD8Zn8ro0">
+  <div class="brand" data-page-node-id="JLjqVgpg4N2LXbqqNr5EJd">
+    <div class="mark" data-page-node-id="4zvmPVu1iFNk8cVeTiXhL9"><span class="dot" data-page-node-id="c6liAJkA4wLfOYyZRMNEqd"></span>HR Agent 文档集</div>
+    <div class="sub" data-page-node-id="t0dCXWGlOb0kMu5oaAGozM">Doc 01 / 04 · Overview</div>
+  </div>
+  <nav data-page-node-id="qZvWNn5qFcEFEmPRD3ksyd">
+    <a href="#s0" data-page-node-id="ktvR9dX09A4UE8HB0EZDBm"><span class="n" data-page-node-id="TDUGTC8Lf8Jf1szTuiVlfD">00</span>一页速览</a>
+    <a href="#s1" data-page-node-id="1CGqCD9NRC97knJ1D2SOkJ"><span class="n" data-page-node-id="RraSAT5CgukB96Ngs8qIVK">01</span>业务背景</a>
+    <a href="#s2" data-page-node-id="PFoLIvvsIFYK426zgoUZ7f"><span class="n" data-page-node-id="CkOG38dWViFoBtdgzhKx39">02</span>核心痛点分析</a>
+    <a href="#s3" data-page-node-id="fLDoT24oohTzRNNZOvchDc"><span class="n" data-page-node-id="1Nwt4ognlN305fvUOsQnL0">03</span>需求分析</a>
+    <a href="#s4" data-page-node-id="MideUI30AFiG50SVNKaEEy"><span class="n" data-page-node-id="pGD13nhRJ56jStP8SPcmVF">04</span>技术选型</a>
+    <a href="#s5" data-page-node-id="GaKGmCGhFjoZp92w4iJDo0"><span class="n" data-page-node-id="JjlD0uCxeLHRCp8pnaDoUQ">05</span>业务价值与 ROI</a>
+    <a href="#s6" data-page-node-id="7K7JG4SPjBNQ0XnXxOOtz4"><span class="n" data-page-node-id="rfO8rnEEDu4g4z7E0VDDfO">06</span>边界与风险</a>
+    <a href="#s7" data-page-node-id="zH35Qgv7dhia5fc278wqN7"><span class="n" data-page-node-id="mBaKgx2Stlqz7yLZqacw0f">07</span>落地路线</a>
+  </nav>
+</aside>
+
+<main data-page-node-id="5WCcMU9NxCZ4IQ6UzKWmAL">
+<div class="hero" data-page-node-id="w7IBDCMFIAR1RMa5ixRyvy">
+  <div class="wrap" data-page-node-id="WmHyiiNZYfWVbwTZv1tCSO">
+    <div class="kicker" data-page-node-id="WRg3suPikcjXneHf42I6T0">Project Overview · 文档 01 / 04</div>
+    <h1 data-page-node-id="XYtutDMMTwohRUv3noVkt5">HR Agent 项目介绍</h1>
+    <p class="lead" data-page-node-id="GLeqAAllacz03JNQoYD0sQ">一个以自然语言对话为入口的智能人力资源工作台。用户不必在菜单与表单之间跳转，只需说明目标，系统识别意图、调度受控工具、在关键动作上停下来等确认，再把结构化产物落回业务表。</p>
+    <div class="meta" data-page-node-id="PGOuu1Ie8x6v0krqIniX7L">
+      <span data-page-node-id="HAAsmeBXXpiEbmQ45iWdgN">业务背景</span><span data-page-node-id="zKg8PHtNcTGEK0IE9KONX4">核心痛点</span><span data-page-node-id="mPrxcl6bSGviIuEytBP4UT">需求分析</span><span data-page-node-id="9XDdAqiRlVpBKFinIV1THQ">技术选型</span>
+      
+    </div>
+  </div>
+</div>
+
+<div class="wrap" data-page-node-id="2pQCcZnORzrQVvw2wTo5At">
+
+  <div class="kpis" data-page-node-id="PuDKZLa0jkMXCRS07gQn3O">
+    <div class="kpi" data-page-node-id="YRnlqHHrE1fiu6jUL2XLG1"><b data-page-node-id="dGGEWRDcmNjlpQnv4GhvuS">5</b><span data-page-node-id="JuPRtloJJ6U87oxbXltmIM">核心功能域</span></div>
+    <div class="kpi" data-page-node-id="65BcjhTbcc3MKE1GnjgCJF"><b data-page-node-id="d5j1UCSfhoWLkoCF2NEptT">13</b><span data-page-node-id="3t2XF65CVjzetWC2Nvr1Dx">Agent 意图分支</span></div>
+    <div class="kpi" data-page-node-id="28tb0UDkgyB9g8xIC0O3OG"><b data-page-node-id="f8rGuuirylqDVz6Vqco7ET">20</b><span data-page-node-id="WG0ZTAPE46cHW5Wvke4wb8">API 路由模块</span></div>
+    <div class="kpi" data-page-node-id="FiBpJdHvfXb1wGhqqZkGw7"><b data-page-node-id="zPgqjGQDv54doPGTlF1jn5">4</b><span data-page-node-id="3VIYsMCHO5kEzB4DOyvhWn">类系统角色</span></div>
+  </div>
+
+  <!-- ============ 0 ============ -->
+  <section id="s0" data-page-node-id="HTD8dzcdWAAGGwvfce2GHb">
+    <h2 data-page-node-id="p2SuC4KWe2vUcUBxjs8ZBX"><span class="no" data-page-node-id="BX8aSVzLXJBHsKWOrwt9An">00</span>一页速览</h2>
+    <div class="h2-rule" data-page-node-id="efr99ZqHnVC7YyH3JUkEQl"></div>
+
+    <p data-page-node-id="a0e2G0RTmZI0uzRUG69EMw">HR Agent 不是「给 HR 用的 ChatGPT」，也不是完整的人力资源信息系统。它的准确定位是：<strong data-page-node-id="DGPc8D7SYDEn0JmrCcEHyC">把 HR 高频、低结构化的文本工作，沉淀成可执行、可确认、可回溯的业务链路</strong>。</p>
+
+    <div class="grid g3" data-page-node-id="IIXkLSNwAfoRRp4mbEDq6N">
+      <div class="card" data-page-node-id="jKryUMgsC1RwAq8rpOKxGq">
+        <div class="t" data-page-node-id="WCTIPdzDFHwYH3zqJ8BBvI"><span class="idx" data-page-node-id="qJcEva4srsqI9OqPaQpWYA">是</span>对话即操作</div>
+        <p data-page-node-id="eZbbajSDcW2gJfMiNiCAO2">一个统一入口承接 JD 生成、简历筛选、面试方案、试卷生成、邮件通知、资源删除。用户说目标，系统选工具。</p>
+      </div>
+      <div class="card" data-page-node-id="xYLl5dRpL9993GcIZdjxhU">
+        <div class="t" data-page-node-id="CslQvDwMWVRnm0Xww8usOY"><span class="idx" data-page-node-id="5cLy7xHOURmegCIQmJei4o">是</span>受控编排</div>
+        <p data-page-node-id="gl6co5nLY0KIWHeLQrMTUJ">模型只负责<strong data-page-node-id="kYy2m7YbUo0EVfEeeZjq4A">选路</strong>；删除、发送、落库这些写操作交给确定性节点。关键动作在图上是真暂停，不是提示词劝告。</p>
+      </div>
+      <div class="card" data-page-node-id="ujAH7xAzm9qiqAjhWj2TWn">
+        <div class="t" data-page-node-id="fT3wWeP1DhHHMyN19RwgE7"><span class="idx" data-page-node-id="NDIGjQG6ZMn6w0F1cGQZpj">不是</span>自动决策</div>
+        <p data-page-node-id="J7PGahxokYYrhqa2oYNzUD">不做自动录用、自动淘汰、自动群发。AI 产出是初稿与辅助判断，最终结论由 HR 负责，这是写进需求文档的边界。</p>
+      </div>
+    </div>
+
+    <div class="quote" data-page-node-id="Utl790E89OJNifbB15Mykr">
+      核心链路只有三步：<b data-page-node-id="Lls56rCUSkBAS2T173XqSx">听懂要做什么 → 选对工具 → 该停的地方停下来</b>。前两步靠两级路由（规则快通道 + 观察型 ReAct），第三步靠 LangGraph 的 <code data-page-node-id="q6THJpPzAcD1dFeg4feQVC">interrupt</code> 与 PostgreSQL checkpoint。
+    </div>
+
+    <h3 data-page-node-id="LtpwpSDxd5fpG6bzuqHgmP">文档集结构</h3>
+    <div class="tw" data-page-node-id="YEOR0GOFHcMaU4veDesEAA">
+      <table data-page-node-id="qC8xdXdPd35hERAylCpGDr">
+        <thead data-page-node-id="sGDgwym0HUFq84b4J3VEzQ"><tr data-page-node-id="xedxBh2SHDGWTrHqJOUqq8"><th style="width:70px" data-page-node-id="1hWhS7CBKSMpbkV9AwQnau">编号</th><th style="width:230px" data-page-node-id="3VcG30R4Bes0U74ljTQ64k">文档</th><th data-page-node-id="CCmBiqRGSKNACuAlRScvbs">回答什么问题</th></tr></thead>
+        <tbody data-page-node-id="aHUMullsbHgdqBaCFpBIJr">
+          <tr data-page-node-id="euKuxeDUl75EXmnSJt5vQB"><td class="tnum" data-page-node-id="XFoa3zxlCWJVwH3o21Y5DX">01</td><td class="k" data-page-node-id="YXEamukpK6wNOGEm1zNEj8">项目介绍（本篇）</td><td data-page-node-id="hjfEjImHwKVHmCbF83AAHN">为什么做、为难做、要做什么、大致怎么选型</td></tr>
+          <tr data-page-node-id="87PbpVuhpDoxqUp7kaEHSj"><td class="tnum" data-page-node-id="x6JEtqaooJo9GItyHjm2Lt">02</td><td class="k" data-page-node-id="LjR0fJpggcM3BOK7CZpbOv">技术栈与选型思路</td><td data-page-node-id="EoLDEj5LUFtS7Paz10nLnX">每一层用了什么、为什么不用别的、版本与取舍代价</td></tr>
+          <tr data-page-node-id="cDX86QAlAZgrkt4MKD5Ygl"><td class="tnum" data-page-node-id="DEN1JniFLtlHfXVuZ4ud4R">03</td><td class="k" data-page-node-id="hF53tcQZPA6QqVp2gvQ1dh">LangGraph 设计与实现</td><td data-page-node-id="mhGSFf7EaURJSfuTuqJ2YH">图怎么画、状态怎么存、确认怎么做、事件怎么流</td></tr>
+          <tr data-page-node-id="5cuDxITJhRRyFfDdoxSmEC"><td class="tnum" data-page-node-id="cbLx84op2Cig4sn5VFCmSV">04</td><td class="k" data-page-node-id="KKV42rh9dLBCeziI93dtCP">核心业务链路与实现</td><td data-page-node-id="CQF0yJAMwip2YOE3nF2L7R">招聘/培训/知识库/面试评价怎么落地，质量怎么守</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 1 ============ -->
+  <section id="s1" data-page-node-id="nAbbGyNDdz9XA8E3pISurM">
+    <h2 data-page-node-id="eB3XYO46OHVIGhSpuumuiy"><span class="no" data-page-node-id="HzEXWpPEVr56sMPOM4NAJ0">01</span>业务背景</h2>
+    <div class="h2-rule" data-page-node-id="ZkKANFhjQ7vWlhJyA2tmpZ"></div>
+
+    <h3 data-page-node-id="bF5Fs2ZfDduBnq0ZIbZhbe">1.1 组织处境</h3>
+    <p data-page-node-id="OcjVkiz3cUl4S0DYdlU4HE">企业 HR 团队的工作有一个共同特征：<strong data-page-node-id="6SKjpPGsr3mwIdEQMblLkH">输入是零散的自然语言，输出是结构化文档，中间大量环节依赖人的阅读与改写</strong>。业务部门一句「帮我招个前端，能带团队的」，到一份可发布的 JD，中间要补齐职责、要求、技能、薪资区间、汇报关系；一份简历到「要不要约面」，中间要读完项目经历再和 JD 逐条对齐。</p>
+    <p data-page-node-id="GhHPWdfIAyB4iVFxHHsuCR">这些环节单看都不难，难在<strong data-page-node-id="m21a2RYLSofhHBUkWG3rt3">量大、重复、口径不稳定</strong>。招聘旺季 HR 一天要过几十份简历，判断标准会随疲劳漂移；同一个岗位换一位 HR 写 JD，结构和侧重就变了。培训侧同理：一套培训资料要出成试卷，出题人得先通读一遍再逐题设计，耗时且难复用。</p>
+
+    <h3 data-page-node-id="UxvsyGolzxwjoRWU5bIQpS">1.2 业务链路上的六个断点</h3>
+    <p data-page-node-id="NBKSlMEOEGYhBvw5aJclCY">把招聘与培训的主链路摊开看，AI 能介入的位置并不是均匀分布的。真正卡住的不是「写不出来」，而是六处<strong data-page-node-id="CqgmXsnprM4dEsmn5Omkgm">信息在人与人之间转手时的损耗</strong>。</p>
+
+    <figure data-page-node-id="bEoB8yIuLXwG98hnwvnBEh">
+      <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HR 业务链路六个断点" data-page-node-id="NRZ7xMKYwFN0IYGlxdJ2wN">
+        <defs data-page-node-id="cSZYZvXIWEkw6dbQc9WRqR">
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" data-page-node-id="qr4TSB9iXWxq3SHR9NQhNm">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#93a8bd" data-page-node-id="m6lXhj6FLqqtjdQmiqRzlk"/>
+          </marker>
+          <marker id="arR" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" data-page-node-id="OQ820wlMA5a0FkKfr68Lkw">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#c0655a" data-page-node-id="UxMM4ZWXg15GgRPfEGVdLN"/>
+          </marker>
+        </defs>
+
+        <!-- 主链路 -->
+        <text x="30" y="34" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="PqHjmOYb0UOP26WYOrXWH9">招聘主链路</text>
+        <g font-size="12.5" font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="JH5zWGClPKh9vToGmQgzq3">
+          <rect x="30" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="knagQytmkLnK3Zwzt9eIdg"/>
+          <text x="93" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="FtbsnGG1gEYvRNDWHQT5xa">需求口述</text>
+          <text x="93" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="P8ztGi50Um8G51EpEnLpRX">业务部门 → HR</text>
+
+          <rect x="172" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="1lbUHWcHgRzsXCFcbFOTEE"/>
+          <text x="235" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="B8PHhyELFpwBqTRcqc300u">JD 撰写</text>
+          <text x="235" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="gNnwkhDf7204LyPsKNLVYm">HR 手工补全</text>
+
+          <rect x="314" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="PakXqH4Nkecv9E9t2v2oPk"/>
+          <text x="377" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="GRdAxGhMMHQlE7wMj9zDM2">简历初筛</text>
+          <text x="377" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="G0ZbS4nsHjM1krRoOzHqZ7">逐份阅读比对</text>
+
+          <rect x="456" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="VfmYoP91jU8btavsddR8wt"/>
+          <text x="519" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="dT9yHkwnHnROTPMfQD5dMy">面试准备</text>
+          <text x="519" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="R7BvpdMiE2b8SFhnxlPWGD">题目靠经验</text>
+
+          <rect x="598" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="TjJ9njQ7bS30ayX1GFruq5"/>
+          <text x="661" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="gz8vJkK5R2vJ74xHWFCpAB">面试评价</text>
+          <text x="661" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="8BUO9HYNcr5skdG0Rat7DO">凭记忆写结论</text>
+
+          <rect x="740" y="48" width="126" height="52" rx="6" fill="#fff" stroke="#c9d8e8" data-page-node-id="DnPAqTRWGOYiLl68qNb4C1"/>
+          <text x="803" y="70" text-anchor="middle" fill="#123a63" font-weight="600" data-page-node-id="KKBRlDyRT9QsF1C89jgp1t">结果沉淀</text>
+          <text x="803" y="88" text-anchor="middle" fill="#7b8da1" font-size="11" data-page-node-id="jQPnKLrMWI5SxOjyFNiERr">散落在表格</text>
+        </g>
+
+        <g stroke="#93a8bd" stroke-width="1.2" marker-end="url(#ar)" data-page-node-id="gSPfFebl8xBdouxcdmQHE3">
+          <line x1="156" y1="74" x2="168" y2="74" data-page-node-id="BJXcJzXtWnD8jNgUUjxVMW"/><line x1="298" y1="74" x2="310" y2="74" data-page-node-id="BiUcwWOSkNVFW7oNZGCoWC"/>
+          <line x1="440" y1="74" x2="452" y2="74" data-page-node-id="ryoaUOHObeSOVAOu8YiJFL"/><line x1="582" y1="74" x2="594" y2="74" data-page-node-id="RmNpTvrjQjXlBd6FHSCRqg"/>
+          <line x1="724" y1="74" x2="736" y2="74" data-page-node-id="9mXrUqOZpK9ikKdmss3LAb"/>
+        </g>
+
+        <!-- 断点标记 -->
+        <g font-size="10" font-family="PingFang SC, Microsoft YaHei, sans-serif" text-anchor="middle" data-page-node-id="75EHnpDTXIeijp2FhDHNg0">
+          <circle cx="164" cy="62" r="8.5" fill="#b03a2e" data-page-node-id="fsMHh2dLjqywHNN49r1C1G"/><text x="164" y="66" fill="#fff" font-weight="700" data-page-node-id="q6p5U53exEy72Iqlqznixt">1</text>
+          <circle cx="306" cy="62" r="8.5" fill="#b03a2e" data-page-node-id="azEqrUGB8jNXrNKzL23tx6"/><text x="306" y="66" fill="#fff" font-weight="700" data-page-node-id="OAejrB64M8Iu7YFSxZkaX6">2</text>
+          <circle cx="448" cy="62" r="8.5" fill="#b03a2e" data-page-node-id="LM9CLM9iTCJpCDTX1C6899"/><text x="448" y="66" fill="#fff" font-weight="700" data-page-node-id="DqlfUTncH7g4dBBlqWj0Cb">3</text>
+          <circle cx="590" cy="62" r="8.5" fill="#b03a2e" data-page-node-id="Cu09LEXCb1rrigFqiGfnTY"/><text x="590" y="66" fill="#fff" font-weight="700" data-page-node-id="TJ91fC7pzCF0xHHgJlBQRq">4</text>
+          <circle cx="732" cy="62" r="8.5" fill="#b03a2e" data-page-node-id="mNfwhiDVGe7spNn696A06a"/><text x="732" y="66" fill="#fff" font-weight="700" data-page-node-id="kOzjAHZYueV3ZkfHMaoEiO">5</text>
+        </g>
+
+        <!-- 断点说明带 -->
+        <g font-size="11.5" fill="#8a5f0d" font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="iK5pDCvlp0qRGmgA5FyKio">
+          <rect x="30" y="128" width="836" height="34" rx="5" fill="#fdf6e6" stroke="#f0e0be" data-page-node-id="kjo5YxonscCl5RuUQLUDeR"/>
+          <text x="44" y="150" data-page-node-id="oBEGYG2LwEJpKCPz9wLyfK">断点 ① 信息不完整 · ② 口径不统一 · ③ 标准会漂移 · ④ 方案不可复用 · ⑤ 评价无证据 · ⑥ 过程不沉淀</text>
+        </g>
+
+        <!-- 三列：现状 / 后果 / 可介入 -->
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="5pYSjAEiecp6L5Mz89TjcD">
+          <text x="30" y="200" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="hOD9Gyg359esGrdjiDGWEN">现状</text>
+          <text x="330" y="200" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="XejBHM7hRJ4FvRwhdCj4kH">后果</text>
+          <text x="630" y="200" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="RPp6pK65pSbWoPt4cGjcBS">AI 可介入点</text>
+
+          <g font-size="12" data-page-node-id="RkuYyZphENP5QByk6xWVQB">
+            <rect x="30" y="212" width="270" height="40" rx="5" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="ue6EclITfUQEHw9iPETfEi"/>
+            <text x="42" y="237" fill="#3c5470" data-page-node-id="X9XjDjYpMGvHEdoEiBuNSH">需求散落在聊天、会议、口头交代</text>
+
+            <rect x="330" y="212" width="270" height="40" rx="5" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="KJzLfo0SgwI2iXDZtqgW0m"/>
+            <text x="342" y="237" fill="#3c5470" data-page-node-id="drOHo7TKyehqgIL84WpNvX">HR 反复补问，JD 交付周期拉长</text>
+
+            <rect x="630" y="212" width="236" height="40" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="CnAaPoTUnhHwMCMuvim263"/>
+            <text x="642" y="237" fill="#123a63" font-weight="600" data-page-node-id="SylNTxgGsqMfH0JxgKEvXU">需求解析 + 字段缺失提示</text>
+
+            <rect x="30" y="262" width="270" height="40" rx="5" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="IRAzWzqHnA5iAz1dxpB9Wd"/>
+            <text x="42" y="287" fill="#3c5470" data-page-node-id="urIIvB1JYQEhDlzFDGsSGE">筛选标准只存在于老 HR 的经验里</text>
+
+            <rect x="330" y="262" width="270" height="40" rx="5" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="x7RWsupcgH9LpDctS5RZgV"/>
+            <text x="342" y="287" fill="#3c5470" data-page-node-id="XdZ9q9vXzgwC4jpd8bylpb">不同人排序不同，复核成本高</text>
+
+            <rect x="630" y="262" width="236" height="40" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="pGBcDQX5pZgiyHAFxkAJn9"/>
+            <text x="642" y="287" fill="#123a63" font-weight="600" data-page-node-id="USWVh8DFCzXpxoU22GPg2N">评分标准 → 维度化打分</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption data-page-node-id="tG6jXLLtVdAPLweuAEX3ia"><b data-page-node-id="JvBKwBJIF287avwr2viD9m">图 1-1</b>　招聘主链路的六个信息断点。断点集中在「转手」环节：口述→文档、文档→筛选、筛选→面试、面试→结论。这四处正是系统把自然语言转成结构化记录的着力点。</figcaption>
+    </figure>
+
+    <h3 data-page-node-id="l3SXy8CJfSveGcIVWV8v8S">1.3 立项动因</h3>
+    <div class="grid g2" data-page-node-id="2mgMMMlK8Nb6TDvhROlwob">
+      <div class="card" data-page-node-id="S9LCL5zOqO01HIErK6ct8K">
+        <div class="t" data-page-node-id="WnDctliNmCd2o14ltl3dpQ">业务侧</div>
+        <p data-page-node-id="vBhQOdkEoJ4H2WhbElq0IQ">招聘需求量增长但 HR 编制有限，初筛与文档产出占了大量本可用于沟通和判断的时间。企业希望先提升「产出效率」，而不是先上重型 HRIS。</p>
+      </div>
+      <div class="card" data-page-node-id="Qlk4Z7jiM1waR7FjCCHbbS">
+        <div class="t" data-page-node-id="JJHwEyH6aNBkIXpLZhP49b">技术侧</div>
+        <p data-page-node-id="aIqeuNFuSDqRndvJQM6HGv">大模型的文本理解与生成能力已经能覆盖 JD、评分标准、面试题、试卷这类结构化写作；RAG 让企业制度问答有了可引用的依据；Agent 编排让「一句话触发一条业务链」变得可行。</p>
+      </div>
+      <div class="card" data-page-node-id="EdetjmIZWJrYPF7fXN9tVA">
+        <div class="t" data-page-node-id="NIWzrm4VnKlOJGcj0f66xf">组织侧</div>
+        <p data-page-node-id="n6fAHmohGA53cDVMgEVECh">企业希望把大模型能力落在明确业务流程里，而不是停留在通用聊天工具。HR 是理想的试点域：场景高频、边界清楚、失败可回退到人工。</p>
+      </div>
+      <div class="card" data-page-node-id="45HgHUGf6evPRCNwo6jpOv">
+        <div class="t" data-page-node-id="NKDAqnpniyPMAminXBL8Lq">落地侧</div>
+        <p data-page-node-id="xIGoCQNSoCpHR2exBAh1ml">项目可从内部试点起步，不必一次性替换现有 ATS/HRIS。JD、简历、考试三条主流程各自独立，任一环跑通都能独立产生价值。</p>
+      </div>
+    </div>
+
+    <h3 data-page-node-id="hpBPXLVAMM2wdewL7sGITK">1.4 基线数据的采集口径</h3>
+    <p data-page-node-id="FxzEBzRQEkxMclHDBwdmjd">立项时要能量化收益，前提是有基线。以下六项建议在试点前采集，缺历史数据就先记 2–4 周。</p>
+    <div class="tw" data-page-node-id="xFjNZa3HjEb58GdsS0Brul">
+      <table data-page-node-id="SdyZ5HjGuBrTomBvOFkFmG">
+        <thead data-page-node-id="OjJB44gij778VmYtB5Xfv6"><tr data-page-node-id="bVATFkDsDlpNcQAQcZFI3p"><th style="width:220px" data-page-node-id="PKTrA1ZK1xXGqv3KY91DCo">指标</th><th style="width:200px" data-page-node-id="edaTAYDc27C21LwsDOL9EI">采集方式</th><th data-page-node-id="Kp2m4dcYqfAVqBTVGFHr7l">用途</th></tr></thead>
+        <tbody data-page-node-id="TwnUJNtHHBc4tHQdIS7zFs">
+          <tr data-page-node-id="3BbwnEJtFtVao482aWs9NT"><td class="k" data-page-node-id="tSLwsuGCyr6UZVb5bPe0ea">每月新增招聘岗位数</td><td data-page-node-id="6BOwxzIvXb9PawMrO7hTNX">HR 招聘台账</td><td data-page-node-id="Kgj50jEAesZCZQGwD0Punv">评估 JD 与评分标准生成的价值上限</td></tr>
+          <tr data-page-node-id="kc80I3EPtkHGJXvUohMBXo"><td class="k" data-page-node-id="ubYiC2ZCjaWQKoTskAGgqx">每岗位平均简历数</td><td data-page-node-id="zeL9UaNg4NB5jpYHYhjXp4">简历收集记录</td><td data-page-node-id="vLPoBF6vnMgEy2IKqv4WJ1">评估简历筛选自动化的收益规模</td></tr>
+          <tr data-page-node-id="SuiY9ZDa9Vu0WfRrxrzcnv"><td class="k" data-page-node-id="mDCAzDb7TqKdlPF2n9VMqC">单份 JD 平均耗时</td><td data-page-node-id="i8OYFb4l0kUZNgAzHX1c6z">抽样访谈 / 工时记录</td><td data-page-node-id="GR5YAGc9iEN4XFvSIU2VfW">换算节省时间</td></tr>
+          <tr data-page-node-id="eBuSjMjs4hcRT2hB5GEfEj"><td class="k" data-page-node-id="gKYf1F5bfvjrXXE521a0ty">单份简历初筛耗时</td><td data-page-node-id="lFBi6QtGEsTEv9MTl4KjGq">抽样计时</td><td data-page-node-id="lEw8LiJbOtnAYQZFbgRpjS">换算筛选效率提升</td></tr>
+          <tr data-page-node-id="GEfm73ReTABFMN4EmrqhcN"><td class="k" data-page-node-id="NcpGk38q6guHqbnILTVg6A">每月培训考试次数</td><td data-page-node-id="zl7iuKauNIjWjHX9Pa6eug">培训计划</td><td data-page-node-id="HKuW9DfWIhxKpCjeAvHtcc">评估试卷生成与考试管理价值</td></tr>
+          <tr data-page-node-id="9ll2zq8BfddtXUElWdUime"><td class="k" data-page-node-id="etKz9fZ9gXOH3VGv1uZExh">制度/知识问答频次</td><td data-page-node-id="wLDwYfV9gVyAllmg8iKCWo">HR、行政问答记录</td><td data-page-node-id="Va82wwzhUSS2IVbDCEUP8H">评估知识助手的分流效果</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section id="s2" data-page-node-id="f5sTmySkgqRjljvuB31OCv">
+    <h2 data-page-node-id="HjGZYGlOkjAw88zw8y1aOn"><span class="no" data-page-node-id="0H1Akj0ZvIm1x25b9qD5Ou">02</span>核心痛点分析</h2>
+    <div class="h2-rule" data-page-node-id="ieDdSKeWOOcpjBg7IFocjA"></div>
+
+    <p data-page-node-id="kgSSz2mCUm9XuBQMhaK1gf">痛点要分三层看：<strong data-page-node-id="mGK0usrXe7KZYr5ORWHJYJ">业务痛点</strong>决定值不值得做，<strong data-page-node-id="eDFgQmgRTSp9zeCoRW8NQE">产品痛点</strong>决定做成什么形态，<strong data-page-node-id="KHWulqqfxATY3FcXZFGs33">技术痛点</strong>决定能不能稳定跑起来。三层不对齐，项目就会变成「演示很惊艳、上线没人用」。</p>
+
+    <h3 data-page-node-id="RgAf91wOOkuTSD07dBjZY8">2.1 三层痛点</h3>
+    <div class="tw" data-page-node-id="V72CYutMlSTSYOaUEgvttO">
+      <table data-page-node-id="6khyVCbj7IwKBjol2PCGmF">
+        <thead data-page-node-id="MxnJ1yhR7RbXRvP3xltFQC"><tr data-page-node-id="A3YNawkspDBYEkDW40Uy4t"><th style="width:90px" data-page-node-id="O02LASkMTx1IcZUSiunP4w">层级</th><th style="width:300px" data-page-node-id="trwZ3n0AZlyMWsEXupxDB7">具体表现</th><th data-page-node-id="fI9pTrZjfQQaFQtfWmTjhT">本质问题</th></tr></thead>
+        <tbody data-page-node-id="a3SgvG945bMpEAMhEuZBry">
+          <tr data-page-node-id="ajylVxlEevCHGtsRT53kwA">
+            <td class="k" data-page-node-id="FEPzMbVvbAcHaeVqQANG5G">业务</td>
+            <td data-page-node-id="cA6r5t3YPg6VXeAOvoigHW">JD 从需求到可发布要反复补问；简历靠人工读，标准不稳；面试方案与评分标准因人而异；培训出题重复劳动；制度文档检索成本高</td>
+            <td data-page-node-id="2vzoK3pwxy7fKXXBueb6sp">文本处理工作没有沉淀成<strong data-page-node-id="nDWslqGowKy6PgTt4HzNc6">可复用的生产能力</strong>，每次都从零开始</td>
+          </tr>
+          <tr data-page-node-id="6bEdBTKibqi48AnJPSAEGu">
+            <td class="k" data-page-node-id="zcsPTeA2xyUHTIJls5ElNP">产品</td>
+            <td data-page-node-id="WrGGAQNnTI8vI9QI4PP3AD">能力分散在脚本、外部工具、个人经验里；没有统一登录、权限、历史记录；新用户要理解菜单、字段、操作顺序</td>
+            <td data-page-node-id="f9LTxrDfjmhA0iOGCe2XK7">缺少<strong data-page-node-id="yWdK2QmLv4mnGAezza9f3e">统一入口与统一数据底座</strong>，AI 能力无法变成产品</td>
+          </tr>
+          <tr data-page-node-id="OyPgBjNqWeL15fcFbClH0T">
+            <td class="k" data-page-node-id="B2lpE0Lhq4cBWyCprMwR6U">技术</td>
+            <td data-page-node-id="OxQQIZ6LtL5RCki8pKQhEU">LLM、工作流、RAG、文件解析、向量检索、业务库各说各话；长任务无进度反馈；关键动作无法确认与回滚</td>
+            <td data-page-node-id="9WEaDpfpz1Cwr9C874nQua">缺少<strong data-page-node-id="B5OV4C4sPOP8wQzH3dUWwL">状态化编排与人机协同机制</strong>，AI 只能做一次性问答</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="pRiOwTT4TnIwCgENXDJtDb">2.2 从痛点到系统能力</h3>
+    <p data-page-node-id="Tu9zfhDnXtpGLhHhwTzdZv">下图把「看到的症状」推到「根因」，再对到「系统里具体哪一层解决」。这张图是后续所有设计决策的来源：凡是落不到第三列的需求，都不进范围。</p>
+
+    <figure data-page-node-id="I6iDSMkwfG6EU859EV7q3B">
+      <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="痛点根因能力映射" data-page-node-id="ptv0ZhZ6tiZChFVH4ueEXZ">
+        <defs data-page-node-id="MgarYqq0mPOywS7zkrOMBu">
+          <marker id="a2" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto" data-page-node-id="902CoUqUH9JjCCJ6mAH0Cq">
+            <path d="M0,0 L8,4 L0,8 z" fill="#b9c9da" data-page-node-id="ZphuxXAospckFWHLoNhZCU"/>
+          </marker>
+        </defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="VEjv8V4zCgIG5v4UraQ896">
+          <text x="28" y="26" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="UA5zDH8Ibo7zhWGpW6aj7B">业务症状</text>
+          <text x="330" y="26" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="VetyleqGDdjPlHtK17IfWJ">根因</text>
+          <text x="620" y="26" font-size="12" fill="#6d7f93" letter-spacing="1" data-page-node-id="yYUc8jEkFC0ncq0bEovubM">系统能力（落点）</text>
+
+          <!-- rows -->
+          <g font-size="12.5" data-page-node-id="5vktCZ51rkVAnwdZMIPdln">
+            <!-- row1 -->
+            <rect x="28" y="44" width="262" height="54" rx="6" fill="#fff" stroke="#e3e9f1" data-page-node-id="i2QLglnasgejNTaYOj1qzd"/>
+            <text x="42" y="66" fill="#233a52" font-weight="600" data-page-node-id="v7lKmx3na5LsM0gkVhmyJc">JD 反复补问、结构不齐</text>
+            <text x="42" y="85" fill="#7b8da1" font-size="11.5" data-page-node-id="OeOPKFiqrAp1h33CYpWYB5">一次写不完，改五版</text>
+
+            <rect x="330" y="44" width="262" height="54" rx="6" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="lV1ry3EKitkV599eLBpDHi"/>
+            <text x="344" y="66" fill="#3c5470" data-page-node-id="QADQfqPuLChu5afE2AgO4h">需求是非结构化口述，字段缺失</text>
+            <text x="344" y="85" fill="#7b8da1" font-size="11.5" data-page-node-id="1GZoHPmeyziQeCWmcydIp8">没有解析与校验环节</text>
+
+            <rect x="620" y="44" width="252" height="54" rx="6" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="ELXLHfhF90pARsk8xt8O6h"/>
+            <text x="634" y="66" fill="#003366" font-weight="600" data-page-node-id="KgBXgSFPXuJL8DlPgdfD0e">需求解析 + 缺失字段提示</text>
+            <text x="634" y="85" fill="#4a6b8a" font-size="11.5" data-page-node-id="SommzytyPyYYfKDsrKXsLd">Dify 工作流 / 解析节点</text>
+
+            <!-- row2 -->
+            <rect x="28" y="118" width="262" height="54" rx="6" fill="#fff" stroke="#e3e9f1" data-page-node-id="2vpTvbb4iQcR21uEKjPKka"/>
+            <text x="42" y="140" fill="#233a52" font-weight="600" data-page-node-id="bQCM3BszCvUle1zdwz9Ddt">简历筛选标准会漂移</text>
+            <text x="42" y="159" fill="#7b8da1" font-size="11.5" data-page-node-id="JtrnSuacWsRJG0VFajVXpL">同岗不同人排序不同</text>
+
+            <rect x="330" y="118" width="262" height="54" rx="6" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="7EyDfCJzztEVxfUDdGEL77"/>
+            <text x="344" y="140" fill="#3c5470" data-page-node-id="13OLC6eOig4uxOaEF7TuSM">评分维度只存在经验里</text>
+            <text x="344" y="159" fill="#7b8da1" font-size="11.5" data-page-node-id="YxG2KqdrjSBl4Y5oSryvF6">没有可复用的口径</text>
+
+            <rect x="620" y="118" width="252" height="54" rx="6" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="fvNzJeKFZHqtkDzx83oiRL"/>
+            <text x="634" y="140" fill="#003366" font-weight="600" data-page-node-id="AQngFACcNDxJ2e3NgpMYAB">评分标准 + 维度化评分</text>
+            <text x="634" y="159" fill="#4a6b8a" font-size="11.5" data-page-node-id="00Fl13660s0iPutKlfkA4n">标准与 JD 绑定，理由可查</text>
+
+            <!-- row3 -->
+            <rect x="28" y="192" width="262" height="54" rx="6" fill="#fff" stroke="#e3e9f1" data-page-node-id="GgXW8k7GA6m2mYUAV2FpUS"/>
+            <text x="42" y="214" fill="#233a52" font-weight="600" data-page-node-id="3ZeRlY6vQ71ZRyWtV4fkih">面试评价只有结论没有证据</text>
+            <text x="42" y="233" fill="#7b8da1" font-size="11.5" data-page-node-id="u8ERCLsvlb4LD6Zq2o0W9G">「感觉还行」无法复核</text>
+
+            <rect x="330" y="192" width="262" height="54" rx="6" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="eB3KRNcNCQNDroI3CIRIrM"/>
+            <text x="344" y="214" fill="#3c5470" data-page-node-id="nbv7l0FnglxHXE9OoU8GjC">缺少逐条对应的原始发言</text>
+            <text x="344" y="233" fill="#7b8da1" font-size="11.5" data-page-node-id="945TO0L3PzFMqyTsBkeZ2y">转写稿没有被结构化</text>
+
+            <rect x="620" y="192" width="252" height="54" rx="6" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="jUVKPGicV7FKnE5SN7c8yG"/>
+            <text x="634" y="214" fill="#003366" font-weight="600" data-page-node-id="fiYGuuJaZeCMdfgnzlrrYo">转写结构化 + 问答配对</text>
+            <text x="634" y="233" fill="#4a6b8a" font-size="11.5" data-page-node-id="pr3NIL8PYWoOYOViylKruN">逐条引用原话作为证据</text>
+
+            <!-- row4 -->
+            <rect x="28" y="266" width="262" height="54" rx="6" fill="#fff" stroke="#e3e9f1" data-page-node-id="UQpKfc4nvBBUyEcvAdyqyf"/>
+            <text x="42" y="288" fill="#233a52" font-weight="600" data-page-node-id="INnSrRh5p7oIoLAdhjLBae">制度问答靠人找人</text>
+            <text x="42" y="307" fill="#7b8da1" font-size="11.5" data-page-node-id="yT2sKVPGTbB2GxAXBL43x5">同一问题被问几十遍</text>
+
+            <rect x="330" y="266" width="262" height="54" rx="6" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="4f6yUKwfUEf8ZTlOLMTM6R"/>
+            <text x="344" y="288" fill="#3c5470" data-page-node-id="KAWfRdQjT7J8eGL3AdaFa6">文档分散，检索无依据</text>
+            <text x="344" y="307" fill="#7b8da1" font-size="11.5" data-page-node-id="Y5cEx3vDiBx60xUhjCJRXM">通用问答容易编造</text>
+
+            <rect x="620" y="266" width="252" height="54" rx="6" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="bU37uxkimBfkNjZ7HXT2I0"/>
+            <text x="634" y="288" fill="#003366" font-weight="600" data-page-node-id="94DlVw9UqPHS6zDB1qNcl0">RAG + Rerank 引用回答</text>
+            <text x="634" y="307" fill="#4a6b8a" font-size="11.5" data-page-node-id="gKt0D94AGYFrZhCENJy2vj">无依据时明确说资料不足</text>
+
+            <!-- row5 -->
+            <rect x="28" y="340" width="262" height="46" rx="6" fill="#fff" stroke="#e3e9f1" data-page-node-id="SQ5iXXs3YiEaNEGJ4bn1Xu"/>
+            <text x="42" y="368" fill="#233a52" font-weight="600" data-page-node-id="jwJl1VCmotOAkVBjnlXb34">关键动作不敢交给 AI</text>
+
+            <rect x="330" y="340" width="262" height="46" rx="6" fill="#fbfcfe" stroke="#e3e9f1" data-page-node-id="cedxvQmTEZWd9cv0FweJJ9"/>
+            <text x="344" y="368" fill="#3c5470" data-page-node-id="5vXfzAsdU1pxl4RwGp2FOd">无法确认、无法回滚、无法追溯</text>
+
+            <rect x="620" y="340" width="252" height="46" rx="6" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="vlY9Ble3mC9GYZlKYVp0mo"/>
+            <text x="634" y="368" fill="#003366" font-weight="600" data-page-node-id="OpAfSFBI0wLT3GmsXYw0uU">interrupt 暂停 + checkpoint 恢复</text>
+          </g>
+
+          <g stroke="#b9c9da" stroke-width="1" marker-end="url(#a2)" fill="none" data-page-node-id="iK4v7S6gEabvRt5VpjeuAn">
+            <line x1="290" y1="71" x2="326" y2="71" data-page-node-id="OEeEUXqLK82W7G7CwgscgO"/><line x1="290" y1="145" x2="326" y2="145" data-page-node-id="StYOKWICiWLk1afr7k4mOG"/>
+            <line x1="290" y1="219" x2="326" y2="219" data-page-node-id="Swe2D5BGKuvFPdmLziirQL"/><line x1="290" y1="293" x2="326" y2="293" data-page-node-id="CraqoV7RSTgP94vLBwT4ZO"/>
+            <line x1="290" y1="363" x2="326" y2="363" data-page-node-id="W8pF2ik5BLsHKgIa79S9i7"/>
+            <line x1="592" y1="71" x2="616" y2="71" data-page-node-id="9Bze1wzP6KWL0N9W2xVD1q"/><line x1="592" y1="145" x2="616" y2="145" data-page-node-id="6HJCiHbuRzlXwJoSzZWwOc"/>
+            <line x1="592" y1="219" x2="616" y2="219" data-page-node-id="X62Aw0mtVMVmQhsZHevFpk"/><line x1="592" y1="293" x2="616" y2="293" data-page-node-id="Wt6P7K2xgNAs5GLURGVWDQ"/>
+            <line x1="592" y1="363" x2="616" y2="363" data-page-node-id="oAhh6Yn81JTJ92efRd6Pfv"/>
+          </g>
+        </g>
+      </svg>
+      <figcaption data-page-node-id="UJWL7oquFoCTmgINvFhMXI"><b data-page-node-id="WOWnR0SqAnAmBdbEy6aeDF">图 2-1</b>　痛点 → 根因 → 能力映射。第三列是需求范围的边界：映射不到的诉求（如渠道投放、Offer 审批）明确排除在项目之外。</figcaption>
+    </figure>
+
+    <h3 data-page-node-id="xwpPeSEq5fVFWMEL3IWF5b">2.3 痛点优先级</h3>
+    <p data-page-node-id="XID7H9tamGppWGaQHSwsT6">下表是定性评估，不是实测数据。判据是三个：<strong data-page-node-id="W43YWBNt2zKgL4CMDUkLDT">发生频次、影响面、可自动化程度</strong>。三个都高的先做。</p>
+    <div class="tw" data-page-node-id="ZsAtoYRKUYulq9h9ibs81e">
+      <table data-page-node-id="eGZvXFZ83qDcRJ7l7WKrWF">
+        <thead data-page-node-id="uqN2F627DGpjmBWOAcLGiJ"><tr data-page-node-id="xbLo7yR1M9aALsxC2WxO0n"><th style="width:250px" data-page-node-id="9jdcHp6JIYjc5fLL6ifRdz">痛点</th><th style="width:90px" data-page-node-id="t95FUdnmaHExKSabt4jm3i">频次</th><th style="width:90px" data-page-node-id="mHr4FDXszH4QuhSK5Q82CZ">影响面</th><th style="width:110px" data-page-node-id="lHtpTOPihCeKQBs8rgrQ1h">可自动化</th><th style="width:80px" data-page-node-id="VmcqBccSE8eTi82LNRevs5">优先级</th></tr></thead>
+        <tbody data-page-node-id="gsZbiXWn1BO93GKdLpkzxK">
+          <tr data-page-node-id="a2gxX5PpWiFr8pNOzmLBOz"><td class="k" data-page-node-id="FwNjt3YbG5vXpJeZ7Yqrvo">简历初筛耗人力、标准不稳</td><td data-page-node-id="WsTHPx8xnn1jIy49lhzceF">极高</td><td data-page-node-id="XAhmQnVwDOtHefp71utVHw">招聘全流程</td><td data-page-node-id="BNeSBbb7IEzWF0HvXrMxKN">高（可评分可排序）</td><td data-page-node-id="T21qFeZgtL0sFeZHQjEjoA"><span class="tag p0" data-page-node-id="tRINeEFTwCsG82XJbfPqS8">P0</span></td></tr>
+          <tr data-page-node-id="lbg0WxbTpmI7ls54HAyGEA"><td class="k" data-page-node-id="g6XMU8AtDG04ExYGanLOtc">JD 与评分标准从零撰写</td><td data-page-node-id="rtsBdehlDJCaqqjp5CJG7C">高</td><td data-page-node-id="0IIK9IahkHo7tTywacTvme">招聘起点</td><td data-page-node-id="keDas2YgGyr1GwG3p3mnC8">高（文本生成）</td><td data-page-node-id="MpR6HgBRnCvyP4aCn7SeuA"><span class="tag p0" data-page-node-id="VSMYR5wjo2wfyRVvISawlH">P0</span></td></tr>
+          <tr data-page-node-id="mYtuODf2ybT8IiByPMu2C9"><td class="k" data-page-node-id="iYCDfebaJpoR85xZPBKfQ6">面试方案因人而异</td><td data-page-node-id="asFcjACrTZ7BlqHr8y1YHN">高</td><td data-page-node-id="S1MfnUqZpgwrm0WO6D3lLW">面试质量</td><td data-page-node-id="NmWcGoS07w9hZ2gBtkl0rR">高（结构化生成）</td><td data-page-node-id="e5RsP75M9FO9NTK4UmK0AD"><span class="tag p0" data-page-node-id="hErBYj2CW6D0TIsUcGuXYS">P0</span></td></tr>
+          <tr data-page-node-id="dx8XcFGLJ0bOL343hGKiLd"><td class="k" data-page-node-id="6DAOJUpoz9BhDRxu0dOkLR">培训出题重复劳动</td><td data-page-node-id="GU01VI0PN7MQZ7U4fTWL6m">中</td><td data-page-node-id="WGWdkDJmitW0JKDgv9iWyq">培训闭环</td><td data-page-node-id="HKZpbvSH5I8jsutjOZoaEa">高（资料→题目）</td><td data-page-node-id="F37dU80Ft1zB9jqzdDzRdm"><span class="tag p0" data-page-node-id="lYZ8mbiZRKmtMhspdxKDPi">P0</span></td></tr>
+          <tr data-page-node-id="NqHGos1TrMnmBpsukpaEpT"><td class="k" data-page-node-id="y2PyEWF7ctpzvdtpA9MWNp">制度知识靠人找人</td><td data-page-node-id="2Y93azRYr6Ajlzkv8WgyTU">高</td><td data-page-node-id="nF1vApms4KjB5H3ONI7Yj4">全员</td><td data-page-node-id="ByJAHjnxK3B2AcN8lnwGek">中（依赖资料质量）</td><td data-page-node-id="FMqIm1HynZoebQ3rKfqjNM"><span class="tag p0" data-page-node-id="lEHPF9MwlcbtqMXVkwC2j5">P0</span></td></tr>
+          <tr data-page-node-id="HVK790Lbb9imZVXeJt0S13"><td class="k" data-page-node-id="OsV1cCN6ZnalmltF0SrAnB">面试评价无证据、不可复核</td><td data-page-node-id="LdEjSkDEhguj522UsAWplj">中</td><td data-page-node-id="CVgCoGkam5XUBn4VFrpWhR">录用决策</td><td data-page-node-id="NIKBXOAJTzR3GeOhgDXPMD">中（依赖转写质量）</td><td data-page-node-id="vnqkaaJRrMIpH6GXZ6CSQP"><span class="tag p1" data-page-node-id="KNxeba8NTMIvietTDgasFe">P1</span></td></tr>
+          <tr data-page-node-id="ffeWcwL3gP508Ti0P3an5K"><td class="k" data-page-node-id="4LeVjRvFQENJYHMCc5z08x">通知邮件手工写、易漏发</td><td data-page-node-id="Hm96GhAvyQZIxAqBgF91DA">中</td><td data-page-node-id="SchvZG8BylcNUWEdG5zKnD">候选人体验</td><td data-page-node-id="u5gEgIPg269ZH98Du608MO">中（需人工确认）</td><td data-page-node-id="WgIkGpFbY9VTMeUTYWpEs5"><span class="tag p1" data-page-node-id="KwXmElxFGtLOSlvZ5CWE33">P1</span></td></tr>
+          <tr data-page-node-id="Bg3uotuQU5HcXzq52e6CEq"><td class="k" data-page-node-id="48HErQBdglRSvD5SdBQtve">招聘培训进展不可视</td><td data-page-node-id="YG6hqSDBb2huGUjbrfBU6q">中</td><td data-page-node-id="V4DafPAhmk8wmIfyBZa8R7">管理决策</td><td data-page-node-id="DptxLaJJEqdIySgVqGgTPe">高（统计聚合）</td><td data-page-node-id="QvHZLPD1Vl5Hnw2aKJBWf3"><span class="tag p1" data-page-node-id="VFRy6s9nQ8wWEBKCI3VfRU">P1</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn" data-page-node-id="Aq8EDBIq3UfpjcUiz2dKWO">
+      <span class="h" data-page-node-id="JeaBHFJfzR51dWF39IGpl3">最容易做错的三件事</span>
+      <p data-page-node-id="uxXm0R8ocMDnkPJNQ0CRRM"><strong data-page-node-id="1WPL3JHmx6HxW1XA9pyV8L">一、把「生成」当「决策」。</strong>简历评分再准也只是排序建议，写进产品文案和 UI 时必须保留「待复核」状态，否则业务方上线第一天就会质疑责任归属。</p>
+      <p data-page-node-id="auvHfLapZv2clBVfG6j2rW"><strong data-page-node-id="PwmpA5C3afjXn6VXBB5Hv8">二、用提示词约束代替机制约束。</strong>「请不要自动发送邮件」写在 system prompt 里，模型换个说法就可能绕过去。正确做法是把发送动作放在图上的独立节点，前面加 <code data-page-node-id="kBdQXypfak2entewfKb8Sw">interrupt</code>。</p>
+      <p data-page-node-id="ynrGeW8GiU6ABTUoVC9MEB"><strong data-page-node-id="MIbeg4d3qjxgC5jokAf5wT">三、一开始就做通用 Agent。</strong>开放式工具调用看着强，实际每次误触发都要人工收拾。项目最终选择「动作空间受限 + 写操作不进模型」，这是被现实教育出来的结论。</p>
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section id="s3" data-page-node-id="O2t1KTRoqzCbHpcFBqx4Sz">
+    <h2 data-page-node-id="PfFLgYXP8KAu20u4FYvvin"><span class="no" data-page-node-id="kKzpT5mETtrytLOCgtrlJa">03</span>需求分析</h2>
+    <div class="h2-rule" data-page-node-id="BLyv0vTM1F2Wt3orYZlQbU"></div>
+
+    <h3 data-page-node-id="A6SkRD0zTU0HxvJJKxFnBT">3.1 角色与核心诉求</h3>
+    <div class="tw" data-page-node-id="v5V4sO0oMc8yKrm8YLY56k">
+      <table data-page-node-id="byiyHyb009A2qyzRk42tF1">
+        <thead data-page-node-id="38DOBc7frltVq2PMPZ6KZx"><tr data-page-node-id="ZfaOj8C0vly7RehxqnFx72"><th style="width:130px" data-page-node-id="bIQo5hqodNOn4Dkqj2jGgH">角色</th><th style="width:300px" data-page-node-id="4DS6WIJMrITGIed8mw1Xh2">核心诉求</th><th data-page-node-id="APMOj5L2lgoKtPt6Kzb3xq">主要权限</th></tr></thead>
+        <tbody data-page-node-id="p5s2wRVBBrbJY988ehHIe3">
+          <tr data-page-node-id="RFGRQnlyZG6BaaaJE1lGcA"><td class="k" data-page-node-id="PuKZ64s70TfHcwXYWXVUA7">超级管理员</td><td data-page-node-id="vaZDqOG38m4DzyjPBKZnAr">管系统、管人、管邮箱配置</td><td data-page-node-id="8vEOdmzJjNav7q3dJ6EbZF">用户管理、角色管理、邮箱配置、全部业务数据</td></tr>
+          <tr data-page-node-id="yUjfHaFlHjzPiPX8Vvw7t5"><td class="k" data-page-node-id="eWAEAtqqn0zeBedxYx2SGw">HR 负责人</td><td data-page-node-id="RSvoP5KWKslBi8g4KZXavP">看进展、保质量、控口径</td><td data-page-node-id="fGAvZWHSrs8mEYLW8K1EOF">统计看板、招聘与培训结果、关键业务数据</td></tr>
+          <tr data-page-node-id="1OqogWTC25kXgOF3A7nlDS"><td class="k" data-page-node-id="6cvYePW4vF3YmJpRixommo">HR 专员</td><td data-page-node-id="kJXWqEEdbEOYCFpeP7u9C6">把招聘任务执行完</td><td data-page-node-id="SPWuiNfRAvgUmyJwVRuTYy">JD、评分标准、简历筛选、面试方案、邮件草稿</td></tr>
+          <tr data-page-node-id="9OJtMDDHoeop4RG2Wgl4PH"><td class="k" data-page-node-id="EbEB75YOCdJqOWf5GjMnDX">培训管理员</td><td data-page-node-id="NQxa089ALEHO5aerCPgUy8">把资料变成考试</td><td data-page-node-id="uQeXmE0EO9zkF0GVbliQ0K">文档上传、试卷生成、考试管理、结果查看</td></tr>
+          <tr data-page-node-id="tbrUmv5u9EBWIeCQWqRHJM"><td class="k" data-page-node-id="gFvfJEukxdahCJARi0yCrL">普通员工</td><td data-page-node-id="r8MjnyIJJEKk931rGJX8yE">查制度、参加考试</td><td data-page-node-id="StIG8sibZKvFj7n4KxAx7F">知识问答、考试分享页</td></tr>
+          <tr data-page-node-id="hyEgdYLOMLQzpFkTJXav4u"><td class="k" data-page-node-id="uSgwbEGoBhyeYy1l1YWJEa">候选人</td><td data-page-node-id="Ee1YFEGiwCyswIuyr25RyU">完成测评</td><td data-page-node-id="6pRbTVzh1aHBV8BIrIOkyP">通过分享链接访问，无需账号</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="gt2NVr7aTvkJ7biJSgm8wV">3.2 用户故事</h3>
+    <div class="tw" data-page-node-id="XC19yVIeHfGg9mjNlLiwke">
+      <table data-page-node-id="Dt2VcVxScEVbo7optz3PVK">
+        <thead data-page-node-id="sNHcxXjJUUhBiLYCrqA0SO"><tr data-page-node-id="nD55qqmeSsmjFNiFN0KERn"><th style="width:70px" data-page-node-id="whsiCr8HzMhIZAgU6yTnxi">编号</th><th style="width:110px" data-page-node-id="3tbTxGPlindNFbmNXykVIN">角色</th><th data-page-node-id="he49h3x96AYQGqAGBRtaNs">用户故事</th><th style="width:130px" data-page-node-id="kvwmKxSXo7M45GvbAO0g5k">价值</th><th style="width:60px" data-page-node-id="HgRBTdJUjduWGETvHQxKzb">优先级</th></tr></thead>
+        <tbody data-page-node-id="nmKyHgLyyL8VrDK7yfxQLb">
+          <tr data-page-node-id="HCiE2qN2JgJxv8kVb0rj3A"><td class="tnum" data-page-node-id="0Fr3dzn5AoVumQWfYaRne1">US-001</td><td data-page-node-id="uzh1wE18eIEBsx92oBUvAN">HR 专员</td><td data-page-node-id="AEIctJuhIC6YJ1sDNDmtEA">输入岗位需求即可生成 JD 初稿</td><td data-page-node-id="LfXYevD6xFW3FZZMz85MOs">降低撰写成本</td><td data-page-node-id="hAdvxkt6JD8ZgUDMkF5Sgz"><span class="tag p0" data-page-node-id="vBepMgErqA7mstg3PYqOUK">P0</span></td></tr>
+          <tr data-page-node-id="92uvtGEVygANK5uRfTmj5u"><td class="tnum" data-page-node-id="Vb4IDUiGtI68DWy92DmBSN">US-002</td><td data-page-node-id="WGqZ1iUGGNyF7FyOCpoBfs">HR 专员</td><td data-page-node-id="WYmUv2cO5DmNZONfhCMiVv">JD 生成后自动产出评分标准</td><td data-page-node-id="RkA1U3HOIpsoUgd08KqVK5">筛选口径一致</td><td data-page-node-id="StJqCX9HV0aEyQM9xnVYqD"><span class="tag p0" data-page-node-id="97UqeuFHq9NsObQ7zZxEfo">P0</span></td></tr>
+          <tr data-page-node-id="fxwjlOSwgQ9ZTocwSCdRsa"><td class="tnum" data-page-node-id="86mzpNo5FzgvyWd3RKOX6B">US-003</td><td data-page-node-id="DXtgCABBJfIJ3xwqBjvMFk">HR 专员</td><td data-page-node-id="76HVnAbdtPNHQnA9wFFtik">批量上传简历并获得评分</td><td data-page-node-id="zWpE8VAb3lkF8Bznd3Gp47">提高初筛效率</td><td data-page-node-id="8W0So4gOMzwGw80WNhnwOD"><span class="tag p0" data-page-node-id="AYfhgareNjjOwXAGtevo2D">P0</span></td></tr>
+          <tr data-page-node-id="8rTYfAWNYAsKwDSKKpGLpo"><td class="tnum" data-page-node-id="tisOlw5jVth6R00PjSKoFk">US-004</td><td data-page-node-id="xFTrpUCrlZxN4b2Ka1cOlu">HR 负责人</td><td data-page-node-id="9GHuOhsLE7NNsgRho7qgFn">查看候选人评分理由与维度</td><td data-page-node-id="ntguWaXPo31NqlIhEY4yGN">支持复核判断</td><td data-page-node-id="axn9ltAltB58wpNIKhG1Un"><span class="tag p0" data-page-node-id="Uh56AEg9yxKoCr59whqGSw">P0</span></td></tr>
+          <tr data-page-node-id="byEAfTosN7YkFgh02ly6M5"><td class="tnum" data-page-node-id="WgG7L5ojuiIzlzwjFWfCDP">US-005</td><td data-page-node-id="A8KteyfCuB4opcC1Sml6Ro">面试官</td><td data-page-node-id="vKDKE8hSGvpDTWw8wkjLYu">拿到结构化面试方案</td><td data-page-node-id="mn7LMBpuO0APIiacjAejRA">提升准备效率</td><td data-page-node-id="sFcwPDlrxy7lJH622acd27"><span class="tag p0" data-page-node-id="DFmUNf64or3urx4HuUlwKy">P0</span></td></tr>
+          <tr data-page-node-id="VHlbER8YYjzWxCGli25D6H"><td class="tnum" data-page-node-id="bx6ATthxu8vuAJtP77FD0n">US-006</td><td data-page-node-id="LPNKju2xqToqai8sLBADIz">培训管理员</td><td data-page-node-id="2GVCEyx2fuzeWUgC6lk4bO">基于资料生成试卷</td><td data-page-node-id="s6IkpgEBFV9VbAHHmkYWkP">降低出题成本</td><td data-page-node-id="FP49DP7j6Egaj4Yw53YADY"><span class="tag p0" data-page-node-id="cfEK9rz7fYWCEAGclLISsu">P0</span></td></tr>
+          <tr data-page-node-id="BkTydIyxBCTyC4Q89xIitQ"><td class="tnum" data-page-node-id="mfG0X2Q7TYMk0HzdmrViNX">US-007</td><td data-page-node-id="2m71Gn6idvLx9QCASmGsu4">员工</td><td data-page-node-id="4DgYucpBgFpkzZhWJPXt9G">通过知识助手查制度</td><td data-page-node-id="WOg9nhm9IMXOzMZRLHoGRV">减少重复咨询</td><td data-page-node-id="5mp6GqmULv6PRUg3O4HPIr"><span class="tag p0" data-page-node-id="vNJGI7ZLTNf7VvWuJ1u5eQ">P0</span></td></tr>
+          <tr data-page-node-id="6tyLpppXUfFDrEMaCVvK59"><td class="tnum" data-page-node-id="B4Ninm5DRdLuNbEhneZcIZ">US-008</td><td data-page-node-id="IngREKWDtZHZmm9qcfwbX2">系统管理员</td><td data-page-node-id="Iqb4HOp4gXIO1EQ6VLajWA">管理用户与角色</td><td data-page-node-id="AkvKmO8VQY4nKHGSCDhqEj">控制访问边界</td><td data-page-node-id="RKf1wmDC07EQQsysm6oXu5"><span class="tag p0" data-page-node-id="mm7IKch16CKeRpNe6RPThU">P0</span></td></tr>
+          <tr data-page-node-id="9WdCtDw7aJrWYakbp8u7eC"><td class="tnum" data-page-node-id="EUDVNPiuMyzjFQHOqg3laQ">US-009</td><td data-page-node-id="vUmo4Gypgvs7VcChlssOaY">HR 专员</td><td data-page-node-id="GcDmzjv61ixPCLhyzLCpK2">用一句话描述任务，由系统调度</td><td data-page-node-id="8D3NbhukuHgtGG8T7zm2aY">降低使用门槛</td><td data-page-node-id="CvtncEP6pY75WtDIqPsiR8"><span class="tag p1" data-page-node-id="2ogd8mUA4zHNIahyylPOKB">P1</span></td></tr>
+          <tr data-page-node-id="83LMicPt31CsnVOYYO6vMt"><td class="tnum" data-page-node-id="N0AHC3uSIYPpwYtf5Vel2p">US-010</td><td data-page-node-id="CNslFPh2Xza0sLVOB1LhRF">超级管理员</td><td data-page-node-id="pukakBokeRzF5pspNttWJX">配置邮箱并测试连接</td><td data-page-node-id="nW0apfjzZaNOP6bXoaQNDk">通知自动化前置</td><td data-page-node-id="RHhiLjJtCkHWDt0wktCERf"><span class="tag p1" data-page-node-id="N0x6FyNKYf1HktQYMplLcL">P1</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="Y2xfqwZfarN9HJzjdAqFyr">3.3 范围边界</h3>
+    <div class="grid g2" data-page-node-id="WE2sn2psAmJxiJr6Corf0k">
+      <div class="card" data-page-node-id="fev9M4RLtQxuDv184KEfub">
+        <div class="t" data-page-node-id="YkBF0EdPeQ9uRvFqYb7pT4"><span class="tag ok" data-page-node-id="Z9OivniYYjbVMEmHRHOB4c">范围内</span></div>
+        <p data-page-node-id="KGrkFlOsOUipb6HrOgN2FU">登录鉴权与 RBAC · 用户/角色管理 · HR Agent 对话与流式执行 · JD 与评分标准 · 简历评估 · 面试方案与面试评价 · 文档与知识库问答 · 试卷生成与考试管理 · 邮箱配置与邮件 Skill · 统计看板</p>
+      </div>
+      <div class="card" data-page-node-id="gIJpRmWCUeUrVsDoNezNBB">
+        <div class="t" data-page-node-id="49ZusPqa0vD3WwVseJAHEr"><span class="tag p2" data-page-node-id="GLgjlCcj0jyjuGj2AexE70">范围外</span></div>
+        <p data-page-node-id="RU672P4WoRbdHOwjvKEY9x">招聘渠道投放与效果分析 · 候选人 CRM / Offer 审批 / 背调 / 入职 · 薪酬绩效考勤等完整 HRIS · 自动录用或自动淘汰 · 候选人招聘门户 · 企业级 CI/CD、服务发现、灰度平台 · 多租户 SaaS 计费</p>
+      </div>
+    </div>
+
+    <h3 data-page-node-id="IJl22QYbPQO4vFagguUCl8">3.4 招聘主流程</h3>
+    <p data-page-node-id="NzjLk59wEBZ9gQZ0yvULpM">五步闭环，每一步的产出都是下一步的输入。这条链路决定了数据模型的骨架：JD → 评分标准 → 简历评估 → 面试方案 → 面试记录，五张表以外键串起来。</p>
+
+    <figure data-page-node-id="CWJlzBImN5wJ2UfETZMBCb">
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="招聘主流程" data-page-node-id="U3aRqx7CC5RqwJocYEw3RR">
+        <defs data-page-node-id="LQ7OAuvB1D3VUGZ31gAeyl">
+          <marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" data-page-node-id="2fISa4TaRj5nHr0QXnGMXp">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#5c86b8" data-page-node-id="OYAlOVH7O3KkmiMkOhr6Fn"/>
+          </marker>
+        </defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="CP0lsMTSSMfHShXJPgkXHO">
+          <!-- step boxes -->
+          <g font-size="12.5" data-page-node-id="1woJxa0NTf5mWBQY9UwSzU">
+            <rect x="20" y="40" width="150" height="66" rx="8" fill="#fff" stroke="#c9d8e8" stroke-width="1.2" data-page-node-id="uUIRBHZZcS85N82SmWcvpa"/>
+            <circle cx="40" cy="60" r="10" fill="#003366" data-page-node-id="iRc2WxPEukkVhHbDD14opQ"/><text x="40" y="64" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" data-page-node-id="4eyH0zu1LYB57Rp33NtUtQ">1</text>
+            <text x="58" y="64" fill="#123a63" font-weight="600" data-page-node-id="dTFpxqLd2zcwSg4utc6EDG">岗位需求</text>
+            <text x="34" y="86" fill="#7b8da1" font-size="11" data-page-node-id="fp3BRyE6Dpifu2VfvVna05">名称/地点/薪资/经验</text>
+            <text x="34" y="100" fill="#7b8da1" font-size="11" data-page-node-id="BCKqSbd8spxW4ZfgLAqidM">学历/技能/职责</text>
+
+            <rect x="194" y="40" width="150" height="66" rx="8" fill="#fff" stroke="#c9d8e8" stroke-width="1.2" data-page-node-id="tyaOrK7U4WebDCgvMe0Dyp"/>
+            <circle cx="214" cy="60" r="10" fill="#003366" data-page-node-id="H1xCeEG1ySCMlzgmAUCXUA"/><text x="214" y="64" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" data-page-node-id="8P6u5xvyhSRKhNCrE7TeDc">2</text>
+            <text x="232" y="64" fill="#123a63" font-weight="600" data-page-node-id="vb9rDERzvnEQkqRg6PPHhn">JD 生成</text>
+            <text x="208" y="86" fill="#7b8da1" font-size="11" data-page-node-id="RgpTjrUwPQgJEGwgKbGr6E">流式输出初稿</text>
+            <text x="208" y="100" fill="#7b8da1" font-size="11" data-page-node-id="UQ6KqiDNgu80EMGQayAEUa">HR 编辑后保存</text>
+
+            <rect x="368" y="40" width="150" height="66" rx="8" fill="#fff" stroke="#c9d8e8" stroke-width="1.2" data-page-node-id="clkosaRbqbPFnrFOB2plXK"/>
+            <circle cx="388" cy="60" r="10" fill="#003366" data-page-node-id="kEJfo5N7ZXBmKuZMkySKjV"/><text x="388" y="64" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" data-page-node-id="4replg03wDqhlRs76PstuS">3</text>
+            <text x="406" y="64" fill="#123a63" font-weight="600" data-page-node-id="lI9UUHWJKDpTWzFrirbsuA">评分标准</text>
+            <text x="382" y="86" fill="#7b8da1" font-size="11" data-page-node-id="Gb7IMc9RlWlfPnvXmV4aCC">维度/权重/满分</text>
+            <text x="382" y="100" fill="#7b8da1" font-size="11" data-page-node-id="JQvAcfbnnq0zSrfyBdOZcK">与 JD 绑定</text>
+
+            <rect x="542" y="40" width="150" height="66" rx="8" fill="#fff" stroke="#c9d8e8" stroke-width="1.2" data-page-node-id="gaRljBV7Gc470C5xrkZZCY"/>
+            <circle cx="562" cy="60" r="10" fill="#003366" data-page-node-id="AgJtqCP6iMtxDeAYB2PQ7T"/><text x="562" y="64" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" data-page-node-id="asxcPCV8gF0hXgB3is2cFk">4</text>
+            <text x="580" y="64" fill="#123a63" font-weight="600" data-page-node-id="GYx5wuJ3APfZjJvHl3jecX">简历筛选</text>
+            <text x="556" y="86" fill="#7b8da1" font-size="11" data-page-node-id="vYG1FMWl4DyEbCueRwePCm">批量上传 → 评分</text>
+            <text x="556" y="100" fill="#7b8da1" font-size="11" data-page-node-id="rdKAWGAQY3CD3KUO9lbcVH">理由 + 维度可查</text>
+
+            <rect x="716" y="40" width="150" height="66" rx="8" fill="#fff" stroke="#c9d8e8" stroke-width="1.2" data-page-node-id="6VEUkL7xWhsVLtp7HUlKJM"/>
+            <circle cx="736" cy="60" r="10" fill="#003366" data-page-node-id="bEorIIdumeAevlWqZqt4JF"/><text x="736" y="64" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" data-page-node-id="YqoB9r4UJ8SHv1IDzC9Fvx">5</text>
+            <text x="754" y="64" fill="#123a63" font-weight="600" data-page-node-id="GMe7ndV5iZ5T4NBRXZOcHt">面试方案</text>
+            <text x="730" y="86" fill="#7b8da1" font-size="11" data-page-node-id="xKbALzxlrIinauUBSDdFir">题目/维度/风险点</text>
+            <text x="730" y="100" fill="#7b8da1" font-size="11" data-page-node-id="iFIuooBzYj85KD9ffvfOja">可编辑复用</text>
+          </g>
+
+          <g stroke="#5c86b8" stroke-width="1.4" marker-end="url(#a3)" data-page-node-id="isYjEI0sF89CHqshiQU2Gz">
+            <line x1="170" y1="73" x2="190" y2="73" data-page-node-id="dnka4HqpdVj2WZHhUVgPBD"/><line x1="344" y1="73" x2="364" y2="73" data-page-node-id="mF7MuQohD0Ftk9HGB6Ke4l"/>
+            <line x1="518" y1="73" x2="538" y2="73" data-page-node-id="TNgOrl5WppI0VAuzvIdBsg"/><line x1="692" y1="73" x2="712" y2="73" data-page-node-id="u7xAyya7P9WmflIS0P84rF"/>
+          </g>
+
+          <!-- 产物带 -->
+          <text x="20" y="142" font-size="11.5" fill="#6d7f93" letter-spacing="1" data-page-node-id="s6FXCK4sXtZZCG3AQ4T8o1">落库产物</text>
+          <g font-size="11.5" data-page-node-id="OpvNvgNVbm8gkfB33vmRcx">
+            <rect x="20" y="152" width="150" height="34" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="EFguUUvAwI8lL0k0AWIIdd"/>
+            <text x="95" y="173" text-anchor="middle" fill="#123a63" data-page-node-id="tkCF7q9h5jBlVjzFBD0qxa">parsed_requirements</text>
+            <rect x="194" y="152" width="150" height="34" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="hACufObqNXCiH4nkdDJDmF"/>
+            <text x="269" y="173" text-anchor="middle" fill="#123a63" data-page-node-id="XT8maCT9KsL9eDhSBwAHrK">job_descriptions</text>
+            <rect x="368" y="152" width="150" height="34" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="lqBIKwLn7xiexst6RMqzHx"/>
+            <text x="443" y="173" text-anchor="middle" fill="#123a63" data-page-node-id="MmMJdg6B9DtnrtbdqnuNnN">scoring_criteria</text>
+            <rect x="542" y="152" width="150" height="34" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="CqdsnxGSZLBkCQwFG3DXen"/>
+            <text x="617" y="173" text-anchor="middle" fill="#123a63" data-page-node-id="3xox4yDqvnmcCb8dJeISAE">resume_evaluations</text>
+            <rect x="716" y="152" width="150" height="34" rx="5" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="3tw2V2i2lhcFDOBBDWHYtT"/>
+            <text x="791" y="173" text-anchor="middle" fill="#123a63" data-page-node-id="F4quH89LyJgBYC86cqn4zA">interview_plans</text>
+          </g>
+
+          <!-- 人工确认点 -->
+          <g font-size="11.5" data-page-node-id="AdNJ0CZAC9G8QHEhQMjrFJ">
+            <path d="M269 106 l0 30" stroke="#c8891c" stroke-width="1.2" stroke-dasharray="3 3" data-page-node-id="u1YSGiaBMdG2NTQYV7G4bv"/>
+            <path d="M617 106 l0 30" stroke="#c8891c" stroke-width="1.2" stroke-dasharray="3 3" data-page-node-id="pXLRhiIrtWBk918CRsYA3u"/>
+            <text x="277" y="126" fill="#8a5f0d" data-page-node-id="z7Rc5k0DJ7qq0svyGDI8UY">人工确认</text>
+            <text x="625" y="126" fill="#8a5f0d" data-page-node-id="SObOcwPOZdiyqBwOGksmVP">人工复核</text>
+          </g>
+
+          <!-- 底部 Agent 入口 -->
+          <rect x="20" y="214" width="846" height="60" rx="8" fill="#003366" data-page-node-id="RjBrCszHyQ5fNctwf3EyT9"/>
+          <text x="40" y="240" fill="#fff" font-size="13" font-weight="600" data-page-node-id="cJrgkznEZR39GKSxc8iThf">HR Agent 对话入口</text>
+          <text x="40" y="260" fill="#b9d4ec" font-size="11.5" data-page-node-id="YpDbMiwaGprqtqRh0IG3LJ">一句话触发任一步骤；缺前置条件时返回 missing_fields 与页面入口，不直接失败</text>
+          <text x="838" y="248" text-anchor="end" fill="#8fc0ec" font-size="11.5" font-family="SF Mono, Menlo, monospace" data-page-node-id="ET0iFHesHdI1fF7nMv47MB">POST /agent/graph/chat · SSE</text>
+
+          <g stroke="#8fc0ec" stroke-width="1" stroke-dasharray="4 4" opacity=".55" data-page-node-id="VHZxLyba5BrOJCzHXrsf5B">
+            <line x1="95" y1="214" x2="95" y2="190" data-page-node-id="TDh1nyIsF43ZGxwtaGKFqD"/>
+            <line x1="269" y1="214" x2="269" y2="190" data-page-node-id="QbobDIDxSD4Y3kOoR5dud5"/>
+            <line x1="443" y1="214" x2="443" y2="190" data-page-node-id="R7FgiklMiZyAPtbYXQSAuh"/>
+            <line x1="617" y1="214" x2="617" y2="190" data-page-node-id="KtlWziu81rQ13nIiR3IgY6"/>
+            <line x1="791" y1="214" x2="791" y2="190" data-page-node-id="v6Fh050c5BTfQvG2P3JNz1"/>
+          </g>
+        </g>
+      </svg>
+      <figcaption data-page-node-id="zXPWt9iWlwA8UPOwddZT9J"><b data-page-node-id="yRCWmOHWpoKHBJwykQOvDY">图 3-1</b>　招聘主流程与落库产物。橙色虚线是人工确认点：AI 产出初稿，人确认后才进入下一环。</figcaption>
+    </figure>
+
+    <h3 data-page-node-id="d3peTQz36utbxeXB9kkIiK">3.5 Agent 对话流程</h3>
+    <p data-page-node-id="xDrzAtY2PTBIH4IZOE0tUZ">对话入口不是「聊天框 + 几个按钮」，它需要能判断三件事：<strong data-page-node-id="GiHjN9RTcHpACLxTkQZrjB">这是闲聊还是任务</strong>、<strong data-page-node-id="hpGWNCBbDKmqLulyIf7Xhg">任务缺什么</strong>、<strong data-page-node-id="IFHMeO7GWpQ1zfo3bb3moE">该走哪条链</strong>。判断结果直接决定响应结构。</p>
+    <div class="flow" data-page-node-id="xIIE5mzcuYaVubDpoC2VjW">
+      <div class="st" data-page-node-id="CDKw38aXVbnC8s1eB7sgbM"><em data-page-node-id="61OTSXZksAdB2SRIXXVsAb">01</em><b data-page-node-id="q3Mm9XkYHndeQIAbHoCP1l">归一化附件</b><span data-page-node-id="sEtgq6SmWD8cXwzVJixfSI">文件名、扩展名、大小标准化，供意图判断使用</span></div>
+      <div class="st" data-page-node-id="mIq4J51Wjlzf2PU58yi2Oi"><em data-page-node-id="BnNHXdwvLXjCvC6Qe5gmCO">02</em><b data-page-node-id="hJVdxTPaHpGAlMcSrTNoLm">识别意图</b><span data-page-node-id="uGNk7GDRaECMHq0ogg0oDn">规则快通道优先，未命中再走观测型 ReAct</span></div>
+      <div class="st" data-page-node-id="vbLDz9y936DcRCz6NTg3DI"><em data-page-node-id="f6mbdPiY4vm20CxhWkTivd">03</em><b data-page-node-id="VOu9YECoep51j1OzPZp3eS">判断动作</b><span data-page-node-id="i3BJSBXgKp1jPAO0HQLNSl">chat / use_tool / ask_user 三选一</span></div>
+      <div class="st" data-page-node-id="YPS56FiMRtqzjXNHWF22Ba"><em data-page-node-id="Qzd29QSFsDmrnt4KI66L8M">04</em><b data-page-node-id="FZyC9TvJwbnwMl7FxJBCPG">调度工具</b><span data-page-node-id="jIe9vvbN0z8mDrBzN2JeGL">只调用 tool_registry 声明过的能力</span></div>
+      <div class="st" data-page-node-id="Efr2w1SOYVBBVfq3BoK6Vb"><em data-page-node-id="k83q9H91uy1ZoVMpRHB79H">05</em><b data-page-node-id="TQQyEPxh26rX6FPPgHc6ZH">确认后执行</b><span data-page-node-id="eNsplnQmjFK2snRPa02rQr">写操作在确定性子图里完成</span></div>
+      <div class="st" data-page-node-id="PsNI1ZBdYKK2XnEGAKBAzk"><em data-page-node-id="Ffh4lzEJYRNeT9pr1grXbZ">06</em><b data-page-node-id="SmQKCSIcKtTnLh2P8WocJM">流式回传</b><span data-page-node-id="5AEjbbUPdBsUAD4WznHHpP">progress / delta / artifact / final</span></div>
+    </div>
+
+    <h4 data-page-node-id="0j3n1gcP97psJU0QrPuTB4">响应契约</h4>
+    <div class="tw" data-page-node-id="rSAs8QwuXyhWiOSpNtiQyX">
+      <table data-page-node-id="wjWCyjZVGVvUnyeZwhIWIC">
+        <thead data-page-node-id="Yez42QwopCqgmEm6TuEVsW"><tr data-page-node-id="SApCTd8yftNbB7HaHY1Yjy"><th style="width:210px" data-page-node-id="CbntNenHESRyly3jPlGlS1">字段</th><th data-page-node-id="m3uXErr5uEMikiDLvZDl7E">含义</th></tr></thead>
+        <tbody data-page-node-id="kdqoyDaMq8ItdU0LE0zc7l">
+          <tr data-page-node-id="OIoFZi7Hh0OsCpEEKCKK2M"><td class="k" data-page-node-id="ITp1XPi4ptO4PBivEZPXeg">message</td><td data-page-node-id="IDVTYA5GxPMHO8g4Ic0UzN">给用户看的自然语言回复</td></tr>
+          <tr data-page-node-id="TBqO47iko549LmeNYicMBT"><td class="k" data-page-node-id="cjgD1pDgnnLq7FYsOAA3ko">intent / route</td><td data-page-node-id="ZGqe83GsdNgAbER3VbOpKI">识别到的意图，以及建议跳转的业务页面</td></tr>
+          <tr data-page-node-id="UbMbBAy4oeViUBwyNBAgdV"><td class="k" data-page-node-id="P5bfZZrhsHMQKFjfecsjBZ">steps</td><td data-page-node-id="er2Yd5puqr5h7GQPPMij0r">执行步骤列表，含 id、标题、状态、工具名</td></tr>
+          <tr data-page-node-id="RY63yo41uIxEWV2ZbICQZo"><td class="k" data-page-node-id="4IfGLhGH3xmXNgpTvm7ihE">artifacts</td><td data-page-node-id="F59DRvXVAsYHztwe6zOyqM">结构化产物：JD、需求、评分结果、面试方案、试卷</td></tr>
+          <tr data-page-node-id="TMdFkfXv71R0ggtjFBmxFa"><td class="k" data-page-node-id="TF05TvS85eEgsa1xCCzAZX">suggestions</td><td data-page-node-id="bsX05mYGl3XCghYwSGGBwy">下一步建议</td></tr>
+          <tr data-page-node-id="f239tshdpNIJhRc9RPAsnY"><td class="k" data-page-node-id="pLxGHSLYioRBIfa6UVitda">requires_confirmation</td><td data-page-node-id="Rn9lwi43tFgNI8fAVGGEZd">是否需要用户确认后才继续</td></tr>
+          <tr data-page-node-id="i7WCBHuwRCA0MC1SBbAjn3"><td class="k" data-page-node-id="RMErjfflnYXj7BOgaMaVCO">missing_fields</td><td data-page-node-id="Y4Kph0U5OSxDlnUYB9Rf6E">缺失的前置条件，配合表单回填</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" data-page-node-id="GGVeYia7ztONRFpp2wmYfL">
+      <span class="h" data-page-node-id="hiAkdYs91ntLDtFjYBl850">设计取舍</span>
+      <p data-page-node-id="4MEpXhz6ZQKUCH2VtyCsB4">这套契约从手写编排时代就定下来了，迁移到 LangGraph 时<strong data-page-node-id="T7G4oXpAN5OVvPsOlACKRf">一字未改</strong>。原因是评测用例对 <code data-page-node-id="1YXPgzYmmUCzzrtakrGMvF">step.id</code> 与 <code data-page-node-id="rLOuVLbGCDe927ibSl5b8V">artifact.type</code> 有硬断言，且前端事件解析依赖字段名。编排引擎可以换，对外契约不能换。</p>
+    </div>
+
+    <h3 data-page-node-id="TA8DDD2O8FIYHl12Rrch7q">3.6 功能优先级</h3>
+    <div class="tw" data-page-node-id="9NeSJMGIEnefegNBlCotnE">
+      <table data-page-node-id="OFe6IOnUW8WORhAiTC8sDN">
+        <thead data-page-node-id="hKNZAhYVFjMovhaRbV7kPy"><tr data-page-node-id="OpauVXupyi52RFv5FAkQtc"><th style="width:80px" data-page-node-id="nhmVDaymlZ9IG16mnhEBLB">优先级</th><th style="width:340px" data-page-node-id="i98HOwrSaltEWcn3h26mzS">功能</th><th data-page-node-id="L6f9tpHtx689dENmDA6vv8">验收重点</th></tr></thead>
+        <tbody data-page-node-id="SLbwp4eDDmi961kakU3LcI">
+          <tr data-page-node-id="qXiKrCIrIiuPkxD74jAiMn"><td data-page-node-id="nDjl0jHh2bOd5O2ZBYwJB9"><span class="tag p0" data-page-node-id="OHcILsgJ0QnWAM8KcvKrk7">P0</span></td><td data-page-node-id="D6q2ZOy5HffxdgUd2izukP">登录鉴权、用户权限、健康检查</td><td data-page-node-id="U4nYApvEYeD7RhXWOdFdik">用户能安全进入，敏感接口受保护</td></tr>
+          <tr data-page-node-id="AGk7i0I4j7MkEKaJZlcHJE"><td data-page-node-id="K64Tf4PJAag0mBfTTbVi6M"><span class="tag p0" data-page-node-id="aXHrZNfAPgeegNhGTGsPCB">P0</span></td><td data-page-node-id="DmkVLjv6HGZoEbKaWHWEDk">JD、评分标准、简历筛选、面试方案</td><td data-page-node-id="8iD6AXxihB5FQMdF3rRGPJ">招聘主流程可闭环</td></tr>
+          <tr data-page-node-id="MlC0Z39YeHa4xcxTKhUdvK"><td data-page-node-id="h7jHXAGhmZd0GFfadwROC6"><span class="tag p0" data-page-node-id="iWGlu4QWCzKk1X83ffvNl7">P0</span></td><td data-page-node-id="vXBlyYdI3MC2GwqQGA6P8t">文档上传、知识库问答</td><td data-page-node-id="fg9TiyTLUsSQsJ99XMapMK">企业资料可检索问答</td></tr>
+          <tr data-page-node-id="5WdA3U6nXSbOqOonwEVwGl"><td data-page-node-id="F1IjOVcN1hNHE5QeAbK73M"><span class="tag p0" data-page-node-id="mNSwGVvk4cO1wGSdSjWKhc">P0</span></td><td data-page-node-id="E8nXQUYRHbgi26dHAL40fc">试卷生成、考试管理、结果查看</td><td data-page-node-id="udjV5eD0i99cge2GfAMeEA">培训考试可闭环</td></tr>
+          <tr data-page-node-id="CfYC7PR8BxiiNeSbkWZz99"><td data-page-node-id="IInVxNZ3bQDIYGP249A2Zx"><span class="tag p1" data-page-node-id="h51jyVXxdEBfCXc3bBAR37">P1</span></td><td data-page-node-id="2yHnvShLJtj7x4DyQOp6os">HR Agent 对话编排与流式响应</td><td data-page-node-id="2HEAAP52u8BsX1CdmJubhh">自然语言可触发或引导业务流程</td></tr>
+          <tr data-page-node-id="oObYYv559o9mzKCLmjmR8E"><td data-page-node-id="lxXtCCMbc93fzn87xhiLpc"><span class="tag p1" data-page-node-id="opewFMJSP77Ze4N3COKHn1">P1</span></td><td data-page-node-id="De8RF2y5z44Bgf0kwgVXny">邮箱配置与邮件 Skill</td><td data-page-node-id="LCUIYx3lXrLm0TWS9FDoqS">管理员可配置，通知必须确认</td></tr>
+          <tr data-page-node-id="IASiZSsI76YfY5lVd04CCP"><td data-page-node-id="7d8FzbUw2lcpA9n7zE4PIX"><span class="tag p1" data-page-node-id="7CLd1NDbR7sXWqXl9RWAeu">P1</span></td><td data-page-node-id="pkWlnKz6zfIZGlaiGEMi1k">统计看板</td><td data-page-node-id="AsMVRSCHCf7ujAamoaKR4n">管理者可查看运营概览</td></tr>
+          <tr data-page-node-id="3CDvDCVJXEUdujulI0BETI"><td data-page-node-id="ZzIll9gH6G3yy6nEtyAlfH"><span class="tag p2" data-page-node-id="UwhbFUPXGOEEPNuNu0qWIK">P2</span></td><td data-page-node-id="cTLsVYpBpGjrKkn1ennzCO">渠道集成、复杂审批、更多自动化</td><td data-page-node-id="arZ4bhYU8AtWc1593OVSdm">后续迭代</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="eW3YUsK72or0pcacrCs3HE">3.7 非功能需求</h3>
+    <div class="tw" data-page-node-id="lCblN3FApW2XklQUahfQfG">
+      <table data-page-node-id="SJvH4944sCz1pbCCgzJwCh">
+        <thead data-page-node-id="KbDtHUeI4H6hCXwIwaNrnJ"><tr data-page-node-id="ea2r0CvTieprgla93uFkEq"><th style="width:110px" data-page-node-id="Cfi8MZsUBYNl1FtMqnnZcL">维度</th><th data-page-node-id="5AFhSBkQSOKlfxiKAD8fFS">要求</th></tr></thead>
+        <tbody data-page-node-id="EUF716XybCEP33CpY66FRG">
+          <tr data-page-node-id="vxCx93QJ6i55RDiYWGW5bL"><td class="k" data-page-node-id="nsy8mFB3OQrSWhGpetk44W">性能</td><td data-page-node-id="zGhJHRI1C24rnYHVRMBqX6">列表查询 3 秒内返回；登录与鉴权 2 秒内；长文本生成 5 秒内出现首个流式片段；文件上传显示进度</td></tr>
+          <tr data-page-node-id="pwUANE4SjgN7oOfIU3Pt9P"><td class="k" data-page-node-id="Hdk2XFWY6lejD18aBpiosf">安全</td><td data-page-node-id="1pdF6ii1Ac7h3XlWXJYuN3">密码 bcrypt 哈希；JWT Bearer 鉴权；生产必须替换默认 SECRET_KEY / 数据库密码 / API Key；上传限制格式与大小（默认 10MB）</td></tr>
+          <tr data-page-node-id="VtWZWEy29Zm064Wlrz2Rh2"><td class="k" data-page-node-id="aXOA4see2ups1s3VZ7CbU9">可用性</td><td data-page-node-id="BcW3YIsUx0Yxy0ElAsvqjD">菜单按业务域组织；表单、权限、上传、生成失败均有明确提示；长任务必须有进度反馈</td></tr>
+          <tr data-page-node-id="Fzt92p7vNBZO7Cq9KYa6BL"><td class="k" data-page-node-id="Hoc2zOYXmufuEGHHnBlZ6K">可维护</td><td data-page-node-id="xa9lTGq39ulIj6BWkuJrPK">后端按 endpoint / schema / model / service 分层；前端 API 统一在 <code data-page-node-id="U1pXaoveUZzEpmfyfK8E3V">src/api</code>；新增功能需补接口、服务、页面、测试</td></tr>
+          <tr data-page-node-id="iFZRaGjeLlI9Ky7xLnnFa8"><td class="k" data-page-node-id="ncC1NKgNZSZ3gCrQ79Kj2i">合规</td><td data-page-node-id="LZsmgfO7Q0OtgI8gyXKmK7">AI 输出仅作辅助建议；简历属敏感个人信息，需明确访问权限与保存期限；对外通知不得绕过人工确认</td></tr>
+          <tr data-page-node-id="2Fr7TZaxmFt87BUJNq2Y2k"><td class="k" data-page-node-id="XYbvsqNDjI6j8PKTvWbits">可观测</td><td data-page-node-id="KfOlz5nAeIsCuZLQFLsNuO">记录启动、数据库初始化、外部服务失败、权限失败、文件解析失败；企业生产化阶段补集中日志与链路追踪</td></tr>
+          <tr data-page-node-id="7iPt1Sms2AZoLu0iZyGdEb"><td class="k" data-page-node-id="OJUkMjs6GlxzgrzA8Zq2T4">可恢复</td><td data-page-node-id="bL4dbP2wIpg4di8sXEK0uG">数据库定期备份；上传目录持久化；上线前保留旧版本可回滚</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section id="s4" data-page-node-id="leOriah0kHu9HoOS3sm2R4">
+    <h2 data-page-node-id="8ChVcDfT1tvBqMnWAdRCfz"><span class="no" data-page-node-id="g9dGl2fdWAx1Zqf6yF1YRs">04</span>技术选型</h2>
+    <div class="h2-rule" data-page-node-id="fSZQ1aQlo4T61fgHMLdIWB"></div>
+
+    <p data-page-node-id="kM5W7rCxUcaLDFcdqkzqZE">本节给结论，详细论证与对比见《02 技术栈与选型思路》。选型不是挑最新最热的组件，而是<strong data-page-node-id="VTGB96euDuAV0M0RxgxJtC">在「团队能维护」与「场景撑得住」之间找交点</strong>。</p>
+
+    <h3 data-page-node-id="P7T0v4cTch22qG9A7PCLtL">4.1 五条原则</h3>
+    <div class="grid g3" data-page-node-id="XmDs9drU7TGG8SuBiC5IpO">
+      <div class="card" data-page-node-id="V4Vrm1sUxEIedRPoUGZUC2"><div class="t" data-page-node-id="D3Ai3IMGTMBdK63j8Dsgk3"><span class="idx" data-page-node-id="4sioi6gAGl1ONYF6miurSW">01</span>业务优先</div><p data-page-node-id="8VB2w2ulx4D6ZgxxHF7Ocg">按 HR 实际工作流组织系统，而不是为了展示 AI 能力堆功能。</p></div>
+      <div class="card" data-page-node-id="asjPgrhoOSGljWN7yGkifL"><div class="t" data-page-node-id="wl4tCq8QvFA98cfLhXHG8Y"><span class="idx" data-page-node-id="SIaqhTdtWhsdnm1TSlsStO">02</span>受控自动化</div><p data-page-node-id="9HYksYvdJDBr80QDQbqMPL">AI 负责生成、分析、路由；最终决策与对外动作保留人工。</p></div>
+      <div class="card" data-page-node-id="AhYfTBYavtuOD2LwzrHlrY"><div class="t" data-page-node-id="uW01uJ2ZoUbOx7pMOHIO3r"><span class="idx" data-page-node-id="y8Jmrkn5mMY8XIfTHMpDFf">03</span>分层解耦</div><p data-page-node-id="AZT9n89mdQIDNiTOI2Y1K6">前端、API、Service、Model、外部 AI 服务边界清晰，任一环可替换。</p></div>
+      <div class="card" data-page-node-id="jBMUTAc8SFD2K9h7TiIuEB"><div class="t" data-page-node-id="E9tRimGu4hBUWHwI2j3UpW"><span class="idx" data-page-node-id="7diEKbBTpjXQVkDQTnqjFl">04</span>可追踪</div><p data-page-node-id="WFso8AM6zPhfgOAelc9jn1">关键产物落结构化表，可查询、复用、删除，不留在会话里。</p></div>
+      <div class="card" data-page-node-id="GeKW9hF6kfTFVwzPHTLosa"><div class="t" data-page-node-id="xym8IHwcLWSJdWFmWMj67q"><span class="idx" data-page-node-id="AbPx7NktTpOpyFuQpTTifT">05</span>可回退</div><p data-page-node-id="uXpu7zyxyh8AXqXieU3xei">每个 AI 环节失败都有降级路径：模型不可用退规则，Rerank 失败退原排序。</p></div>
+      <div class="card flat" data-page-node-id="jVs5n1jWyBYMdYVgvW8mof"><div class="t" data-page-node-id="NTipmCQbXu2rGEueIDAeAs">隐性的第六条</div><p data-page-node-id="Pph69r6NBCaawCiikhuJRe">不引入团队没有运维能力的中间件。少一个组件，就少一类半夜报警。</p></div>
+    </div>
+
+    <h3 data-page-node-id="FVHzYoUZtBRbkJ6SgHEPcz">4.2 技术栈全景</h3>
+    <figure data-page-node-id="e8wAMwAv3D0SMY0GX9ee7N">
+      <svg viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="技术栈分层架构" data-page-node-id="y1bcrHMHmPAlyiy07kc680">
+        <defs data-page-node-id="jgBbfa0QPL6LnAV9eWSFjr">
+          <marker id="a4" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto" data-page-node-id="G1nT1EK4b7tDMM7oy9wEUc">
+            <path d="M0,0 L8,4 L0,8 z" fill="#9db2c8" data-page-node-id="jmYD8OOMy9NJHa53qQgmrH"/>
+          </marker>
+        </defs>
+        <g font-family="PingFang SC, Microsoft YaHei, sans-serif" data-page-node-id="WHVMUV00MbF1D9jLIirsbd">
+          <!-- 用户层 -->
+          <g font-size="12" data-page-node-id="tgRrFbHGZGS23HHprPodQH">
+            <rect x="24" y="20" width="196" height="46" rx="6" fill="#fff" stroke="#d5e0ec" data-page-node-id="uAMWUNIO5fgq2jE25MeeUr"/>
+            <text x="122" y="48" text-anchor="middle" fill="#123a63" data-page-node-id="cOSloB8yjr85iwHua10Oq0">HR 负责人</text>
+            <rect x="240" y="20" width="196" height="46" rx="6" fill="#fff" stroke="#d5e0ec" data-page-node-id="yQ4d4DRz72xAbpCA9ygU8g"/>
+            <text x="338" y="48" text-anchor="middle" fill="#123a63" data-page-node-id="MuJrYtYDLniHYzjzfMxI6g">HR 专员</text>
+            <rect x="456" y="20" width="196" height="46" rx="6" fill="#fff" stroke="#d5e0ec" data-page-node-id="oHPhXhcX5PE1EcUUclLpsz"/>
+            <text x="554" y="48" text-anchor="middle" fill="#123a63" data-page-node-id="n7zYyYEk4zs5KHCFEyAB5G">培训管理员</text>
+            <rect x="672" y="20" width="196" height="46" rx="6" fill="#fff" stroke="#d5e0ec" data-page-node-id="5paBTZDbPoRX584Vrhbd9E"/>
+            <text x="770" y="48" text-anchor="middle" fill="#123a63" data-page-node-id="EgnSNulBtHPy2uBFqkGVm8">系统管理员</text>
+          </g>
+
+          <g stroke="#9db2c8" stroke-width="1.1" marker-end="url(#a4)" data-page-node-id="7Dqr82f8K4CunUQ7gdV4SK">
+            <line x1="450" y1="66" x2="450" y2="90" data-page-node-id="MPhUQhfXmNlrKch14jGGGd"/>
+          </g>
+
+          <!-- 前端 -->
+          <rect x="24" y="94" width="844" height="52" rx="7" fill="#eef5fd" stroke="#c9ddf3" data-page-node-id="cca3G3wxYIPXqSAgXnn4bE"/>
+          <text x="44" y="116" fill="#003366" font-size="12" font-weight="700" data-page-node-id="28Tha210CWhUTwvr5wAoO6">前端　Vue 3 + Vite 7</text>
+          <text x="44" y="134" fill="#4a6b8a" font-size="11.5" data-page-node-id="Q0JN3zwp4v7AHq5p2E3o6Y">Element Plus · Pinia · Vue Router · ECharts · Axios · SSE 消费</text>
+          <text x="700" y="134" fill="#6f8dab" font-size="11" data-page-node-id="5CGv7mwgrtJxgFcXSISCnv">路由守卫 / Token 注入</text>
+
+          <g stroke="#9db2c8" stroke-width="1.1" marker-end="url(#a4)" data-page-node-id="DOlyDAO4EG8LZCS3WHQcto">
+            <line x1="450" y1="146" x2="450" y2="170" data-page-node-id="NQFmnyL69HlqL006E9snQP"/>
+          </g>
+
+          <!-- API -->
+          <rect x="24" y="174" width="844" height="52" rx="7" fill="#e8eef6" stroke="#c9d8e8" data-page-node-id="EFOCKrmExytjbKJC2gfzf2"/>
+          <text x="44" y="196" fill="#003366" font-size="12" font-weight="700" data-page-node-id="gqD0n171jDmT6qgBrcN2sn">API 层　FastAPI 0.121</text>
+          <text x="44" y="214" fill="#4a6b8a" font-size="11.5" data-page-node-id="MQdH1QtidCTSmmsSAzhaEZ">REST + SSE · OAuth2 Bearer / JWT · RBAC 依赖注入 · 统一异常处理 · 20 个路由模块</text>
+
+          <g stroke="#9db2c8" stroke-width="1.1" marker-end="url(#a4)" data-page-node-id="PRmo2nOZ3VArfInhBblbSQ">
+            <line x1="450" y1="226" x2="450" y2="250" data-page-node-id="DQKCKWMO9hihM7HiCC87fL"/>
+          </g>
+
+          <!-- 编排 / 业务 / 扩展 -->
+          <g font-size="11.5" data-page-node-id="Mb3wsa4BJwj20xPxvBMvju">
+            <rect x="24" y="254" width="300" height="118" rx="7" fill="#003366" data-page-node-id="CfyRi8vOfGiFYh1fDQkMRh"/>
+            <text x="44" y="278" fill="#fff" font-size="12.5" font-weight="700" data-page-node-id="icoH1YBAGGMHzDyhCVauhp">Agent 编排　LangGraph 1.0</text>
+            <text x="44" y="300" fill="#c9dcef" data-page-node-id="17fPAqosbgcqkqaXh057Tl">主图路由 → 13 条意图分支</text>
+            <text x="44" y="320" fill="#c9dcef" data-page-node-id="A3WeXURldpGFrZz6bAfiNJ">interrupt 人工确认 + 断点恢复</text>
+            <text x="44" y="340" fill="#c9dcef" data-page-node-id="ANgr5cn5ue2bLzb5ufKCrq">AsyncPostgresSaver 状态持久化</text>
+            <text x="44" y="360" fill="#8fc0ec" font-size="11" data-page-node-id="UrQTpezB6wsH3AiTyw6FBY">create_agent · RouterDecision</text>
+
+            <rect x="344" y="254" width="272" height="118" rx="7" fill="#fff" stroke="#c9d8e8" data-page-node-id="d0ELwUFxfsqhI285qYTAS1"/>
+            <text x="364" y="278" fill="#003366" font-size="12.5" font-weight="700" data-page-node-id="w5H76jvxFlQ71EmV87Uuwb">业务服务层</text>
+            <text x="364" y="300" fill="#4a6b8a" data-page-node-id="DvaTM3W4MvibsjrphOqkOl">招聘：JD / 评分 / 简历 / 面试</text>
+            <text x="364" y="320" fill="#4a6b8a" data-page-node-id="EDRUM3b6AmLEYuh09Yw44a">培训：试卷 / 考试 / 阅卷</text>
+            <text x="364" y="340" fill="#4a6b8a" data-page-node-id="1hwsfhZVCapwsZNa2EiEaD">知识：文档 / 切片 / 问答</text>
+            <text x="364" y="360" fill="#4a6b8a" data-page-node-id="NzoSUI3sMVSjYD6c4eQHBy">评价：转写 / 配对 / 算分</text>
+
+            <rect x="636" y="254" width="232" height="118" rx="7" fill="#fff" stroke="#c9d8e8" data-page-node-id="OGA8jb6aDFl3iRGNafqgSU"/>
+            <text x="656" y="278" fill="#003366" font-size="12.5" font-weight="700" data-page-node-id="gHvEVmGPumR6406MW9cRqP">扩展能力</text>
+            <text x="656" y="300" fill="#4a6b8a" data-page-node-id="IrD3CFFABGuoQ6MpkaMuxo">Skill 插件系统（draft/send）</text>
+            <text x="656" y="320" fill="#4a6b8a" data-page-node-id="5H732Cp3iqQ5ykcLGRXe4i">Dify 工作流（JD / 简历 / 试卷）</text>
+            <text x="656" y="340" fill="#4a6b8a" data-page-node-id="y1uD0GGDiQU75IZLFDNdXS">RAG + Rerank（gte-rerank-v2）</text>
+            <text x="656" y="360" fill="#4a6b8a" data-page-node-id="sVkWZ1W2GBmxsBFQGVxDIb">规则文件驱动评分</text>
+          </g>
+
+          <g stroke="#9db2c8" stroke-width="1.1" marker-end="url(#a4)" data-page-node-id="rdw4aNKJWEKof1X6e8Rog6">
+            <line x1="450" y1="372" x2="450" y2="398" data-page-node-id="rvD9CaOrgLd2BSh4CMxnQC"/>
+          </g>
+
+          <!-- 数据与外部 -->
+          <g font-size="11" data-page-node-id="vjxZ0I7nQCOLiEvGifvEyk">
+            <rect x="24" y="402" width="278" height="56" rx="6" fill="#f6f9fc" stroke="#d5e0ec" data-page-node-id="R5VWk0ANHjDCkRLRK49FAI"/>
+            <text x="40" y="424" fill="#123a63" font-size="12" font-weight="600" data-page-node-id="X7W4kAF6hQncVCOfBmUuCT">PostgreSQL + pgvector</text>
+            <text x="40" y="443" fill="#6d7f93" data-page-node-id="I5KTwqueb6CmvgQW8YjRig">业务表 · 向量索引 · checkpoint 三表</text>
+
+            <rect x="316" y="402" width="150" height="56" rx="6" fill="#f6f9fc" stroke="#d5e0ec" data-page-node-id="fnNBs1NQj8YKGQqZabTLbI"/>
+            <text x="332" y="424" fill="#123a63" font-size="12" font-weight="600" data-page-node-id="P3B67VecosknJNpzVSdMf5">uploads</text>
+            <text x="332" y="443" fill="#6d7f93" data-page-node-id="OrnKy6sgx1B662G5cbVFtw">原始文件持久化</text>
+
+            <rect x="480" y="402" width="196" height="56" rx="6" fill="#f6f9fc" stroke="#d5e0ec" data-page-node-id="eLKj6J9gyAw7SuaDdGIcmp"/>
+            <text x="496" y="424" fill="#123a63" font-size="12" font-weight="600" data-page-node-id="QIhN4lmU5EcmNAm0hYHpFy">Qwen / DashScope</text>
+            <text x="496" y="443" fill="#6d7f93" font-size="9.6" data-page-node-id="sOoijCIUPOMYurGmjI3FvP">qwen3.8-flash · qwen3.7-emb · ASR</text>
+
+            <rect x="690" y="402" width="178" height="56" rx="6" fill="#f6f9fc" stroke="#d5e0ec" data-page-node-id="WG57BzDUuLCAdMJrHngvNq"/>
+            <text x="706" y="424" fill="#123a63" font-size="12" font-weight="600" data-page-node-id="eGkft6Eqk6hZK2kUtHhfCl">会议 / 邮箱</text>
+            <text x="706" y="443" fill="#6d7f93" data-page-node-id="n9k218VNHsEzZTAdhPcCiZ">腾讯会议 MCP · SMTP/IMAP</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption data-page-node-id="3CNby2sAkqYyWaBRt9GQBi"><b data-page-node-id="aWzxJdi8UMTLL7SG4dzjY5">图 4-1</b>　技术栈分层。Agent 编排与业务服务解耦：图只负责「走到哪个节点」，节点调用 AgentService 门面，业务函数原样复用。</figcaption>
+    </figure>
+
+    <h3 data-page-node-id="R3YDHUbgH2afxaX3MNmh4a">4.3 选型清单</h3>
+    <div class="tw" data-page-node-id="HVGn2C8RJg0oBJAEhTis5y">
+      <table data-page-node-id="cXBZwZ6f9KtCI6ZKZbAym4">
+        <thead data-page-node-id="J91mYiBk0Tku8T3aU5eYTf"><tr data-page-node-id="2xnFEczs8bqYbKTdFlKEtd"><th style="width:110px" data-page-node-id="YSNA4QjEFk50gF4CB5EIob">层级</th><th style="width:230px" data-page-node-id="1X9Q2GbsANI0xkxlJcuz6K">技术</th><th data-page-node-id="fAVdACt4vaYwkCszyOSD7G">为什么选它</th></tr></thead>
+        <tbody data-page-node-id="Gw6sNcPWJbb3kevOtDCS0t">
+          <tr data-page-node-id="6Xr7SIMCU6QxkxFongZ2m1"><td class="k" data-page-node-id="j2CeQ0GwcI3VQnXbs3E4fl">前端框架</td><td data-page-node-id="imi4nG53BZt7plEWUDBnyo">Vue 3 + Composition API + Vite 7</td><td data-page-node-id="5jX4Z28re7jHi7PxbZPoq1">上手成本低，Element Plus 组件覆盖后台场景；Vite 冷启动快，适合多人并行开发</td></tr>
+          <tr data-page-node-id="OKTV57cfKVHE7sKoZHtFAv"><td class="k" data-page-node-id="RiNBkw1rEIQt1MppmRVFeP">前端状态</td><td data-page-node-id="qmLDAvRsBlQsydDUGD4MRX">Pinia + Vue Router</td><td data-page-node-id="7FWT8pIwjDVC4iOMS6lIIV">只存登录态与用户信息，业务状态以接口返回为准，避免前端成为第二数据源</td></tr>
+          <tr data-page-node-id="imn9DsC3URLrkfykQLn205"><td class="k" data-page-node-id="0uPoRTGEPUrxkYvffEmuxH">后端框架</td><td data-page-node-id="XLISdd5nGCylmZPh7iyDlc">FastAPI 0.121 + Pydantic 2</td><td data-page-node-id="twimBZnCKkRuLwg3ahZC68">原生 async、自动 OpenAPI 文档、依赖注入天然适配 JWT/RBAC；SSE 实现简单</td></tr>
+          <tr data-page-node-id="4uGosHHpxKp9pv1HLN7ulU"><td class="k" data-page-node-id="wCOCtfMaXrj6cj3DAfACPB">ORM</td><td data-page-node-id="8BsVuOjigwsyU4wtbdRyDj">SQLAlchemy 2.0 Async + asyncpg</td><td data-page-node-id="yTABh4u9mwZ96vcpcGo1rq">全异步链路，与 FastAPI 事件循环一致；Alembic 管迁移</td></tr>
+          <tr data-page-node-id="aSirQEZBICTF78GeMTdrAe"><td class="k" data-page-node-id="4COT1NrGDMBuKEZ8L2dy1B">Agent 编排</td><td data-page-node-id="pgCWsHqGGHmpB5PIBeiG5X">LangGraph 1.0.10</td><td data-page-node-id="FwEvpdNMZ6h92cZqMDEXwq">需要的是<strong data-page-node-id="QGBScBd1xM35D4IcK6Ph9a">状态图 + 断点续跑 + 人工中断</strong>，不是链式调用。LangGraph 把这三件事做成原语</td></tr>
+          <tr data-page-node-id="ENGbyblckxmFAA2hENt1DX"><td class="k" data-page-node-id="HmsUGxYMoNcLNQTUctlRcB">模型接入</td><td data-page-node-id="KMrEOKaoRrBvGEBqGqFCEQ">langchain-openai + DashScope 兼容端点</td><td data-page-node-id="kyaPdQvAi1NN97tzrxqG7u">Qwen 提供 OpenAI 兼容接口，可直接用 ChatOpenAI，不必写私有 SDK 适配层</td></tr>
+          <tr data-page-node-id="GZyNJslCCRJQ1MdTVD9QkM"><td class="k" data-page-node-id="30DbupEE7911ZOX8D3u3NB">数据库</td><td data-page-node-id="YZjiFirO68VGY5f57jHYit">PostgreSQL + pgvector 0.3.6</td><td data-page-node-id="dGNudDssgZZBoyrNCyZcvW">业务表、向量、图状态共用一套库；少一个中间件就少一套备份与监控</td></tr>
+          <tr data-page-node-id="5rrYBO42JnXEEXPjyNfW39"><td class="k" data-page-node-id="xytQa6E7UbbC6mz5i2mKRR">工作流</td><td data-page-node-id="hODpNaOuNSobyLUzAq511Y">Dify（JD / 简历 / 试卷）</td><td data-page-node-id="l1CoUgkmrq4BKqBSMzblvF">提示词与参数调整频繁，放在 Dify 可让业务侧自己改，不必每次发版</td></tr>
+          <tr data-page-node-id="3LGhHZJkhlWXp8eoF52Utn"><td class="k" data-page-node-id="xZDtnq2pH3ULJh3qHm1GEF">流式协议</td><td data-page-node-id="Ae5FPTPCA4mDMno9oSNJCB">SSE</td><td data-page-node-id="CEkVkst3wnb0SSx9RLVIXb">单向推送足够，比 WebSocket 省掉连接管理与心跳；HTTP 层兼容代理和网关</td></tr>
+          <tr data-page-node-id="y6Jq4pX1XbdrBXeH48stpW"><td class="k" data-page-node-id="JfUirz3a1E5PipkGn4UxZJ">测试</td><td data-page-node-id="vtwjZ1aWr6JBb5XsrPXnQE">pytest + 自建评测集</td><td data-page-node-id="4JsL4uza7TdqdICloDqQLB">单测守契约，评测集守行为。Agent 链路的回归不能靠断言字符串</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="zH2J76cRGh6VqKn6wQzlfM">4.4 四个关键取舍</h3>
+    <div class="grid g2" data-page-node-id="nbmUW2Smhn2ECfTQ9PUyFR">
+      <div class="card" data-page-node-id="WjFmAoUOgMqrruwYBzwy3Y">
+        <div class="t" data-page-node-id="C2Z9Ezxfk6FOjWzDPoB86W">LangGraph vs 手写编排</div>
+        <p data-page-node-id="m24lkuGjZJz5fks6QWYCSG"><strong data-page-node-id="95KtKujw2jFvYBFiNBpmyK">选手写：</strong>5800 行 service 加 3 个 mixin，意图、工具、确认、SSE 全揉在一起。<strong data-page-node-id="1ztIuRrRxy9r3uBwv7PODA">选 LangGraph：</strong>把状态、路由、中断、事件四件事交给框架，业务函数原样保留。代价是多一层抽象与一个 checkpointer 依赖。</p>
+      </div>
+      <div class="card" data-page-node-id="smmCeFan171sHKEK0kXdHq">
+        <div class="t" data-page-node-id="ElEkjCdJIHmO9DqNutRLxq">pgvector vs 专用向量库</div>
+        <p data-page-node-id="JLj4Nazn0tmgWHVYoOJDSt"><strong data-page-node-id="ktaPhT08Kksy6wtUkKO9ug">选 pgvector：</strong>数据量在十万级、检索与业务表强关联（按知识库过滤、按用户隔离），SQL 里一个 JOIN 就能解决。换成 Milvus 要多维护一套集群，收益在这个量级体现不出来。</p>
+      </div>
+      <div class="card" data-page-node-id="Ybcc8IEz3nMKdXVhWsTEDp">
+        <div class="t" data-page-node-id="F0zCZWf7ZghQOS1sDUIxuh">Dify + 自研双轨</div>
+        <p data-page-node-id="IHRYIOaphUCfPu7q7afR6M"><strong data-page-node-id="lPZJyVyMhghGVmSIe7YEew">不是二选一。</strong>长文本生成类（JD、评分标准、试卷、简历解析）放 Dify，改了即时生效；编排、确认、权限、落库必须自研，因为需要事务与可回滚。</p>
+      </div>
+      <div class="card" data-page-node-id="hQO28dJQYjtdvbWGKS0gcx">
+        <div class="t" data-page-node-id="EjOlAPdAagw3qNr0Fhkdij">SSE vs WebSocket</div>
+        <p data-page-node-id="VPBG0G4TBIJ4DiuJJtx3MH"><strong data-page-node-id="8tFcUU48xwrqdpYUddmJYI">选 SSE：</strong>生成任务是「客户端请求、服务端持续回吐」，没有双向需求。SSE 走普通 HTTP，鉴权头、负载均衡、日志都按现成方式处理。</p>
+      </div>
+    </div>
+
+    <h3 data-page-node-id="JCOSsVoh80lBG7YDnUUT7M">4.5 架构上的三个「不」</h3>
+    <div class="callout warn" data-page-node-id="NdWmp2aDuVZqdAHbEOjtJj">
+      <span class="h" data-page-node-id="JevqAJafp2g79Er2VluuBD">这三条是硬约束，不是建议</span>
+      <p data-page-node-id="O0Jus00O6aKQFOuNVGNiEa"><strong data-page-node-id="AS27TrfPVPOjKjEJarvt2S">一、写操作不进模型。</strong>删除、发送、落库全部由确定性节点执行。路由 agent 只持有 <code data-page-node-id="XKjiHoCYOBh4vliG8xp3xW">search_resources</code> 一个只读工具，模型只能在 <code data-page-node-id="9dJ3bBE0zP1B1mq3a85Epu">chat / use_tool / ask_user</code> 里选。</p>
+      <p data-page-node-id="O6YC43zy0g0jLLajjwHWYK"><strong data-page-node-id="wd1WzreBrGgUKrXhwzFpNQ">二、路由阶段不写数据。</strong>「选路」与「执行」分离，模型判断错最多走错分支，不会误删记录。</p>
+      <p data-page-node-id="D7EpPG7W5GDbWRwLfrWeBn"><strong data-page-node-id="LGl7sPsRBYgUqFy1BIf4HH">三、对外动作必须确认。</strong>邮件发送在图上有独立的 <code data-page-node-id="1q0aEzDJP42bNkrkhedUPa">interrupt</code> 节点，没有 checkpointer 时退化成 <code data-page-node-id="DxM4TFnmHslBVpF1sjD3Pc">requires_confirmation</code> 响应，任何路径都绕不过去。</p>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section id="s5" data-page-node-id="RcP8fNt5TSaoGMENCG0OJz">
+    <h2 data-page-node-id="cbN1rRpKWiFkXlS3E7OZpu"><span class="no" data-page-node-id="FZCpeMNPDBZMqqGE8GECHs">05</span>业务价值与 ROI</h2>
+    <div class="h2-rule" data-page-node-id="UX42YU1FCvzu7KEc45Lj38"></div>
+
+    <h3 data-page-node-id="y7GGuoP2InVA2WoQYAU76j">5.1 四类价值</h3>
+    <div class="grid g2" data-page-node-id="UkKEgHISn8hzMRrHdVay3H">
+      <div class="card" data-page-node-id="XBZtK93U1lqRMMHTsc2HNG"><div class="t" data-page-node-id="qtfFSoT676OhTGlFcupSKM">效率</div><p data-page-node-id="o5BKmAsHiqkHyJw4WIv4IW">JD、评分标准、面试题、试卷的初稿时间被压缩；简历批量评分替代逐份阅读；文档检索变成问答。</p></div>
+      <div class="card" data-page-node-id="nj3cZzwDW1jibAcsCR5klM"><div class="t" data-page-node-id="Jq1OBpB3797AdkDUNccmwB">质量</div><p data-page-node-id="2PmjMsvoA4H54iCv35jvR0">JD 与评分标准结构统一；候选人评价从「总分」变成「维度 + 理由 + 证据」；知识问答带引用来源。</p></div>
+      <div class="card" data-page-node-id="QBZ5mu3eLzauZGl389b7gr"><div class="t" data-page-node-id="H7SoSCEIQDfpAAgGE6bpQO">管理</div><p data-page-node-id="rt0zaP94SCOhK1uNQZ5L6C">用户、角色、文档、对话、评估结果、考试结果进入统一系统；统计看板提供运营概览。</p></div>
+      <div class="card" data-page-node-id="BirwXr0eRDKxgboSxNFdIh"><div class="t" data-page-node-id="Qd61uSJ477MtXUjbl2LlMS">体验</div><p data-page-node-id="yrgSONlRhc3jJ7SVTS0gyv">对话入口降低新用户理解菜单的成本；流式输出让等待有反馈；业务页面保留编辑与确认空间。</p></div>
+    </div>
+
+    <h3 data-page-node-id="M9dEK3rsWBm6y6jx9PYiUn">5.2 ROI 测算口径</h3>
+    <p data-page-node-id="S4ckUF7YZuLsUxyuNksCt1">ROI 不能只用「AI 是否生成了内容」衡量，要看<strong data-page-node-id="7o1MT1f8nfIeD5jiKXFjk4">流程节省 + 质量提升</strong>。以下为测算模板，需替换为企业真实数据。</p>
+    <div class="tw" data-page-node-id="KYKdziOGCxpiuzAezACmNi">
+      <table data-page-node-id="aHj8yHuqgLIglkUnqErI0M">
+        <thead data-page-node-id="YiW685mOOsx9mLE6TLRZKM"><tr data-page-node-id="GuYEvABvZIadT2zvxlCGJJ"><th style="width:160px" data-page-node-id="8rIXX6JtbvgNOxfIkCE7Hi">价值项</th><th data-page-node-id="gpcKPg27wEr5LOA5ucFWLC">计算口径</th></tr></thead>
+        <tbody data-page-node-id="CX6HTcRSXf16Q6KHDdEHKN">
+          <tr data-page-node-id="CCFlgzajSlBeB1GRAUxEax"><td class="k" data-page-node-id="TKDC0DfFJHG9muE6hU5pVq">JD 生成</td><td data-page-node-id="OzlrJtrAABLREkDVjJuun0">岗位数 × 人工初稿耗时 − AI 辅助后编辑耗时</td></tr>
+          <tr data-page-node-id="YxAF2v2CVqkXinFSEQYFiG"><td class="k" data-page-node-id="v33qCNwEEAQcuHpg5fv96Q">简历初筛</td><td data-page-node-id="hIk9yfoYJkmOPfToWuM1eK">简历数 × 人工初筛耗时 − AI 批量评分与复核耗时</td></tr>
+          <tr data-page-node-id="mu7KlQZ1yRQmMYY01xbo6B"><td class="k" data-page-node-id="YvSjWZ2l1uAaJxv96cWH0B">面试准备</td><td data-page-node-id="K4NtgSCcHuFm9RjH3DVLXK">面试人数 × 人工准备耗时 − AI 方案编辑耗时</td></tr>
+          <tr data-page-node-id="HZHk3uBE7H3gW8bfXtw8Sp"><td class="k" data-page-node-id="0rbtdvAKS0faLtOltsKLZQ">试卷生成</td><td data-page-node-id="CuAQNHFLlmYnF3GrXVvfbc">考试次数 × 人工出题耗时 − AI 生成与审核耗时</td></tr>
+          <tr data-page-node-id="PpOen0EFFmsGEXxhQWwlYE"><td class="k" data-page-node-id="8VKWdQqyk395IFXSHJjnMq">知识问答</td><td data-page-node-id="GYq9H8COfX0S1CUpwto0FE">问答次数 × 人工查询答复耗时 − 自助问答耗时</td></tr>
+          <tr data-page-node-id="AlAOSxauT0Klc5S4wwXXse"><td class="k" data-page-node-id="Qas5w96CvXA2r3tqd4kdaE">质量提升</td><td data-page-node-id="9fOu1MUVUEWRBZBn2XkxP2">JD 结构一致性、评分标准覆盖率、评价可解释性、试题覆盖率</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="pnqaWjMD77LdcC0zHOk41q">5.3 试点测算示例</h3>
+    <p data-page-node-id="Jy9jz5QvWL1KKbFPN2bGVO">以下数值来自项目文档的示例口径，<strong data-page-node-id="0ddUcVBc8XqsU1OOUNaLBo">仅用于说明测算方法，不构成承诺</strong>。</p>
+    <div class="tw" data-page-node-id="ITKKnHtVvjyxBGIobj0Vq7">
+      <table data-page-node-id="4DijDyh26l34rFE1H6Nmd2">
+        <thead data-page-node-id="WaTd6wth3ykDEACmqKqjPk"><tr data-page-node-id="7dV4zbGzev752DXVgkMpGq"><th style="width:140px" data-page-node-id="YmZZTbWxNEv0mLDA9jhUmC">场景</th><th style="width:140px" data-page-node-id="UpwEODDSZCOT2ziUQAqdYK">人工耗时</th><th style="width:150px" data-page-node-id="xIvszGKe7Yr3QczHByCTEx">AI 辅助后</th><th style="width:110px" data-page-node-id="TaBMir4LfqgcZBtqhDz5do">月度数量</th><th data-page-node-id="vHfVVwD7ROrEcT5w1akVBt">预计节省</th></tr></thead>
+        <tbody data-page-node-id="LYtQOabH004sjl3oO8Ycqp">
+          <tr data-page-node-id="GKDrsUW12xn5s2OOVBD5Qb"><td class="k" data-page-node-id="yjpBE4Nc2h0RnxBwWKafc6">JD 初稿</td><td data-page-node-id="jGaaiio4vhOufFypBRcDps">60 分钟/份</td><td data-page-node-id="mxqLGCMf3Ft9igBbysVhQH">20 分钟/份</td><td data-page-node-id="JCZ2RA7pk2t5cQ2qu8c27Y">20 份</td><td data-page-node-id="1ECo7p8k7nc1l3T9720jAN">800 分钟</td></tr>
+          <tr data-page-node-id="PR4LQQkXpg5bmNUJ2olL29"><td class="k" data-page-node-id="In3eZMF26EUVPJ0dpWlvph">简历初筛</td><td data-page-node-id="EUQMBiVGOhsIfxQfiddt74">8 分钟/份</td><td data-page-node-id="cAucNaKQMmOTr0gMDmjwvU">3 分钟/份</td><td data-page-node-id="DOGfBKpkhY7W1AgCpn04OA">500 份</td><td data-page-node-id="8AbI60nrVEyE8gidBXmVeg">2,500 分钟</td></tr>
+          <tr data-page-node-id="uy2OEMSdHWHPhcaJvejau3"><td class="k" data-page-node-id="BXJBKxXtT6WGOOuPMdUlzb">面试方案</td><td data-page-node-id="RANKxS9oncu4Ou2UOAlUAd">30 分钟/人</td><td data-page-node-id="0TzHx8BRn2kedn6jgSOAdP">10 分钟/人</td><td data-page-node-id="oeqWzkIMA2bDOipIab4BxE">60 人</td><td data-page-node-id="kHKHIFDegEkM7C7DItFUzX">1,200 分钟</td></tr>
+          <tr data-page-node-id="R8Rku7UFDkj2OoFnVKgCdV"><td class="k" data-page-node-id="zlQ5jqVbXWjtGv6MNkcNFZ">试卷出题</td><td data-page-node-id="xKIWFg0oi4NCUTPDrGC5wU">180 分钟/套</td><td data-page-node-id="AkgBVMnVWiSFRg3W6ap8Gs">60 分钟/套</td><td data-page-node-id="ZewlsAMWu909CEdBC29egC">4 套</td><td data-page-node-id="WmIU4tEwCnretQKWoAFX2E">480 分钟</td></tr>
+          <tr data-page-node-id="Vvy3hj4Q3g2bdpFGnfExO1"><td class="k" data-page-node-id="WWo3SIgsbaxmn5wwpDtzZJ">知识问答</td><td data-page-node-id="X2s40e2pcxU0Oh6q68u61C">10 分钟/次</td><td data-page-node-id="TLCe270nIiEtfvQRgAaCqL">3 分钟/次</td><td data-page-node-id="77JWbLKFTYSQKYbz7A0tkI">100 次</td><td data-page-node-id="JBicVGhYGoAUUQBlIrHCV5">700 分钟</td></tr>
+          <tr style="background:#f8fbfe" data-page-node-id="ia0xIWtiVFeRn8hJUOb5Dr"><td class="k" data-page-node-id="h957jyLITFm6QqmlC9RcYI">合计</td><td colspan="3" data-page-node-id="Ewz6sUzcy1KvIKdDV0PMnL">月度节省</td><td data-page-node-id="b9cp5JERspUuFQYvqH9S1E"><strong data-page-node-id="ytUYNF2rxkEGEnoieXbksB">约 5,680 分钟 ≈ 94.7 小时</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="yGx8PNtdu210saNQB2FQYj">5.4 成功标准</h3>
+    <div class="grid g3" data-page-node-id="316FtjjkIPiWvhrbwnQxxT">
+      <div class="card" data-page-node-id="YiTLeJCRhu1cw4AjYbawJy">
+        <div class="t" data-page-node-id="YeKkk4QohgRv67ZhOygjrV">功能</div>
+        <p data-page-node-id="nPQh70ysFJ1j4f22cJ49jN">登录与权限可用；JD/评分/简历/面试/知识库/试卷六条链路可各自走通；Agent 能识别常见任务并返回结果或追问。</p>
+      </div>
+      <div class="card" data-page-node-id="QH4d3uSLl6gv5CVxHYhJ82">
+        <div class="t" data-page-node-id="mZjJsVbjT5Kzr9A7wShHRG">质量</div>
+        <p data-page-node-id="x3zdgYp7DI6ayAte4z0KBz">接口在缺失参数、无权限、资源不存在时返回明确错误；长任务有流式反馈；敏感接口经过认证与权限校验。</p>
+      </div>
+      <div class="card" data-page-node-id="hWV21ahQSfyFV4ogy7O3cz">
+        <div class="t" data-page-node-id="NXHLm4o5TCaBAv3nWcCs3i">验收</div>
+        <p data-page-node-id="S2uzjJyjs3JP6WdvAWFGLu">3 类岗位端到端验证；2 份企业资料完成知识问答；1 份培训资料完成考试闭环；管理员完成用户、角色、邮箱配置。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section id="s6" data-page-node-id="CFtvEJUCiOkbngHbAzD8zR">
+    <h2 data-page-node-id="b69o0czyiMzB8rMBEDzJjh"><span class="no" data-page-node-id="5ijBNriBtQ1ybitKA6SZgh">06</span>边界与风险</h2>
+    <div class="h2-rule" data-page-node-id="E78GeG9u8ETpIy97IOznUv"></div>
+
+    <h3 data-page-node-id="q08V7YRtSqwrTFihqhd0Jj">6.1 明确不做的事</h3>
+    <ul data-page-node-id="nVSq9gcxvEIiCAjTcVtJa0">
+      <li data-page-node-id="j5HI0cw0kehmQhqsU4mNhB"><strong data-page-node-id="lcDJgUNTrISDxuvzrgTwFQ">不做完整 ATS</strong>：渠道投放、候选人 CRM、Offer 审批、入职办理均不在范围。</li>
+      <li data-page-node-id="8pVp5kr8FsJsoiI6ZBBDqF"><strong data-page-node-id="zOxdg8n9BeNMAotwcS72ml">不做完整 HRIS</strong>：薪酬、绩效、考勤、组织架构全生命周期不在范围。</li>
+      <li data-page-node-id="VeGMxGchRxS8OD17PpJBBM"><strong data-page-node-id="4HqEfGUKYZDdyyX6RO4q0C">不承诺自动决策</strong>：AI 不自动录用、不自动淘汰、不自动发送不可撤销的通知。</li>
+      <li data-page-node-id="erisCZKeDECzqLadAuUIvY"><strong data-page-node-id="oA1ziTcJu6lAHakKmUPbYI">不内建企业平台能力</strong>：CI/CD、集中日志、服务发现、灰度发布属于上线环境职责。</li>
+    </ul>
+
+    <h3 data-page-node-id="LajGzfeXhhNXX7imeeOgFJ">6.2 五类风险与缓解</h3>
+    <div class="tw" data-page-node-id="i9lBFmetrxqZWvFcz7SaAq">
+      <table data-page-node-id="yOyiV4OIKHuIIqB38sWZF0">
+        <thead data-page-node-id="E1w7YkEbqhvRew0TgpR6Pu"><tr data-page-node-id="VByYgnemi8G8BxxCToBJ6e"><th style="width:150px" data-page-node-id="rspYuGAQh6a8oJeg2ji6sA">风险</th><th style="width:280px" data-page-node-id="MMLUTVLKqY9OM81BsHf3tj">表现</th><th data-page-node-id="D7ikQY9BNFk9lBiUyBk0tC">缓解措施</th></tr></thead>
+        <tbody data-page-node-id="shrrPEwW61KxHN6qt631Nk">
+          <tr data-page-node-id="gBxWKT3TxXB1BKoarQgPTM">
+            <td class="k" data-page-node-id="Tm2QIhOjZ3aTDAOSF3sm0F">模型输出不稳定</td>
+            <td data-page-node-id="CT1BNDrPDH7v4D1UaYG7HA">同一份转写重复评分出现分数漂移；结构化输出偶尔缺失</td>
+            <td data-page-node-id="944TP0AEE3ToDH88HFbdO7">固定采样种子 + 温度 0；结构化决策缺失时按次数重试，仍失败回退规则；提供漂移测量脚本</td>
+          </tr>
+          <tr data-page-node-id="uNRnO3YFp6sGzRwakuf6ZE">
+            <td class="k" data-page-node-id="SsnGqGJd1XSGbZ7eFtYVH8">文档解析质量</td>
+            <td data-page-node-id="xICaKC5oBIG9WoHthD48Ir">扫描件、乱码、复杂表格导致提取失败或错位</td>
+            <td data-page-node-id="MUg10iUeCfjnnaVjVbOxSo">明确提示解析失败并允许重传；不基于失败文本生成虚假评分；多解析器按格式选型</td>
+          </tr>
+          <tr data-page-node-id="PFzDIzksXvEbTYtcKjOkLr">
+            <td class="k" data-page-node-id="IikVKaF1lvkCYu993rBFIW">敏感数据合规</td>
+            <td data-page-node-id="kCNvGHgLoHPxnHPcQ0peZx">简历、候选人信息、面试录音属敏感个人信息</td>
+            <td data-page-node-id="yw34NlcrCncj7ALnUWCvF6">权限隔离、明确保存期限与删除流程；对外部模型调用范围做书面约定；日志脱敏</td>
+          </tr>
+          <tr data-page-node-id="IjttjaecNLLx2C6cCpfrzr">
+            <td class="k" data-page-node-id="txLQIETGIDNOI3T0dnGdLp">外部服务依赖</td>
+            <td data-page-node-id="tl5x2ESFnAzcER3h4tOqh7">LLM、Dify、Embedding、Rerank、会议 API 任一不可用都会影响体验</td>
+            <td data-page-node-id="Vz67kxECvh229niI2cz0B5">逐项降级：Rerank 失败退原排序、LLM 失败退规则、Dify 超时提示重试并保留输入</td>
+          </tr>
+          <tr data-page-node-id="p3nw8CnA1Hq52gbVECieoc">
+            <td class="k" data-page-node-id="npxQH9HuGxTX7Oz3YyBFUo">组织接受度</td>
+            <td data-page-node-id="27UfikrxKN5Kmbtd3axEPe">HR 担心被替代，或过度信任 AI 结论</td>
+            <td data-page-node-id="LmQZgaKD4ZZcOt29AsB6OL">产品定位写成「初稿 + 人工确认」；UI 保留待复核状态与修改入口；不隐藏 AI 参与痕迹</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 data-page-node-id="ku8hYokMPqV8psgCJw80Gy">6.3 合规红线</h3>
+    <div class="callout risk" data-page-node-id="oRRN5Z9jZYCwxcnw1tP9q7">
+      <span class="h" data-page-node-id="9Jh1ob6L5eS3cqTWj3SCvI">三条不可越过的线</span>
+      <p data-page-node-id="LgayniUoD5r0SR2SeZFjSg"><strong data-page-node-id="UCVuj6amK0hlNTzmWWjMFO">一、AI 评分不得作为淘汰或录用的唯一依据。</strong>系统输出的定位是辅助判断，最终决定必须有人签字负责。</p>
+      <p data-page-node-id="7EENfBhmkeD0C8DTLJQWnP"><strong data-page-node-id="CBrnCkLBDztT5s0OnCFbUz">二、候选人敏感信息不得明文外泄。</strong>日志、导出、前端回显都要脱敏；邮箱授权码不得明文回显。</p>
+      <p data-page-node-id="DrUgNtoE3dPt4CqAEHqN3L"><strong data-page-node-id="eoBFd2jDKzkNs7O7w6RrwS">三、对外沟通不得绕过确认。</strong>邮件发送前必须由 HR 确认收件人、主题、正文，且发送失败不得自动重试造成重复发送。</p>
+    </div>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section id="s7" data-page-node-id="0a2axarPNMyQZKJEdG5LpC">
+    <h2 data-page-node-id="Kckn8ybKW41KKsVglRpDMm"><span class="no" data-page-node-id="tpHJeetkWoVHL2ZZii1cu1">07</span>落地路线</h2>
+    <div class="h2-rule" data-page-node-id="Pf0b8XDB4qCeNBpktaXZjT"></div>
+
+    <p data-page-node-id="KkOY1rqmLhu4ys0NhXARh4">项目按「先验证可行性，再补编排与治理，最后接企业平台」四段推进。每个版本都有可独立交付的价值，不依赖下一版才能用。</p>
+
+    <div class="tl" data-page-node-id="0EVbUt3bSjsgt6BKSgK7Vg">
+      <div class="item hi" data-page-node-id="M98K2tVeDyZYbU9r6G7KMv">
+        <div class="ver" data-page-node-id="MPxGUxbfUT61Q5MuXeQ5W0">MVP</div>
+        <b data-page-node-id="ucDPDYygvRHLbWpJNDqVSF">验证核心业务可行性</b>
+        <span data-page-node-id="mdoiG33kaFOZRP6RpJnF2F">登录、JD、评分标准、简历评分、知识库、试卷生成。目标是证明「AI 初稿可用」，不追求覆盖率。</span>
+      </div>
+      <div class="item hi" data-page-node-id="lA3QyqfIC4oWCPn7lt0Ag6">
+        <div class="ver" data-page-node-id="TQlFqopd8kuRIBjNL0EIqg">V1.0</div>
+        <b data-page-node-id="F5fJNg93sz10oUSWX5xk58">形成可试点的内部工作台</b>
+        <span data-page-node-id="KgrYN9xXnVWoC0eLxG8BBz">Agent 编排、面试方案、考试管理、系统管理、统计看板。此时 Agent 从「手写编排」迁到 LangGraph，确认机制与流式事件成型。</span>
+      </div>
+      <div class="item" data-page-node-id="EiF30S6Gz13mVGhyLAachZ">
+        <div class="ver" data-page-node-id="moLAcVIJISe41H5zLseBqo">V1.1</div>
+        <b data-page-node-id="LGY2QHkrMAYg4gBWBKy4Pw">提升业务连续性</b>
+        <span data-page-node-id="hVEu9R0X6e5n8rXRnFSohA">邮件通知 Skill、更多导出能力、权限细化、错误体验优化、面试评价 AI 链路与人工修订。</span>
+      </div>
+      <div class="item" data-page-node-id="Vnw8YXtrVE05VRnvviwPAM">
+        <div class="ver" data-page-node-id="MvVlgCYag79vdA8xB5FAnE">V2.0</div>
+        <b data-page-node-id="sPg624M1LYDryesKubGC4g">进入企业集成阶段</b>
+        <span data-page-node-id="Vle3PwCy2Qyb9Mlkpefpox">招聘渠道、审批流、组织架构、企业 SSO、审计日志。此阶段开始与既有 HRIS/ATS 对接。</span>
+      </div>
+    </div>
+
+    <h3 data-page-node-id="uzf7IajQh80gZo3Bu7COEH">进入试点前必须满足</h3>
+    <div class="tw" data-page-node-id="Gv9tuyWKWWZPnoJgyyGEGB">
+      <table data-page-node-id="7kO5G13wCUJZzmnkPe0ns1">
+        <thead data-page-node-id="LgJgBLTsVtcBVyxEcMGveb"><tr data-page-node-id="9sXlaWDVKX73krmG8Ipb1H"><th style="width:40px" data-page-node-id="ZKmZ87Uv70RYJds2Yb389N">#</th><th data-page-node-id="vNqM1oXcLLhfsGNerzgC70">决策门槛</th></tr></thead>
+        <tbody data-page-node-id="7cgmEF9OA15Fq6xzLzuLnU">
+          <tr data-page-node-id="jHyhaX20f062huaWdt5PhG"><td class="tnum" data-page-node-id="YiULbMbrZt1uyDtnBbqZhl">1</td><td data-page-node-id="dxCGae1U1jKdAVBQRJ6cjJ">P0 功能全部可用，无阻断性缺陷</td></tr>
+          <tr data-page-node-id="h9qz6c39h3E8oAixqao7KV"><td class="tnum" data-page-node-id="MpuTeCbvVSZW2jlTBOBJdd">2</td><td data-page-node-id="ZAr2NR1HvlSLpG3KmozVyp">招聘、知识库、考试三条主流程各完成至少一次端到端验证</td></tr>
+          <tr data-page-node-id="t3d1Bv0KXMyZGGpd7ToTDl"><td class="tnum" data-page-node-id="KNqS7GBEK7zUNhBfPyn4CI">3</td><td data-page-node-id="yRrj6ekxyraczfSz7Pd4rt">默认 SECRET_KEY、数据库密码、外部 API Key 已全部替换</td></tr>
+          <tr data-page-node-id="GMW2NRCEQFUfs3qTwCgb0q"><td class="tnum" data-page-node-id="g3Ynf955vWC5B1GDHXFSUA">4</td><td data-page-node-id="ONxKdA7HF0bOkQIkegPp6y">业务方书面确认：AI 结果是辅助产物，不作为最终人事决策</td></tr>
+          <tr data-page-node-id="uOAOxeDrYPuxndRiDTqyun"><td class="tnum" data-page-node-id="t4ohsTifCeBXAqkcqJGDFQ">5</td><td data-page-node-id="FfBzvLkEq4Gg0EeqtNxaDG">运维方确认：数据库备份、上传目录持久化、日志查询、回滚方案就绪</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+</div>
+</main>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  var links = Array.prototype.slice.call(document.querySelectorAll('#side nav a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + '%';
+
+    var pos = h.scrollTop + 120, idx = 0;
+    for (var i = 0; i < secs.length; i++){
+      if (secs[i] && secs[i].offsetTop <= pos) idx = i;
+    }
+    links.forEach(function(a, i){ a.classList.toggle('on', i === idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
