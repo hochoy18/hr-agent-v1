@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 智能人事助手 · 文档中心</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #656d76;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --pdf: #d1242f;
+    --ppt: #d4a72c;
+    --html: #1a7f37;
+    --md: #8250df;
+    --img: #bf8700;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 40px 20px 80px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 48px; }
+  header h1 { font-size: 2rem; margin-bottom: 8px; }
+  header p { color: var(--muted); }
+  section { margin-bottom: 40px; }
+  section > h2 {
+    font-size: 1.25rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  section > .desc { color: var(--muted); font-size: 0.9rem; margin: -8px 0 16px; }
+  ul.files { list-style: none; display: grid; gap: 10px; }
+  ul.files a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  ul.files a:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 6px rgba(9, 105, 218, .15);
+  }
+  ul.files a:hover .name { color: var(--accent); }
+  .badge {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 8px;
+    min-width: 44px;
+    text-align: center;
+  }
+  .badge.pdf  { background: var(--pdf); }
+  .badge.pptx { background: var(--ppt); }
+  .badge.html { background: var(--html); }
+  .badge.md   { background: var(--md); }
+  .badge.img  { background: var(--img); }
+  .name { font-weight: 500; }
+  .note { color: var(--muted); font-size: 0.8rem; margin-left: auto; flex-shrink: 0; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+  @media (max-width: 600px) {
+    .note { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>HR Agent 智能人事助手</h1>
+    <p>项目文档中心 · 通过 GitHub Pages 发布</p>
+  </header>
+
+  <section>
+    <h2>📕 教程课件（PDF / PPT）</h2>
+    <ul class="files">
+      <li><a href="origin/pdf/1-项目环境配置与部署v1.pdf" target="_blank" rel="noopener">
+        <span class="badge pdf">PDF</span><span class="name">1 - 项目环境配置与部署 v1</span>
+      </a></li>
+      <li><a href="origin/pdf/2-使用流程.pdf" target="_blank" rel="noopener">
+        <span class="badge pdf">PDF</span><span class="name">2 - 使用流程</span>
+      </a></li>
+      <li><a href="origin/pdf/3-项目设计与实现.pptx" target="_blank" rel="noopener">
+        <span class="badge pptx">PPTX</span><span class="name">3 - 项目设计与实现</span><span class="note">下载后用 PowerPoint / WPS 打开</span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>📘 HR Agent 文档</h2>
+    <ul class="files">
+      <li><a href="origin/md/HR%20Agent文档/01-HR-Agent项目介绍.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="name">01 - HR-Agent 项目介绍</span>
+      </a></li>
+      <li><a href="origin/md/HR%20Agent文档/02-技术栈与选型思路.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="name">02 - 技术栈与选型思路</span>
+      </a></li>
+      <li><a href="origin/md/HR%20Agent文档/03-LangGraph设计与实现.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="name">03 - LangGraph 设计与实现</span>
+      </a></li>
+      <li><a href="origin/md/HR%20Agent文档/04-核心业务链路与实现.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="name">04 - 核心业务链路与实现</span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>📗 企业级项目文档</h2>
+    <p class="desc">提示：GitHub Pages 不渲染 Markdown，.md 文件将以纯文本形式展示（可另存后本地阅读）。</p>
+    <ul class="files">
+      <li><a href="origin/md/企业级项目文档/README.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">README - 文档总览</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/HR%20Agent%20-%20智能人力资源管理系统.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">HR Agent - 智能人力资源管理系统</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/01-项目背景与目标说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">01 - 项目背景与目标说明</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/02-项目计划与干系人矩阵.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">02 - 项目计划与干系人矩阵</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/03-需求文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">03 - 需求文档</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/04-权限矩阵与数据字典.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">04 - 权限矩阵与数据字典</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/05-方案设计文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">05 - 方案设计文档</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/06-API接口清单.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">06 - API 接口清单</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/07-AI工作流与质量控制说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">07 - AI 工作流与质量控制说明</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/08-测试与验收文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">08 - 测试与验收文档</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/09-UAT验收单与上线检查表.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">09 - UAT 验收单与上线检查表</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/HR项目代码文件说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="name">HR 项目代码文件说明</span>
+      </a></li>
+      <li><a href="origin/md/企业级项目文档/agent-flowchart.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="name">Agent 流程图</span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>🗺️ 业务流程图</h2>
+    <ul class="files">
+      <li><a href="origin/md/业务流程图/01_workbench-intent-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">01 - 工作台意图识别流程</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/02_jd-create-save-flow.svg" target="_blank" rel="noopener">
+        <span class="badge img">SVG</span><span class="name">02 - JD 创建与保存流程</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/02_jd-create-save-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">02 - JD 创建与保存流程（版本 2）</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/03_scoring-criteria-flow.svg" target="_blank" rel="noopener">
+        <span class="badge img">SVG</span><span class="name">03 - 评分标准流程</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/03_scoring-criteria-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">03 - 评分标准流程（版本 2）</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/04_resume-screening-upload-evaluate-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">04 - 简历筛选上传与评估流程</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/04_resume-screening-upload-score-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">04 - 简历筛选上传与评分流程（版本 2）</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/05_smart-interview-plan-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">05 - 智能面试计划流程</span>
+      </a></li>
+      <li><a href="origin/md/业务流程图/05_smart-interview-plan-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="name">05 - 智能面试计划流程（版本 2）</span>
+      </a></li>
+    </ul>
+  </section>
+
+  <footer>
+    HR Agent · 智能人事助手 — 文档索引页
+  </footer>
+</div>
+</body>
+</html>
