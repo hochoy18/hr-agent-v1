@@ -20,6 +20,13 @@ backend/logs/
 backend/uploads/
 *.log
 
+# 测试/调试产物
+.playwright-mcp/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # 前端
 node_modules/
 frontend/dist/

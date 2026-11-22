@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 意图识别机制详解</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #1e2433;
+    --ink-2: #5a6478;
+    --ink-3: #8b93a7;
+    --accent: #5b5bd6;
+    --accent-soft: #eeeefc;
+    --green: #0e9f6e;
+    --green-soft: #e6f7f1;
+    --purple: #8b5cf6;
+    --purple-soft: #f3eefe;
+    --amber: #d97706;
+    --amber-soft: #fdf3e3;
+    --red: #dc2626;
+    --red-soft: #fdecec;
+    --blue: #2563eb;
+    --blue-soft: #e8f0fe;
+    --border: #e5e8f0;
+    --code-bg: #1e2433;
+    --radius: 12px;
+    --sidebar-w: 272px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ---------- 侧边目录 ---------- */
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 40px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  nav.toc .toc-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink-3); text-transform: uppercase;
+    margin: 0 10px 14px;
+  }
+  nav.toc a {
+    display: block; padding: 6px 10px; margin: 1px 0;
+    color: var(--ink-2); text-decoration: none;
+    font-size: 13.5px; border-radius: 8px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  nav.toc a.lv2 { padding-left: 26px; font-size: 13px; color: var(--ink-3); }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc a.active {
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; border-left-color: var(--accent);
+  }
+
+  /* ---------- 主内容 ---------- */
+  main {
+    margin-left: var(--sidebar-w);
+    max-width: 980px;
+    padding: 40px 48px 100px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+    border-radius: 18px;
+    color: #fff;
+    padding: 44px 44px 38px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; right: -60px; top: -60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; right: 60px; bottom: -90px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  header.hero h1 { font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  header.hero p.sub { margin-top: 10px; font-size: 15px; opacity: .92; max-width: 640px; }
+  header.hero .meta { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  header.hero .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 3px 12px; border-radius: 999px; font-size: 12.5px;
+  }
+
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 23px; font-weight: 800; margin-bottom: 18px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  h3 { font-size: 17.5px; font-weight: 700; margin: 30px 0 12px; color: var(--ink); }
+  h3 .h3-tag {
+    font-size: 11.5px; font-weight: 600; vertical-align: 2px;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+  }
+  p { margin: 10px 0; color: var(--ink); }
+  p.dim, li.dim { color: var(--ink-2); }
+  ul, ol { margin: 10px 0 10px 22px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 700; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: .88em;
+    background: var(--accent-soft); color: #4338ca;
+    padding: 1.5px 6px; border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg); color: #dbe2f0;
+    border-radius: var(--radius);
+    padding: 18px 20px; overflow-x: auto;
+    margin: 14px 0; font-size: 13px; line-height: 1.7;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7d8aa5; }
+  pre .k { color: #c4b5fd; }
+  pre .s { color: #86efac; }
+  pre .f { color: #93c5fd; }
+
+  /* ---------- 卡片 / 提示框 ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .callout {
+    border-radius: var(--radius);
+    padding: 14px 18px 14px 16px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 14px;
+  }
+  .callout.tip   { background: var(--green-soft);  border-color: var(--green); }
+  .callout.warn  { background: var(--amber-soft);  border-color: var(--amber); }
+  .callout.info  { background: var(--blue-soft);   border-color: var(--blue); }
+  .callout.danger{ background: var(--red-soft);    border-color: var(--red); }
+  .callout .co-title { font-weight: 700; margin-bottom: 4px; display: block; }
+
+  /* ---------- 表格 ---------- */
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius); overflow: hidden;
+    margin: 16px 0; font-size: 13.8px;
+    box-shadow: 0 1px 3px rgba(30,36,51,.05);
+  }
+  th {
+    background: #f0f1f8; text-align: left;
+    padding: 11px 14px; font-weight: 700; color: var(--ink);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaff; }
+
+  /* ---------- 徽章 ---------- */
+  .badge {
+    display: inline-block; font-size: 11.5px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.green  { background: var(--green-soft);  color: var(--green); }
+  .badge.purple { background: var(--purple-soft); color: var(--purple); }
+  .badge.amber  { background: var(--amber-soft);  color: var(--amber); }
+  .badge.blue   { background: var(--blue-soft);   color: var(--blue); }
+  .badge.red    { background: var(--red-soft);    color: var(--red); }
+  .badge.gray   { background: #eef0f5;            color: var(--ink-2); }
+
+  /* ---------- 流程图（CSS 绘制） ---------- */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 26px;
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .diagram .dg-caption {
+    text-align: center; font-size: 12.5px; color: var(--ink-3);
+    margin-top: 18px; letter-spacing: .04em;
+  }
+  .flow { display: flex; flex-direction: column; align-items: center; min-width: 520px; }
+  .fnode {
+    border-radius: 10px; padding: 10px 22px;
+    text-align: center; font-size: 13.5px; font-weight: 600;
+    border: 1.5px solid; max-width: 560px; line-height: 1.5;
+  }
+  .fnode small { display: block; font-weight: 400; font-size: 12px; opacity: .8; margin-top: 2px; }
+  .fnode.start   { background: #eef0f5; border-color: #c3c9d9; color: var(--ink); border-radius: 999px; }
+  .fnode.rule    { background: var(--green-soft);  border-color: var(--green);  color: #065f46; }
+  .fnode.llm     { background: var(--purple-soft); border-color: var(--purple); color: #5b21b6; }
+  .fnode.route   { background: var(--blue-soft);   border-color: var(--blue);   color: #1e40af; }
+  .fnode.fall    { background: var(--amber-soft);  border-color: var(--amber);  color: #92400e; }
+  .fnode.end     { background: var(--accent-soft); border-color: var(--accent); color: #3730a3; border-radius: 999px; }
+  .fnode.decision{ background: #fff; border-color: var(--ink-3); color: var(--ink); border-style: dashed; }
+  .farrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--ink-3); font-size: 11.5px; padding: 2px 0;
+  }
+  .farrow .line { width: 2px; height: 16px; background: #c3c9d9; }
+  .farrow .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #c3c9d9; }
+  .farrow .lbl { margin: 2px 0; font-weight: 600; }
+  .farrow .lbl.hit { color: var(--green); }
+  .farrow .lbl.miss { color: var(--amber); }
+  .fbranch { display: flex; gap: 18px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
+  .fbranch .fcol { display: flex; flex-direction: column; align-items: center; }
+
+  /* 横向步骤条 */
+  .steps { display: flex; gap: 0; align-items: stretch; justify-content: center; flex-wrap: wrap; min-width: 640px; }
+  .step {
+    flex: 1; min-width: 150px; max-width: 210px;
+    border-radius: 12px; border: 1.5px solid; padding: 14px 14px;
+    text-align: center; position: relative;
+  }
+  .step .st-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .step .st-title { font-weight: 700; font-size: 13.5px; }
+  .step .st-desc { font-size: 12px; margin-top: 5px; opacity: .85; line-height: 1.55; }
+  .step.s1 { background: #eef0f5; border-color: #c3c9d9; } .step.s1 .st-num { background: #64748b; }
+  .step.s2 { background: var(--blue-soft); border-color: var(--blue); } .step.s2 .st-num { background: var(--blue); }
+  .step.s3 { background: var(--green-soft); border-color: var(--green); } .step.s3 .st-num { background: var(--green); }
+  .step.s4 { background: var(--purple-soft); border-color: var(--purple); } .step.s4 .st-num { background: var(--purple); }
+  .step-arrow { display: flex; align-items: center; padding: 0 6px; color: #c3c9d9; font-size: 20px; font-weight: 700; }
+
+  /* 双栏对比 */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* 文件路径引用 */
+  .fileref {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 12px; color: var(--ink-3);
+    background: #f0f1f8; padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 24px 48px 48px;
+    color: var(--ink-3); font-size: 12.5px;
+    border-top: 1px solid var(--border);
+    max-width: 980px;
+  }
+
+  @media (max-width: 1080px) {
+    nav.toc { display: none; }
+    main, footer { margin-left: 0; padding-left: 24px; padding-right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc" id="toc">
+  <div class="toc-title">目录</div>
+  <a href="#overview">1. 全景概览</a>
+  <a href="#entry1">2. 入口一：IntentService 页面分流</a>
+  <a href="#entry1-flow" class="lv2">2.1 两级分类漏斗</a>
+  <a href="#entry1-map" class="lv2">2.2 意图 → 路由映射</a>
+  <a href="#entry1-keyword" class="lv2">2.3 关键词快筛</a>
+  <a href="#entry1-llm" class="lv2">2.4 LLM 兜底分类</a>
+  <a href="#entry1-kb" class="lv2">2.5 kb_qa 自动选库</a>
+  <a href="#entry2">3. 入口二：Agent 意图决策</a>
+  <a href="#entry2-funnel" class="lv2">3.1 四级决策漏斗</a>
+  <a href="#entry2-preset" class="lv2">3.2 ① preset 直通</a>
+  <a href="#entry2-confirm" class="lv2">3.3 ② 用户确认直通</a>
+  <a href="#entry2-rule" class="lv2">3.4 ③ 规则快通道</a>
+  <a href="#entry2-react" class="lv2">3.5 ④ ReAct 观察型路由</a>
+  <a href="#entry2-dispatch" class="lv2">3.6 条件边分发</a>
+  <a href="#compare">4. 两套机制对比</a>
+  <a href="#philosophy">5. 设计哲学与改进建议</a>
+  <a href="#files">6. 关键文件索引</a>
+</nav>
+
+<main>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>HR Agent 意图识别机制详解</h1>
+  <p class="sub">用户一句话进来，系统如何判断"要问知识库、生成 JD、筛简历，还是只是闲聊"？本文拆解项目中两套意图识别机制的完整链路与设计取舍。</p>
+  <div class="meta">
+    <span>📦 backend / app</span>
+    <span>🧭 意图分类 · 路由分发</span>
+    <span>🕸 LangGraph + ReAct</span>
+    <span>📅 2026-11</span>
+  </div>
+</header>
+
+<!-- ==================== 1. 概览 ==================== -->
+<section id="overview">
+  <h2><span class="num">1</span>全景概览</h2>
+  <p>项目中有<strong>两套意图识别机制</strong>，服务于两个不同入口，共享同一套底层关键词规则，但复杂度与能力差异很大：</p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">用户输入（一句话 / 一条对话消息）</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fbranch">
+        <div class="fcol">
+          <div class="fnode route">入口一：POST /intent/route<small>IntentService · 页面分流</small></div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode rule">关键词快筛<small>子串匹配，0 成本</small></div>
+          <div class="farrow"><span class="lbl miss">未命中</span><div class="line"></div><div class="head"></div></div>
+          <div class="fnode llm">LLM 约束分类<small>只许输出 6 个标签之一</small></div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode end">返回前端路由 + kb_id<small>"该跳哪个页面"</small></div>
+        </div>
+        <div class="fcol">
+          <div class="fnode route">入口二：Agent 对话<small>LangGraph 主图 route_intent 节点</small></div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode rule">四级决策漏斗<small>preset → 确认 → 规则 → ReAct</small></div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode llm">ReAct 观察型路由<small>可先调只读工具观察再决策</small></div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode end">条件边分发到业务节点<small>"该执行哪条业务链"</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="dg-caption">图 1 · 两套意图识别机制全景：左侧轻量页面分流，右侧对话任务决策</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">💡 一句话区分</span>
+    入口一只回答<strong>"该跳哪个页面"</strong>，不执行任何业务；入口二回答<strong>"该执行哪条业务链、还是闲聊、还是追问用户"</strong>，是 Agent 对话的大脑第一步。
+  </div>
+</section>
+
+<!-- ==================== 2. 入口一 ==================== -->
+<section id="entry1">
+  <h2><span class="num">2</span>入口一：IntentService 页面分流</h2>
+  <p>
+    API 端点 <code>POST /intent/route</code>
+    <span class="fileref">app/api/v1/endpoints/intent_router.py:21</span>
+    接收 <code>{"query": "用户输入"}</code>，调用
+    <code>IntentService.route_query()</code>
+    <span class="fileref">app/services/intent_service.py:171</span>
+    完成"分类 + 路由"一步到位。
+  </p>
+
+  <h3 id="entry1-flow">2.1 两级分类漏斗 <span class="h3-tag badge green">规则优先 · LLM 兜底</span></h3>
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">query</div>
+      <div class="farrow"><span class="lbl">空输入 → 直接 kb_qa</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">① classify_intent_fast()<small>关键词子串匹配 · 毫秒级 · 0 成本</small></div>
+      <div class="farrow"><span class="lbl hit">命中 → 直接返回意图</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode decision">未命中？</div>
+      <div class="farrow"><span class="lbl miss">是</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">② classify_intent_with_llm()<small>约束式 Prompt · 输出清洗 · 双重兜底</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">③ get_route_for_intent()<small>意图 → 前端路由；kb_qa 额外自动选知识库</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">{ intent, route, query, kb_id }</div>
+    </div>
+    <div class="dg-caption">图 2 · IntentService 三段式链路：大部分明确请求根本不用调 LLM</div>
+  </div>
+
+  <h3 id="entry1-map">2.2 意图 → 路由映射表</h3>
+  <p><code>intent_routes</code> <span class="fileref">intent_service.py:26</span> 定义了 6 个意图到前端页面的映射——意图服务<strong>只做分流，不做业务</strong>，具体功能由各页面自己的服务完成：</p>
+  <table>
+    <thead><tr><th>意图标签</th><th>含义</th><th>前端路由</th></tr></thead>
+    <tbody>
+      <tr><td><code>jd</code></td><td>生成职位描述</td><td><code>/recruitment/jd-generator</code></td></tr>
+      <tr><td><code>resume_screening</code></td><td>简历筛选 / 评分</td><td><code>/recruitment/resume-screening</code></td></tr>
+      <tr><td><code>interview_plan</code></td><td>面试方案 / 流程 / 题目</td><td><code>/recruitment/smart-interview</code></td></tr>
+      <tr><td><code>exam_generate</code></td><td>生成试卷 / 出题</td><td><code>/training/exam-generator</code></td></tr>
+      <tr><td><code>email_notification</code></td><td>邮件通知 / 邀约</td><td><code>/system/email-configs</code></td></tr>
+      <tr><td><code>kb_qa</code></td><td>知识库问答（默认兜底）</td><td><code>/assistant/qa</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="entry1-keyword">2.3 第一级：关键词快筛</h3>
+  <p><code>classify_intent_fast()</code> <span class="fileref">intent_service.py:45</span> 对有序的 <code>(意图, 关键词列表)</code> 做大小写不敏感的子串匹配，命中即返回，全部未命中返回 <code>None</code>（"我不确定"的信号）。</p>
+  <pre><code><span class="k">def</span> <span class="f">classify_intent_fast</span>(self, query: str) -> Optional[str]:
+    q = query.lower()
+    <span class="k">for</span> intent, words <span class="k">in</span> self.keywords:   <span class="c"># 有序列表，顺序即优先级</span>
+        <span class="k">for</span> w <span class="k">in</span> words:
+            <span class="k">if</span> w.lower() <span class="k">in</span> q:          <span class="c"># 子串包含匹配，无分词无正则</span>
+                <span class="k">return</span> intent
+    <span class="k">return</span> <span class="k">None</span>                          <span class="c"># 交给 LLM</span></code></pre>
+  <div class="callout tip">
+    <span class="co-title">✅ 两个刻意的设计细节</span>
+    <strong>顺序即优先级</strong>：<code>resume_screening</code> 排最前、<code>kb_qa</code> 排最后——一句话同时含"简历"和"知识库"时优先判为简历筛选，兜底性质最强的放最后。<br>
+    <strong>关键词粒度混合</strong>：既有完整短语（"简历筛选"），也有裸词（"JD"、"QA"），提高召回。
+  </div>
+
+  <h3 id="entry1-llm">2.4 第二级：LLM 兜底分类（三层防御）</h3>
+  <p><code>classify_intent_with_llm()</code> <span class="fileref">intent_service.py:62</span> 把 LLM 当作<strong>分类器</strong>而非对话模型使用：</p>
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode llm">防御一：约束式 Prompt<small>列出 6 个标签及含义，要求"仅返回标签之一，不要解释"</small></div>
+      <div class="farrow"><span class="lbl">LLM 可能不听话，返回 "意图是：jd" 或中文</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">防御二：输出容错清洗<small>非法标签 → 中英文关键词二次模糊归一化</small></div>
+      <div class="farrow"><span class="lbl miss">归一化也失败 / 调用抛异常</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode fall">防御三：双重兜底<small>一律返回 kb_qa —— 本方法永不失败</small></div>
+    </div>
+    <div class="dg-caption">图 3 · LLM 分类的三层防御：任何情况下入口链路都有结果</div>
+  </div>
+  <ul>
+    <li><strong>懒加载</strong>：<code>self.llm_service</code> 只在真正走到 LLM 分支时才实例化 <span class="fileref">intent_service.py:86</span>——关键词能解决时连 LLM 客户端都不初始化。</li>
+    <li><strong>默认值选 <code>kb_qa</code></strong>：问答是最通用、副作用最小的功能，异常时记日志后静默降级，入口永不 500。</li>
+  </ul>
+
+  <h3 id="entry1-kb">2.5 kb_qa 的特殊增强：自动选知识库</h3>
+  <p><code>get_route_for_intent()</code> <span class="fileref">intent_service.py:135</span> 中，若意图是 <code>kb_qa</code>，不只给页面地址，还调用 <code>KBSelectionService.select_kb_for_question()</code>（候选上限 200）自动挑一个最相关的知识库，把 <code>kb_id</code> 一并返回——前端跳到问答页时<strong>知识库已预选好</strong>。选择失败也不阻断，<code>kb_id = None</code> 交给前端处理。</p>
+</section>
+
+<!-- ==================== 3. 入口二 ==================== -->
+<section id="entry2">
+  <h2><span class="num">3</span>入口二：LangGraph Agent 意图决策</h2>
+  <p>对话消息进入 LangGraph 主图后，先经过 <code>route_intent_node</code> <span class="fileref">app/agent/nodes/routing.py:16</span>，它调用 <code>reasoning.resolve_intent_and_plan()</code> <span class="fileref">app/agent/reasoning.py:38</span> 做决策。这是一个<strong>四级漏斗</strong>：越靠前越便宜、越确定。</p>
+
+  <h3 id="entry2-funnel">3.1 四级决策漏斗</h3>
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1">
+        <div class="st-num">1</div>
+        <div class="st-title">preset 直通</div>
+        <div class="st-desc">专用端点已知意图<br>完全跳过识别</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s2">
+        <div class="st-num">2</div>
+        <div class="st-title">用户确认直通</div>
+        <div class="st-desc">confirmed_requirements<br>回传后不重新分类</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s3">
+        <div class="st-num">3</div>
+        <div class="st-title">规则快通道</div>
+        <div class="st-desc">正则 + 附件 + 多轮上下文<br>零 LLM 成本</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s4">
+        <div class="st-num">4</div>
+        <div class="st-title">ReAct 观察型路由</div>
+        <div class="st-desc">只读工具循环 + 结构化决策<br>失败回退 ③ 的规则</div>
+      </div>
+    </div>
+    <div class="dg-caption">图 4 · Agent 侧四级决策漏斗：确定性的便宜规则优先，LLM 只处理长尾</div>
+  </div>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">对话消息进入 route_intent 节点</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode decision">state 里有 preset_intent？</div>
+      <div class="farrow"><span class="lbl hit">有 → 直达目标节点（跳过记忆与决策）</span><span class="lbl miss">无 ↓</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode decision">有 confirmed_requirements？</div>
+      <div class="farrow"><span class="lbl hit">有 → 按确认 action 匹配 skill，否则回 jd 工具链</span><span class="lbl miss">无 ↓</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">build_rule_agent_plan() 规则快通道<small>删除 / 编辑 / 关键词 / 附件 / followup / 删除候选继承</small></div>
+      <div class="farrow"><span class="lbl hit">命中 → 直接产出 tool 计划</span><span class="lbl miss">未命中 ↓</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">plan_agent_action() → run_router_agent()<small>ReAct：可先调 search_resources 观察，再输出 RouterDecision</small></div>
+      <div class="farrow"><span class="lbl miss">超时 / 失败 / intent 非法 → 回退本地规则 classify_agent_intent()</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">折算 dest_node：chat / skill_draft / 业务节点<small>写入 state，由 LangGraph 条件边分发</small></div>
+    </div>
+    <div class="dg-caption">图 5 · route_intent 节点完整决策流</div>
+  </div>
+
+  <h3 id="entry2-preset">3.2 ① preset 直通 <span class="h3-tag badge gray">跳过识别</span></h3>
+  <p>文件流等专用端点已经知道用户要干什么，直接在 state 里塞 <code>preset_intent</code> <span class="fileref">nodes/routing.py:25</span>，<strong>完全跳过意图识别与记忆构建</strong>，直达目标节点，<code>source: "preset"</code>。</p>
+
+  <h3 id="entry2-confirm">3.3 ② 用户确认直通 <span class="h3-tag badge blue">多轮保障</span></h3>
+  <p>多轮交互中，用户上一轮被追问、这一轮回传了 <code>confirmed_requirements</code>（表单确认），就不再重新分类 <span class="fileref">reasoning.py:58</span>：</p>
+  <ul>
+    <li>确认的 <code>action</code> 匹配到 skill（如 <code>send_email</code>）→ 对应 skill intent；</li>
+    <li>否则默认回 <code>jd</code> 工具链。</li>
+  </ul>
+  <div class="callout info">
+    <span class="co-title">💡 为什么需要这一级</span>
+    避免"确认消息被重新识别成别的意图"——用户点确认按钮回传的结构化数据不该再走一遍自然语言分类。
+  </div>
+
+  <h3 id="entry2-rule">3.4 ③ 规则快通道 <span class="h3-tag badge green">零 LLM 成本</span></h3>
+  <p><code>build_rule_agent_plan()</code> + <code>classify_agent_intent()</code> <span class="fileref">reasoning.py:96-177</span> 是纯本地规则，但比入口一的关键词表强很多：</p>
+  <table>
+    <thead><tr><th>规则</th><th>逻辑</th><th>产出意图</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>正则组合</strong></td>
+        <td>"删除/删掉/移除/清理" <strong>且</strong> 提到 "jd/职位/简历/候选人/面试/试卷/考试"</td>
+        <td><code>resource_delete</code></td>
+      </tr>
+      <tr>
+        <td><strong>专用编辑识别</strong></td>
+        <td><code>_is_jd_edit_request</code> / <code>_is_criteria_edit_request</code>，区分"生成 JD"和"修改刚才的 JD"</td>
+        <td><code>jd_edit</code> / <code>criteria_edit</code></td>
+      </tr>
+      <tr>
+        <td><strong>复用关键词表</strong></td>
+        <td>调用入口一的 <code>intent_service.classify_intent_fast()</code>——两套机制共享底层规则</td>
+        <td>6 个基础意图</td>
+      </tr>
+      <tr>
+        <td><strong>附件上下文</strong></td>
+        <td>上传了 PDF/Word/TXT <strong>且</strong> 消息含"评分/筛选" → 筛简历；含"试卷/出题" → 生成试卷。<strong>同样的话，带不带附件意图不同</strong></td>
+        <td><code>resume_screening</code> / <code>exam_generate</code></td>
+      </tr>
+      <tr>
+        <td><strong>多轮 followup</strong></td>
+        <td>识别"继续给这批候选人生成面试"这类承接上文的请求</td>
+        <td><code>interview_plan</code> / <code>exam_generate</code></td>
+      </tr>
+      <tr>
+        <td><strong>删除候选继承</strong></td>
+        <td>上一轮刚列出删除候选清单，用户只回了一个名字或"第二个" → 继续删除确认流程</td>
+        <td><code>resource_delete</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <span class="co-title">⚠️ 顺序陷阱（代码注释中特意强调）</span>
+    "删除候选继承"规则必须放在通用意图规则<strong>之后</strong> <span class="fileref">reasoning.py:166-169</span>——否则"生成一个JD&lt;候选名&gt;"这类含候选名称的明确意图会被抢先路由进删除流程。
+  </div>
+
+  <h3 id="entry2-react">3.5 ④ ReAct 观察型路由 <span class="h3-tag badge purple">核心亮点</span></h3>
+  <p>规则都没命中时，<code>plan_agent_action()</code> <span class="fileref">reasoning.py:197</span> → <code>run_router_agent()</code> <span class="fileref">app/agent/routing_agent.py:118</span>。<strong>这不是简单让 LLM 输出标签，而是一个带工具的 ReAct Agent</strong>：</p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">输入：消息 + 对话记忆 + 附件清单 + 线程产物数</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">Router LLM（专用路由模型 get_router_model）<small>系统提示：动作空间 + 决策规则 + 合法 intent 集合</small></div>
+      <div class="farrow"><span class="lbl">用户说"刚才 / 上次 / 这个 / 那个"等指代时</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">只读工具 search_resources<small>观察当前用户 / 当前对话最近的资源（循环，受 recursion_limit 约束）</small></div>
+      <div class="farrow"><span class="lbl hit">观察到了什么，再决策</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">RouterDecision（Pydantic 强约束结构化输出）<small>mode + action + intent + thought + confidence + reply</small></div>
+    </div>
+    <div class="dg-caption">图 6 · 观察型 ReAct 路由：先观察、再决策，解决指代消解问题</div>
+  </div>
+
+  <p><strong>结构化决策 <code>RouterDecision</code></strong> <span class="fileref">routing_agent.py:29</span> 的字段约束：</p>
+  <table>
+    <thead><tr><th>字段</th><th>约束</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>action</code></td><td><span class="badge blue">chat</span> <span class="badge green">use_tool</span> <span class="badge amber">ask_user</span> 三选一</td><td>闲聊 / 执行任务 / 缺前置条件追问</td></tr>
+      <tr><td><code>mode</code></td><td><code>chat</code> / <code>tool</code></td><td>validator 强制与 action 一致</td></tr>
+      <tr><td><code>intent</code></td><td>必须 ∈ tool_registry 意图集 + <code>general</code></td><td>系统提示中枚举，越界即回退规则</td></tr>
+      <tr><td><code>thought</code> / <code>confidence</code></td><td>一句推理摘要 / 0-1 置信度</td><td>可观测、可审计</td></tr>
+      <tr><td><code>reply</code></td><td>仅 action=chat 时非空</td><td>闲聊直接给自然回复</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cols2">
+    <div class="card">
+      <strong>🔒 安全边界</strong>
+      <ul class="dim">
+        <li>路由器<strong>只"选路"，不持有写工具</strong>——删除、发送、落库全部由后续确定性子图执行</li>
+        <li>系统提示明确："邮件只能生成草稿，不允许自动发送"</li>
+        <li>"不确定时优先 chat，避免误触发工具"</li>
+        <li>"删除类请求只有工具观察到明确目标时才选 resource_delete，不要臆造名称或 ID"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <strong>🛠 工程保障</strong>
+      <ul class="dim">
+        <li>agent 按 <code>(意图集, 工具说明)</code> 缓存复用，skills 变化自然换 key</li>
+        <li><code>asyncio.wait_for</code> 超时控制 + 最多 N 次重试拿结构化输出</li>
+        <li>intent 非法 / 调用失败 → <strong>回退本地规则</strong>，链路永不中断</li>
+        <li><code>AGENT_ROUTER_MODE=rule/react</code> 可配置切换，非法值按 rule 处理</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="co-title">✅ 为什么比"LLM 直接分类"强</span>
+    用户说"删掉<strong>刚才那个</strong> JD"时，模型可以<strong>先调工具查当前对话最近的资源，观察到了什么再决策</strong>——指代消解是纯关键词和单次分类 LLM 都做不到的。同时受限动作空间（chat / use_tool / ask_user）让 LLM 的输出可被程序安全消费。
+  </div>
+
+  <h3 id="entry2-dispatch">3.6 决策之后：条件边分发</h3>
+  <p><code>route_intent_node</code> 把决策折算成 <code>dest_node</code> <span class="fileref">nodes/routing.py:57</span>——LangGraph 的条件边只读 state，所以目标节点在节点内提前算好：</p>
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode end">agent_plan + intent</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fbranch">
+        <div class="fcol">
+          <div class="fnode decision">mode=chat 或 intent=general</div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode route">chat 节点<small>普通闲聊回复</small></div>
+        </div>
+        <div class="fcol">
+          <div class="fnode decision">intent ∈ skill bundles</div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode route">skill_draft 节点<small>草稿确认链（确认回传后放行到 send）</small></div>
+        </div>
+        <div class="fcol">
+          <div class="fnode decision">其余业务意图</div>
+          <div class="farrow"><div class="line"></div><div class="head"></div></div>
+          <div class="fnode route">对应业务节点<small>jd / resume_screening / exam_generate …</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="dg-caption">图 7 · 条件边分发：决策结果 → 目标节点</div>
+  </div>
+</section>
+
+<!-- ==================== 4. 对比 ==================== -->
+<section id="compare">
+  <h2><span class="num">4</span>两套机制对比</h2>
+  <table>
+    <thead><tr><th>维度</th><th>入口一 · IntentService</th><th>入口二 · Agent 路由</th></tr></thead>
+    <tbody>
+      <tr><td><strong>用途</strong></td><td>前端页面跳转分流</td><td>对话中决定执行哪条业务链</td></tr>
+      <tr><td><strong>快速层</strong></td><td>关键词子串匹配</td><td>正则 + 附件 + 多轮上下文 + 编辑/删除专用规则</td></tr>
+      <tr><td><strong>LLM 层</strong></td><td>单次约束分类（输出标签）</td><td>ReAct Agent，可先调只读工具观察再决策</td></tr>
+      <tr><td><strong>上下文</strong></td><td>无（单句）</td><td>对话记忆、附件、线程产物、用户确认状态</td></tr>
+      <tr><td><strong>兜底</strong></td><td><code>kb_qa</code></td><td>本地规则 → <code>general</code> 闲聊</td></tr>
+      <tr><td><strong>输出</strong></td><td><code>{intent, route, kb_id}</code></td><td><code>{mode, action, intent, confidence, …}</code> + <code>dest_node</code></td></tr>
+      <tr><td><strong>成本</strong></td><td>多数请求 0 LLM 调用</td><td>规则命中 0 调用；长尾走专用路由小模型</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 5. 设计哲学 ==================== -->
+<section id="philosophy">
+  <h2><span class="num">5</span>设计哲学与改进建议</h2>
+
+  <h3>共同的设计哲学</h3>
+  <div class="cols2">
+    <div class="card">
+      <strong>💰 成本分层</strong>
+      <p class="dim">确定性的便宜规则优先，LLM 只处理长尾。大部分明确请求（"帮我生成JD"）根本不用调大模型，省钱省时。</p>
+    </div>
+    <div class="card">
+      <strong>🧱 结构化约束</strong>
+      <p class="dim">LLM 输出用 Prompt 约束 + Pydantic 校验收窄到合法集合，非法输出有归一化和回退，保证可被程序安全消费。</p>
+    </div>
+    <div class="card">
+      <strong>🪂 层层降级</strong>
+      <p class="dim">每一层失败都有默认路径：LLM 挂了回规则，规则不中回闲聊/问答。入口永不 500，链路永不中断。</p>
+    </div>
+    <div class="card">
+      <strong>🔀 路由与执行分离</strong>
+      <p class="dim">路由器只选路不执行写操作；删除、发送、落库由确定性子图完成，LLM 的不确定性被隔离在决策层。</p>
+    </div>
+  </div>
+
+  <h3>潜在问题与改进方向</h3>
+  <table>
+    <thead><tr><th>问题</th><th>说明</th><th>改进建议</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge red">关键词误伤</span></td>
+        <td>裸词子串匹配无法处理否定语义："不用生成试卷，我只想问问知识库"会命中"试卷"被路由到出题页</td>
+        <td>对含否定词的 query 跳过 fast 层直接走 LLM/ReAct</td>
+      </tr>
+      <tr>
+        <td><span class="badge amber">归一化顺序隐患</span></td>
+        <td>入口一 LLM 输出清洗中 <code>if "jd" in intent</code> 排第一，若返回一段含多词的解释文本会被第一个规则截胡</td>
+        <td>先做精确匹配，再按标签特异性排序模糊匹配</td>
+      </tr>
+      <tr>
+        <td><span class="badge amber">无缓存</span></td>
+        <td>相同 query 每次都重新分类（LLM 分支）</td>
+        <td>高频场景加 LRU 缓存</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">硬编码参数</span></td>
+        <td>知识库选择 <code>max_candidates=200</code> 写死，库多时开销值得关注</td>
+        <td>移入 settings 配置</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">入口一无闲聊类别</span></td>
+        <td>文件头注释提到"还是聊天"，但 6 个标签里没有 chat，闲聊被强行归入 kb_qa（入口二已有 general/chat）</td>
+        <td>如需统一，可为入口一补充 chat 标签</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 6. 文件索引 ==================== -->
+<section id="files">
+  <h2><span class="num">6</span>关键文件索引</h2>
+  <table>
+    <thead><tr><th>文件</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/services/intent_service.py</code></td><td>入口一核心：关键词快筛 + LLM 兜底分类 + 路由映射 + 自动选库</td></tr>
+      <tr><td><code>app/api/v1/endpoints/intent_router.py</code></td><td>入口一 API：<code>POST /intent/route</code></td></tr>
+      <tr><td><code>app/agent/nodes/routing.py</code></td><td>LangGraph 路由节点：preset 直通、记忆构建、决策调用、dest_node 折算</td></tr>
+      <tr><td><code>app/agent/reasoning.py</code></td><td>决策编排：确认直通、规则快通道、ReAct 调用与回退、路由模式配置</td></tr>
+      <tr><td><code>app/agent/routing_agent.py</code></td><td>ReAct 路由器：create_agent + 只读工具 + RouterDecision 结构化输出</td></tr>
+      <tr><td><code>app/agent/tools/router_tools.py</code></td><td>路由器只读工具（search_resources）</td></tr>
+      <tr><td><code>app/services/kb_selection_service.py</code></td><td>kb_qa 意图的知识库自动选择</td></tr>
+      <tr><td><code>app/agent/graph.py</code></td><td>主图定义：条件边按 dest_node 分发到各业务节点</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  HR Agent 意图识别机制详解 · 基于 backend 源码整理 · 2026-11
+</footer>
+
+<script>
+  // 目录滚动高亮（scrollspy）
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var targets = links
+      .map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); })
+      .filter(Boolean);
+    function onScroll() {
+      var pos = window.scrollY + 90;
+      var current = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= pos) current = targets[i];
+      }
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>
