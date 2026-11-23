@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent 需求文档</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232563eb'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='white'%3EH%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --sidebar-w:288px;
+    --ink:#1e293b; --ink-soft:#475569; --line:#e2e8f0;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --red:#dc2626; --red-bg:#fef2f2;
+    --amber:#d97706; --amber-bg:#fffbeb;
+    --green:#059669; --green-bg:#ecfdf5;
+    --violet:#7c3aed; --violet-bg:#f5f3ff;
+    --teal:#0d9488; --teal-bg:#f0fdfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--ink);background:#f8fafc;line-height:1.75;font-size:15px;
+  }
+  /* ---------- 侧边目录 ---------- */
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+    background:#0f172a;color:#cbd5e1;overflow-y:auto;z-index:50;
+    padding:20px 0 40px;scrollbar-width:thin;scrollbar-color:#334155 #0f172a;
+  }
+  #sidebar .brand{padding:0 20px 14px;border-bottom:1px solid #1e293b;margin-bottom:10px}
+  #sidebar .brand h1{font-size:17px;color:#f8fafc;letter-spacing:.5px}
+  #sidebar .brand p{font-size:12px;color:#64748b;margin-top:4px}
+  #sidebar ul{list-style:none}
+  #sidebar a{
+    display:block;color:#94a3b8;text-decoration:none;font-size:13.5px;
+    padding:5px 20px;border-left:3px solid transparent;transition:all .15s;
+  }
+  #sidebar a:hover{color:#e2e8f0;background:#1e293b}
+  #sidebar a.active{color:#38bdf8;border-left-color:#38bdf8;background:#1e293b;font-weight:600}
+  #sidebar .toc-l1>a{font-weight:600;color:#cbd5e1;font-size:14px;margin-top:6px}
+  #sidebar .toc-l2>a{padding-left:36px;font-size:12.8px}
+  #sidebar .toc-l3>a{padding-left:52px;font-size:12.2px;color:#64748b}
+  #toc-toggle{
+    display:none;position:fixed;top:12px;left:12px;z-index:60;
+    background:#0f172a;color:#fff;border:none;border-radius:8px;
+    padding:8px 12px;font-size:14px;cursor:pointer;
+  }
+  /* ---------- 主内容 ---------- */
+  #main{margin-left:var(--sidebar-w);padding:36px 48px 80px;max-width:1280px}
+  .doc-header{
+    background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#0d9488);
+    color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:28px;
+  }
+  .doc-header h1{font-size:28px;margin-bottom:8px}
+  .doc-header .meta{font-size:13px;opacity:.85}
+  .doc-header .meta span{margin-right:18px}
+  .legend{
+    display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;font-size:12.5px;
+  }
+  .legend span{background:rgba(255,255,255,.15);border-radius:20px;padding:3px 12px}
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px 32px;margin-bottom:24px}
+  h2{font-size:22px;color:#0f172a;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:10px}
+  h2 .no{
+    background:var(--blue);color:#fff;border-radius:8px;font-size:15px;
+    min-width:34px;height:30px;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;
+  }
+  h3{font-size:17.5px;color:#1e3a8a;margin:26px 0 10px;padding-left:10px;border-left:4px solid var(--blue)}
+  h4{font-size:15.5px;color:#334155;margin:20px 0 8px}
+  p{margin:8px 0;color:var(--ink-soft)}
+  ul.list,ol.list{margin:8px 0 8px 22px;color:var(--ink-soft)}
+  ul.list li,ol.list li{margin:5px 0}
+  strong{color:var(--ink)}
+  .hl-red{color:var(--red);font-weight:700}
+  .hl-blue{color:var(--blue);font-weight:700}
+  .hl-green{color:var(--green);font-weight:700}
+  .hl-amber{color:var(--amber);font-weight:700}
+  mark{background:#fef08a;padding:0 3px;border-radius:3px}
+  code{
+    background:#f1f5f9;border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;font-size:13px;font-family:"SF Mono",Menlo,Consolas,monospace;color:#be185d;
+  }
+  /* ---------- 表格 ---------- */
+  .tbl-wrap{overflow-x:auto;margin:12px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.8px}
+  th{background:#f1f5f9;color:#0f172a;text-align:left;font-weight:600}
+  th,td{border:1px solid var(--line);padding:8px 12px;vertical-align:top}
+  tbody tr:nth-child(even){background:#f8fafc}
+  tbody tr:hover{background:var(--blue-bg)}
+  /* ---------- 提示框 ---------- */
+  .callout{border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px;border-left:4px solid}
+  .callout .ct{font-weight:700;display:block;margin-bottom:2px}
+  .callout.danger{background:var(--red-bg);border-color:var(--red);color:#7f1d1d}
+  .callout.warn{background:var(--amber-bg);border-color:var(--amber);color:#78350f}
+  .callout.info{background:var(--blue-bg);border-color:var(--blue);color:#1e3a8a}
+  .callout.ok{background:var(--green-bg);border-color:var(--green);color:#064e3b}
+  /* ---------- 图 ---------- */
+  .figure{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .figure .fig-title{font-weight:700;color:#334155;font-size:14.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .figure .fig-title::before{content:"图";background:var(--violet);color:#fff;font-size:11px;border-radius:5px;padding:1px 7px}
+  .figure .fig-note{font-size:12.5px;color:#64748b;margin-top:8px}
+  .figure svg{width:100%;height:auto;display:block}
+  svg text{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  /* ---------- 徽章 ---------- */
+  .badge{display:inline-block;border-radius:6px;padding:1px 9px;font-size:12px;font-weight:700;color:#fff}
+  .badge.p0{background:var(--red)} .badge.p1{background:var(--amber)} .badge.p2{background:#64748b}
+  .chip{display:inline-block;background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:6px;padding:1px 8px;font-size:12.5px;font-family:Menlo,Consolas,monospace;margin:2px}
+  .backtop{
+    position:fixed;right:24px;bottom:24px;width:42px;height:42px;border-radius:50%;
+    background:var(--blue);color:#fff;border:none;font-size:18px;cursor:pointer;
+    box-shadow:0 4px 12px rgba(37,99,235,.4);z-index:40;
+  }
+  @media (max-width:960px){
+    #sidebar{transform:translateX(-100%);transition:transform .25s}
+    #sidebar.open{transform:translateX(0)}
+    #toc-toggle{display:block}
+    #main{margin-left:0;padding:64px 18px 60px}
+    section{padding:20px 16px}
+  }
+</style>
+</head>
+<body>
+<button id="toc-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ 目录</button>
+<nav id="sidebar">
+  <div class="brand">
+    <h1>HR Agent · 需求文档</h1>
+    <p>企业级项目文档 · 03</p>
+  </div>
+  <ul>
+    <li class="toc-l1"><a href="#sec1">1. 文档目的</a></li>
+    <li class="toc-l1"><a href="#sec2">2. 需求范围</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec2-1">2.1 范围内</a></li>
+        <li class="toc-l2"><a href="#sec2-2">2.2 范围外</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec3">3. 用户角色与权限需求</a></li>
+    <li class="toc-l1"><a href="#sec4">4. 核心用户需求</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec4-1">4.1 HR 专员</a></li>
+        <li class="toc-l2"><a href="#sec4-2">4.2 HR 负责人</a></li>
+        <li class="toc-l2"><a href="#sec4-3">4.3 培训管理员</a></li>
+        <li class="toc-l2"><a href="#sec4-4">4.4 系统管理员</a></li>
+        <li class="toc-l2"><a href="#sec4-5">4.5 用户故事汇总</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec5">5. 业务流程需求</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec5-1">5.1 招聘主流程</a></li>
+        <li class="toc-l2"><a href="#sec5-2">5.2 Agent 对话流程</a></li>
+        <li class="toc-l2"><a href="#sec5-3">5.3 知识库问答流程</a></li>
+        <li class="toc-l2"><a href="#sec5-4">5.4 培训考试流程</a></li>
+        <li class="toc-l2"><a href="#sec5-5">5.5 系统管理流程</a></li>
+        <li class="toc-l2"><a href="#sec5-6">5.6 面试评价流程</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec6">6. 功能需求</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec6-1">6.1 认证与用户管理</a></li>
+        <li class="toc-l2"><a href="#sec6-2">6.2 HR Agent</a></li>
+        <li class="toc-l2"><a href="#sec6-3">6.3 JD 与评分标准</a></li>
+        <li class="toc-l2"><a href="#sec6-4">6.4 简历筛选</a></li>
+        <li class="toc-l2"><a href="#sec6-5">6.5 面试方案</a></li>
+        <li class="toc-l3"><a href="#sec6-5-1">6.5.1 智能面试</a></li>
+        <li class="toc-l2"><a href="#sec6-6">6.6 知识库与知识助手</a></li>
+        <li class="toc-l2"><a href="#sec6-7">6.7 试卷与考试</a></li>
+        <li class="toc-l2"><a href="#sec6-8">6.8 邮箱配置</a></li>
+        <li class="toc-l2"><a href="#sec6-9">6.9 统计看板</a></li>
+        <li class="toc-l2"><a href="#sec6-10">6.10 页面级需求</a></li>
+        <li class="toc-l3"><a href="#sec6-10-1">6.10.1 页面字段与交互</a></li>
+        <li class="toc-l2"><a href="#sec6-11">6.11 业务规则汇总</a></li>
+        <li class="toc-l2"><a href="#sec6-12">6.12 待定业务口径收敛</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec7">7. 非功能需求</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec7-1">7.1 性能</a></li>
+        <li class="toc-l2"><a href="#sec7-2">7.2 安全</a></li>
+        <li class="toc-l2"><a href="#sec7-3">7.3 可用性</a></li>
+        <li class="toc-l2"><a href="#sec7-4">7.4 可维护性</a></li>
+        <li class="toc-l2"><a href="#sec7-5">7.5 合规与人工确认</a></li>
+        <li class="toc-l2"><a href="#sec7-6">7.6 可观测性</a></li>
+        <li class="toc-l2"><a href="#sec7-7">7.7 可恢复性</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec8">8. 功能边界与优先级</a></li>
+    <li class="toc-l1"><a href="#sec9">9. 版本规划</a></li>
+    <li class="toc-l1"><a href="#sec10">10. 需求评审准出标准</a></li>
+  </ul>
+</nav>
+
+<div id="main">
+  <div class="doc-header">
+    <h1>需求文档</h1>
+    <div class="meta">
+      <span>项目：HR Agent</span>
+      <span>来源：docs/origin/md/2-MD-企业级项目文档/03-需求文档.md</span>
+      <span>文档编号：03</span>
+    </div>
+    <div class="legend">
+      <span>🔴 红色加粗 = 红线 / 强约束</span>
+      <span>🟡 黄色高亮 = 默认口径 / 待确认项</span>
+      <span>🔵 蓝色 = 关键机制</span>
+      <span>📊 内联 SVG 图解 = 流程 / 结构可视化</span>
+    </div>
+  </div>
+
+  <!-- ================= 1 文档目的 ================= -->
+  <section id="sec1">
+    <h2><span class="no">1</span>文档目的</h2>
+    <p>本文档说明 HR Agent 项目<strong>要做什么、不做什么、用户需要什么、业务流程如何闭环、功能边界在哪里</strong>。文档面向产品、研发、测试、业务负责人和上线验收人员。</p>
+  </section>
+
+  <!-- ================= 2 需求范围 ================= -->
+  <section id="sec2">
+    <h2><span class="no">2</span>需求范围</h2>
+
+    <div class="figure">
+      <div class="fig-title">2-1 需求范围全景图（范围内 13 项能力 vs 范围外 8 项边界）</div>
+      <svg viewBox="0 0 1120 600" role="img" aria-label="需求范围全景图">
+        <defs>
+          <marker id="ar0" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker>
+        </defs>
+        <!-- 左：范围内 -->
+        <rect x="20" y="16" width="640" height="568" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+        <rect x="20" y="16" width="640" height="42" rx="12" fill="#059669"/>
+        <text x="340" y="43" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">✔ 范围内 —— 本项目交付的 13 项能力</text>
+        <g font-size="13" fill="#064e3b">
+          <rect x="38" y="72" width="604" height="72" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="96" font-weight="700" fill="#047857">账号与权限</text>
+          <text x="52" y="118">注册 / 登录 / 个人信息 / JWT 鉴权；用户管理、角色管理、</text>
+          <text x="52" y="136">超级管理员权限控制</text>
+          <rect x="38" y="154" width="604" height="72" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="178" font-weight="700" fill="#047857">HR Agent 对话编排</text>
+          <text x="52" y="200">对话入口、意图识别、受控工具编排、SSE 流式响应、</text>
+          <text x="52" y="218">多轮指代与按描述删除资源</text>
+          <rect x="38" y="236" width="604" height="90" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="260" font-weight="700" fill="#047857">招聘链路（JD → 简历 → 面试）</text>
+          <text x="52" y="282">JD 生成 / 保存 / 查询 / 修改 / 删除；简历评分标准同套操作；</text>
+          <text x="52" y="300">简历上传 / 解析 / AI 评分 / 历史 / 状态 / 删除 / 导出；面试方案；</text>
+          <text x="52" y="318">智能面试：腾讯会议建会 / 取消 / 状态同步、转写、四维评分、修订留痕</text>
+          <rect x="38" y="336" width="604" height="72" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="360" font-weight="700" fill="#047857">知识与文档</text>
+          <text x="52" y="382">文档上传 / 处理 / 查询 / 删除 / 切片查看；知识库管理、</text>
+          <text x="52" y="400">知识助手问答、知识库自动选择</text>
+          <rect x="38" y="418" width="604" height="72" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="442" font-weight="700" fill="#047857">培训考试</text>
+          <text x="52" y="464">试卷生成、试卷管理、考试分享、考试提交、</text>
+          <text x="52" y="482">考试结果查看和导出</text>
+          <rect x="38" y="500" width="604" height="72" rx="8" fill="#fff" stroke="#a7f3d0"/>
+          <text x="52" y="524" font-weight="700" fill="#047857">系统运营</text>
+          <text x="52" y="546">邮箱配置 / 连接测试 / 邮件抓取 / 日志查看；</text>
+          <text x="52" y="564">工作台统计、招聘趋势、培训完成情况、近期活动</text>
+        </g>
+        <!-- 右：范围外 -->
+        <rect x="690" y="16" width="410" height="568" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+        <rect x="690" y="16" width="410" height="42" rx="12" fill="#dc2626"/>
+        <text x="895" y="43" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">✘ 范围外 —— 明确不做的 8 项</text>
+        <g font-size="12.8" fill="#7f1d1d">
+          <rect x="706" y="72" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="95">① 招聘渠道发布与渠道效果分析</text>
+          <rect x="706" y="136" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="159">② 候选人 CRM、Offer 审批、背调、</text>
+          <text x="720" y="177">入职办理</text>
+          <rect x="706" y="200" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="223">③ 企业组织架构、绩效、薪酬、考勤等</text>
+          <text x="720" y="241">完整 HRIS 功能</text>
+          <rect x="706" y="264" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="287" font-weight="700">④ 自动录用、自动淘汰、</text>
+          <text x="720" y="305" font-weight="700">自动发送不可撤销通知</text>
+          <rect x="706" y="328" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="351">⑤ 自研音视频会议能力（会议能力由</text>
+          <text x="720" y="369">腾讯会议提供，不实现自有会议服务）</text>
+          <rect x="706" y="392" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="415">⑥ 面向候选人的完整招聘门户</text>
+          <rect x="706" y="456" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="479">⑦ 企业级监控、CI/CD、服务发现、</text>
+          <text x="720" y="497">灰度平台建设</text>
+          <rect x="706" y="520" width="378" height="56" rx="8" fill="#fff" stroke="#fecaca"/>
+          <text x="720" y="543">⑧ 大规模多租户 SaaS 计费、套餐、</text>
+          <text x="720" y="561">租户隔离和商业化运营后台</text>
+        </g>
+      </svg>
+      <div class="fig-note">注：范围外第 ④ 项与全文红线一致 —— AI 只做辅助建议，不做自动录用/淘汰决策（见 6.11 BR-001、7.5）。</div>
+    </div>
+
+    <h3 id="sec2-1">2.1 范围内</h3>
+    <ul class="list">
+      <li>用户注册、登录、个人信息、JWT 鉴权。</li>
+      <li>用户管理、角色管理、超级管理员权限控制。</li>
+      <li>HR Agent 对话入口、意图识别、受控工具编排、SSE 流式响应、多轮指代与按描述删除资源。</li>
+      <li>JD 生成、保存、查询、修改、删除。</li>
+      <li>简历评分标准生成、保存、查询、修改、删除。</li>
+      <li>简历上传、解析、AI 评分、历史记录、状态更新、删除、导出。</li>
+      <li>面试方案生成、保存、查询、修改、删除。</li>
+      <li>智能面试：腾讯会议建会/取消/状态同步、音视频或文档上传、腾讯会议录制转写、逐字稿分段与问答配对、四维评分、评价修订与留痕。</li>
+      <li>文档上传、处理、查询、删除、文档切片查看。</li>
+      <li>知识库管理、知识助手问答、知识库自动选择。</li>
+      <li>试卷生成、试卷管理、考试分享、考试提交、考试结果查看和导出。</li>
+      <li>邮箱配置、连接测试、邮件抓取、日志查看。</li>
+      <li>工作台统计、招聘趋势、培训完成情况、近期活动。</li>
+    </ul>
+
+    <h3 id="sec2-2">2.2 范围外</h3>
+    <ul class="list">
+      <li>招聘渠道发布与渠道效果分析。</li>
+      <li>候选人 CRM、Offer 审批、背调、入职办理。</li>
+      <li>企业组织架构、绩效、薪酬、考勤等完整 HRIS 功能。</li>
+      <li><span class="hl-red">自动录用、自动淘汰、自动发送不可撤销通知。</span></li>
+      <li>视频面试自研音视频能力：会议能力由腾讯会议提供，本项目不实现自有会议服务。</li>
+      <li>面向候选人的完整招聘门户。</li>
+      <li>企业级监控、CI/CD、服务发现、灰度平台建设。</li>
+      <li>大规模多租户 SaaS 计费、套餐、租户隔离和商业化运营后台。</li>
+    </ul>
+  </section>
+
+  <!-- ================= 3 角色与权限 ================= -->
+  <section id="sec3">
+    <h2><span class="no">3</span>用户角色与权限需求</h2>
+
+    <div class="figure">
+      <div class="fig-title">3-1 权限分层模型（三层访问边界）</div>
+      <svg viewBox="0 0 1120 330" role="img" aria-label="权限分层模型">
+        <defs>
+          <marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/></marker>
+        </defs>
+        <g font-size="13">
+          <rect x="20" y="24" width="780" height="84" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="40" y="52" font-size="15" font-weight="700" fill="#dc2626">第 1 层 · 超级管理员（敏感操作）</text>
+          <text x="40" y="78" fill="#7f1d1d">用户管理 · 角色管理 · 邮箱配置 · 全部业务数据维护</text>
+          <text x="40" y="98" fill="#7f1d1d" font-size="12">角色诉求：管理系统、用户、角色、邮箱配置</text>
+
+          <rect x="20" y="124" width="780" height="104" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="40" y="152" font-size="15" font-weight="700" fill="#2563eb">第 2 层 · 已认证用户（JWT，普通业务功能）</text>
+          <text x="40" y="178" fill="#1e3a8a">HR 负责人：查看统计 / 招聘结果 / 培训结果 / 关键业务数据</text>
+          <text x="40" y="198" fill="#1e3a8a">HR 专员：JD / 评分标准 / 简历筛选 / 面试方案 / 面试评价与修订 / 邮件草稿</text>
+          <text x="40" y="218" fill="#1e3a8a">培训管理员：文档上传 / 试卷生成 / 考试管理 / 结果查看　　普通员工：知识问答 / 考试分享页面</text>
+
+          <rect x="20" y="244" width="780" height="70" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="40" y="272" font-size="15" font-weight="700" fill="#059669">第 3 层 · 免登录（按业务需要开放）</text>
+          <text x="40" y="298" fill="#064e3b">候选人 / 考试参与者：通过分享链接访问考试页面</text>
+
+          <rect x="830" y="24" width="270" height="290" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+          <text x="965" y="56" text-anchor="middle" font-size="14.5" font-weight="700" fill="#d97706">⚠ 权限判定铁律</text>
+          <text x="850" y="88" fill="#78350f" font-size="12.8">登录后才能访问主系统页面</text>
+          <text x="850" y="116" fill="#78350f" font-size="12.8">后端接口必须以 JWT 和</text>
+          <text x="850" y="136" fill="#78350f" font-size="12.8">角色校验为准</text>
+          <text x="850" y="168" fill="#dc2626" font-size="12.8" font-weight="700">前端菜单隐藏不能作为</text>
+          <text x="850" y="188" fill="#dc2626" font-size="12.8" font-weight="700">唯一权限控制</text>
+          <text x="850" y="220" fill="#78350f" font-size="12.8">超管以系统内角色或</text>
+          <text x="850" y="240" fill="#78350f" font-size="12.8">is_superuser 校验为准</text>
+          <text x="850" y="272" fill="#78350f" font-size="12.8">考试分享页可免登录</text>
+          <text x="850" y="292" fill="#78350f" font-size="12.8">（业务验收确认）</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>角色</th><th>核心诉求</th><th>主要权限</th></tr></thead>
+        <tbody>
+          <tr><td><strong>超级管理员</strong></td><td>管理系统、用户、角色、邮箱配置</td><td>用户管理、角色管理、邮箱配置、全部业务数据维护</td></tr>
+          <tr><td><strong>HR 负责人</strong></td><td>查看招聘培训进展，保证流程质量</td><td>查看统计、招聘结果、培训结果、关键业务数据</td></tr>
+          <tr><td><strong>HR 专员</strong></td><td>执行招聘任务</td><td>JD、评分标准、简历筛选、面试方案、面试评价与修订、邮件草稿</td></tr>
+          <tr><td><strong>培训管理员</strong></td><td>生成和管理考试</td><td>文档上传、试卷生成、考试管理、结果查看</td></tr>
+          <tr><td><strong>普通员工</strong></td><td>查询知识或参与考试</td><td>知识问答、考试分享页面</td></tr>
+          <tr><td><strong>候选人/考试参与者</strong></td><td>完成考试或测评</td><td>通过分享链接访问考试页面</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>权限要求：</strong></p>
+    <ul class="list">
+      <li>登录后才能访问主系统页面。</li>
+      <li>用户管理、角色管理、邮箱配置等敏感操作<span class="hl-red">仅允许超级管理员访问</span>。</li>
+      <li>普通业务功能至少要求已认证用户。</li>
+      <li>考试分享页面可按业务需要允许免登录访问。</li>
+      <li><span class="hl-red">后端接口必须以 JWT 和角色校验为准，前端菜单隐藏不能作为唯一权限控制。</span></li>
+    </ul>
+  </section>
+  <!-- ================= 4 核心用户需求 ================= -->
+  <section id="sec4">
+    <h2><span class="no">4</span>核心用户需求</h2>
+
+    <h3 id="sec4-1">4.1 HR 专员</h3>
+    <ul class="list">
+      <li>我希望输入岗位需求后自动生成结构完整的 JD，以减少重复撰写。</li>
+      <li>我希望系统同步生成评分标准，使后续简历筛选口径一致。</li>
+      <li>我希望批量上传简历并自动评分，快速定位高匹配候选人。</li>
+      <li>我希望看到<strong>评分理由和维度</strong>，而不是只有一个总分。</li>
+      <li>我希望基于候选人和岗位自动生成面试方案，便于面试官使用。</li>
+      <li>我希望面试的<strong>会议、录像、逐字稿和评分留在同一条记录里</strong>，事后能复盘候选人到底说了什么。</li>
+      <li>我希望面试评分能指出<span class="hl-blue">「哪一问、哪一句」</span>，而不是只给一个总分。</li>
+      <li>我希望评分不符合我的判断时可以修订，并<strong>留下修订痕迹</strong>。</li>
+      <li>我希望通过 Agent 直接描述任务，由系统判断去哪个功能或执行哪个流程。</li>
+    </ul>
+
+    <h3 id="sec4-2">4.2 HR 负责人</h3>
+    <ul class="list">
+      <li>我希望看到招聘相关统计，了解当前 JD、简历筛选、面试等进展。</li>
+      <li>我希望流程产物<strong>可追踪、可复用、可删除</strong>。</li>
+      <li>我希望 <span class="hl-red">AI 结果保留人工确认空间，避免系统替 HR 做最终判断</span>。</li>
+    </ul>
+
+    <h3 id="sec4-3">4.3 培训管理员</h3>
+    <ul class="list">
+      <li>我希望上传培训文档后，系统可以自动生成试卷。</li>
+      <li>我希望配置题型、难度、题量、分值等信息。</li>
+      <li>我希望发布考试链接并查看考试结果。</li>
+    </ul>
+
+    <h3 id="sec4-4">4.4 系统管理员</h3>
+    <ul class="list">
+      <li>我希望能管理用户、角色和邮箱配置。</li>
+      <li>我希望系统有健康检查、错误提示和日志，便于定位问题。</li>
+      <li>我希望敏感配置不被普通用户访问。</li>
+    </ul>
+
+    <h3 id="sec4-5">4.5 用户故事汇总</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>编号</th><th>角色</th><th>用户故事</th><th>价值</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>US-001</td><td>HR 专员</td><td>作为 HR，我希望输入岗位需求即可生成 JD 初稿</td><td>降低撰写成本</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-002</td><td>HR 专员</td><td>作为 HR，我希望 JD 生成后自动生成评分标准</td><td>保持筛选口径一致</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-003</td><td>HR 专员</td><td>作为 HR，我希望批量上传简历并获得评分</td><td>提高初筛效率</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-004</td><td>HR 负责人</td><td>作为负责人，我希望查看候选人评分理由</td><td>支持复核和管理判断</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-005</td><td>面试官</td><td>作为面试官，我希望拿到结构化面试方案</td><td>提升面试准备效率</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-006</td><td>培训管理员</td><td>作为培训管理员，我希望基于资料生成试卷</td><td>降低出题成本</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-007</td><td>员工</td><td>作为员工，我希望通过知识助手查询制度</td><td>降低重复咨询</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-008</td><td>系统管理员</td><td>作为管理员，我希望管理用户和角色</td><td>控制访问边界</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-009</td><td>HR 专员</td><td>作为 HR，我希望通过 Agent 直接描述任务</td><td>降低使用门槛</td><td><span class="badge p1">P1</span></td></tr>
+          <tr><td>US-010</td><td>超级管理员</td><td>作为管理员，我希望配置邮箱并测试连接</td><td>支持通知自动化</td><td><span class="badge p1">P1</span></td></tr>
+          <tr><td>US-011</td><td>HR 专员</td><td>作为 HR，我希望把面试录音或腾讯会议录制自动转成逐字稿并评分</td><td>面试可复盘、可比较</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-012</td><td>HR 负责人</td><td>作为负责人，我希望评分能引用候选人原话，结论能被复核</td><td>避免印象分</td><td><span class="badge p0">P0</span></td></tr>
+          <tr><td>US-013</td><td>HR 专员</td><td>作为 HR，我希望让 Agent 改一下刚才那份 JD / 删掉某个候选人的评分记录</td><td>少切页面</td><td><span class="badge p1">P1</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><span class="ct">📌 故事分布</span>13 条用户故事中 <strong>10 条 P0、3 条 P1</strong>（US-009 / US-010 / US-013）。P0 集中在「招聘主流程闭环 + 面试可复盘 + 知识问答 + 权限」，P1 集中在「Agent 自然语言入口与邮箱自动化」。</div>
+  </section>
+
+  <!-- ================= 5 业务流程需求 ================= -->
+  <section id="sec5">
+    <h2><span class="no">5</span>业务流程需求</h2>
+
+    <h3 id="sec5-1">5.1 招聘主流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-1 招聘主流程（13 步 · 四阶段闭环）</div>
+      <svg viewBox="0 0 1120 500" role="img" aria-label="招聘主流程四阶段">
+        <defs>
+          <marker id="ar51" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+        </defs>
+        <!-- 阶段头 -->
+        <g font-size="14.5" font-weight="700" text-anchor="middle">
+          <rect x="20" y="16" width="250" height="38" rx="8" fill="#2563eb"/><text x="145" y="41" fill="#fff">阶段一 · 岗位定义（1–5）</text>
+          <rect x="300" y="16" width="250" height="38" rx="8" fill="#0d9488"/><text x="425" y="41" fill="#fff">阶段二 · 简历筛选（6–8）</text>
+          <rect x="580" y="16" width="250" height="38" rx="8" fill="#7c3aed"/><text x="705" y="41" fill="#fff">阶段三 · 面试准备（9–10）</text>
+          <rect x="860" y="16" width="250" height="38" rx="8" fill="#ea580c"/><text x="985" y="41" fill="#fff">阶段四 · 评价与后续（11–13）</text>
+        </g>
+        <line x1="272" y1="35" x2="296" y2="35" stroke="#64748b" stroke-width="2" marker-end="url(#ar51)"/>
+        <line x1="552" y1="35" x2="576" y2="35" stroke="#64748b" stroke-width="2" marker-end="url(#ar51)"/>
+        <line x1="832" y1="35" x2="856" y2="35" stroke="#64748b" stroke-width="2" marker-end="url(#ar51)"/>
+        <!-- 阶段一 -->
+        <g font-size="12.5" fill="#1e3a8a">
+          <rect x="20" y="70" width="250" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="34" y="93" font-weight="700">1. HR 输入岗位需求</text>
+          <rect x="20" y="142" width="250" height="70" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="34" y="165" font-weight="700">2. 系统解析岗位信息</text>
+          <text x="34" y="185">名称 / 地点 / 薪资 / 经验 /</text>
+          <text x="34" y="203">学历 / 技能要求</text>
+          <rect x="20" y="228" width="250" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="34" y="251" font-weight="700">3. 调用 JD 生成能力</text>
+          <text x="34" y="271">输出 JD 初稿</text>
+          <rect x="20" y="300" width="250" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="34" y="323" font-weight="700">4. 生成与 JD 匹配的</text>
+          <text x="34" y="343">评分标准</text>
+          <rect x="20" y="372" width="250" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="34" y="395" font-weight="700">5. HR 保存或编辑</text>
+          <text x="34" y="415">JD 与评分标准</text>
+        </g>
+        <g stroke="#93c5fd" stroke-width="2">
+          <line x1="145" y1="126" x2="145" y2="138" marker-end="url(#ar51)"/>
+          <line x1="145" y1="212" x2="145" y2="224" marker-end="url(#ar51)"/>
+          <line x1="145" y1="284" x2="145" y2="296" marker-end="url(#ar51)"/>
+          <line x1="145" y1="356" x2="145" y2="368" marker-end="url(#ar51)"/>
+        </g>
+        <!-- 阶段二 -->
+        <g font-size="12.5" fill="#134e4a">
+          <rect x="300" y="70" width="250" height="56" rx="8" fill="#f0fdfa" stroke="#5eead4"/>
+          <text x="314" y="93" font-weight="700">6. HR 上传候选人简历</text>
+          <rect x="300" y="142" width="250" height="88" rx="8" fill="#f0fdfa" stroke="#5eead4"/>
+          <text x="314" y="165" font-weight="700">7. 系统解析简历</text>
+          <text x="314" y="185">结合 JD + 评分标准输出</text>
+          <text x="314" y="203">评分、匹配度和理由</text>
+          <rect x="300" y="246" width="250" height="56" rx="8" fill="#f0fdfa" stroke="#5eead4"/>
+          <text x="314" y="269" font-weight="700">8. HR 查看候选人排序</text>
+          <text x="314" y="289">和评分详情</text>
+        </g>
+        <g stroke="#5eead4" stroke-width="2">
+          <line x1="425" y1="126" x2="425" y2="138" marker-end="url(#ar51)"/>
+          <line x1="425" y1="230" x2="425" y2="242" marker-end="url(#ar51)"/>
+        </g>
+        <!-- 阶段三 -->
+        <g font-size="12.5" fill="#4c1d95">
+          <rect x="580" y="70" width="250" height="56" rx="8" fill="#f5f3ff" stroke="#c4b5fd"/>
+          <text x="594" y="93" font-weight="700">9. HR 选择候选人</text>
+          <text x="594" y="113">生成面试方案</text>
+          <rect x="580" y="142" width="250" height="56" rx="8" fill="#f5f3ff" stroke="#c4b5fd"/>
+          <text x="594" y="165" font-weight="700">10. HR 为候选人发起</text>
+          <text x="594" y="185">腾讯会议面试</text>
+        </g>
+        <line x1="705" y1="126" x2="705" y2="138" stroke="#c4b5fd" stroke-width="2" marker-end="url(#ar51)"/>
+        <!-- 阶段四 -->
+        <g font-size="12.5" fill="#7c2d12">
+          <rect x="860" y="70" width="250" height="88" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+          <text x="874" y="93" font-weight="700">11. 会中/会后上传音视频</text>
+          <text x="874" y="113">或腾讯会议录制转写，</text>
+          <text x="874" y="131">系统转写并配对问答</text>
+          <rect x="860" y="174" width="250" height="88" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+          <text x="874" y="197" font-weight="700">12. 系统输出四维评分与证据</text>
+          <text x="874" y="217">HR 复核、修订并确认结论</text>
+          <rect x="860" y="278" width="250" height="70" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+          <text x="874" y="301" font-weight="700">13. HR 根据结论安排后续</text>
+          <text x="874" y="321">沟通或准备邮件通知</text>
+        </g>
+        <g stroke="#fdba74" stroke-width="2">
+          <line x1="985" y1="158" x2="985" y2="170" marker-end="url(#ar51)"/>
+          <line x1="985" y1="262" x2="985" y2="274" marker-end="url(#ar51)"/>
+        </g>
+        <!-- 阶段间衔接（底部弧线） -->
+        <path d="M 145 428 L 145 462 L 425 462 L 425 306" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar51)"/>
+        <path d="M 425 302 L 425 476 L 705 476 L 705 202" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar51)"/>
+        <path d="M 705 198 L 705 490 L 985 490 L 985 352" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar51)"/>
+        <text x="560" y="452" text-anchor="middle" font-size="11.5" fill="#64748b">虚线 = 阶段间顺序衔接</text>
+      </svg>
+    </div>
+    <ol class="list">
+      <li>HR 输入岗位需求。</li>
+      <li>系统解析岗位名称、地点、薪资、经验、学历、技能要求等信息。</li>
+      <li>系统调用 JD 生成能力输出 JD 初稿。</li>
+      <li>系统生成与 JD 匹配的评分标准。</li>
+      <li>HR 保存或编辑 JD 与评分标准。</li>
+      <li>HR 上传候选人简历。</li>
+      <li>系统解析简历，结合 JD 和评分标准输出评分、匹配度和理由。</li>
+      <li>HR 查看候选人排序和评分详情。</li>
+      <li>HR 选择候选人生成面试方案。</li>
+      <li>HR 为候选人发起腾讯会议面试。</li>
+      <li>会中/会后上传音视频或腾讯会议录制转写，系统转写并配对问答。</li>
+      <li>系统输出四维评分与证据，HR 复核、修订并确认结论。</li>
+      <li>HR 根据结论安排后续沟通或准备邮件通知。</li>
+    </ol>
+
+    <h3 id="sec5-2">5.2 Agent 对话流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-2 Agent 对话编排流程（LangGraph 主图 + 意图子图 + interrupt 确认环）</div>
+      <svg viewBox="0 0 1120 880" role="img" aria-label="Agent 对话流程">
+        <defs>
+          <marker id="ar52" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+          <marker id="ar52r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d97706"/></marker>
+        </defs>
+        <g font-size="13" text-anchor="middle">
+          <rect x="330" y="16" width="460" height="50" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="560" y="38" fill="#1e3a8a" font-weight="700">① 用户在 HR Agent 输入自然语言</text>
+          <text x="560" y="57" fill="#1e3a8a" font-size="12">可附带附件（简历、文档，单轮最多 20 份）</text>
+
+          <rect x="330" y="96" width="460" height="50" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="560" y="118" fill="#1e3a8a" font-weight="700">② 前端调用 Agent 流式接口</text>
+          <text x="560" y="137" fill="#1e3a8a" font-size="12">后端在 LangGraph 主图入口写入本轮消息</text>
+
+          <rect x="330" y="176" width="460" height="44" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="203" fill="#4c1d95" font-weight="700">③ route_intent 节点：构建对话记忆（含历史产物）</text>
+
+          <rect x="120" y="252" width="330" height="56" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="285" y="275" fill="#064e3b" font-weight="700">规则快通道（关键词）优先</text>
+          <text x="285" y="295" fill="#064e3b" font-size="12">命中 → 直接得到 intent</text>
+          <rect x="670" y="252" width="330" height="56" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+          <text x="835" y="272" fill="#78350f" font-weight="700">未命中 → 受控 ReAct 决策</text>
+          <text x="835" y="290" fill="#78350f" font-size="11">mode / action / intent / thought / observation</text>
+          <text x="835" y="304" fill="#78350f" font-size="11">confidence / reply（mode 与 action 必须自洽）</text>
+
+          <rect x="330" y="340" width="460" height="44" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="360" fill="#4c1d95" font-weight="700">得到 intent 与目标节点</text>
+          <text x="560" y="377" fill="#4c1d95" font-size="12">不确定时保守选择普通对话（general），避免误触发写操作</text>
+
+          <rect x="330" y="414" width="460" height="38" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="438" fill="#4c1d95" font-weight="700">④ 条件边按 intent 分发到对应意图子图</text>
+        </g>
+        <!-- 意图子图 3x3 -->
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="250" y="474" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="340" y="496" fill="#1e3a8a">jd（JD+评分标准）</text>
+          <rect x="460" y="474" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="550" y="496" fill="#1e3a8a">jd_edit（修改 JD）</text>
+          <rect x="670" y="474" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="760" y="496" fill="#1e3a8a">criteria_edit（改标准）</text>
+          <rect x="250" y="518" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="340" y="540" fill="#1e3a8a">resume_screening</text>
+          <rect x="460" y="518" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="550" y="540" fill="#1e3a8a">interview_plan</text>
+          <rect x="670" y="518" width="180" height="34" rx="8" fill="#eff6ff" stroke="#93c5fd"/><text x="760" y="540" fill="#1e3a8a">exam_generate</text>
+          <rect x="250" y="562" width="180" height="34" rx="8" fill="#fef2f2" stroke="#fca5a5"/><text x="340" y="584" fill="#7f1d1d">resource_delete</text>
+          <rect x="460" y="562" width="180" height="34" rx="8" fill="#fffbeb" stroke="#fcd34d"/><text x="550" y="584" fill="#78350f">email_notification</text>
+          <rect x="670" y="562" width="180" height="34" rx="8" fill="#f8fafc" stroke="#cbd5e1"/><text x="760" y="584" fill="#475569">general（普通对话）</text>
+        </g>
+        <g font-size="13" text-anchor="middle">
+          <rect x="330" y="628" width="460" height="46" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+          <text x="560" y="648" fill="#78350f" font-weight="700">⑤ 需要用户确认的意图：子图内 interrupt 真暂停</text>
+          <text x="560" y="666" fill="#78350f" font-size="12">不是提示词里的一句「请确认」，确认前不执行写操作</text>
+
+          <rect x="840" y="612" width="260" height="92" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+          <text x="970" y="636" fill="#78350f" font-weight="700">确认环</text>
+          <text x="970" y="657" fill="#78350f" font-size="12">SSE interrupt 事件 → 前端确认卡片</text>
+          <text x="970" y="675" fill="#78350f" font-size="12">⑥ 用户确认后恢复图执行</text>
+          <text x="970" y="693" fill="#78350f" font-size="12">子图继续跑执行节点</text>
+
+          <rect x="250" y="712" width="620" height="58" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="560" y="735" fill="#064e3b" font-weight="700">产物写回 checkpoint 的 artifacts（跨轮上限 50 条）</text>
+          <text x="560" y="755" fill="#064e3b" font-size="12">⑦ 缺少前置条件 → 返回缺失字段、建议和对应页面入口，不直接失败</text>
+
+          <rect x="250" y="800" width="620" height="52" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="560" y="822" fill="#1e3a8a" font-weight="700">⑧ 前端按 SSE 事件渲染：progress / delta / artifact / interrupt / final / error</text>
+          <text x="560" y="841" fill="#1e3a8a" font-size="12">final 事件结束本轮（每轮有且仅有一个）</text>
+
+          <rect x="20" y="712" width="200" height="92" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="120" y="736" fill="#134e4a" font-weight="700">⑨ 多轮指代</text>
+          <text x="120" y="757" fill="#134e4a" font-size="12">下一轮说「刚才那个」时</text>
+          <text x="120" y="775" fill="#134e4a" font-size="12">路由与编辑/删除链路优先</text>
+          <text x="120" y="793" fill="#134e4a" font-size="12">从 artifacts 反查，无需重复描述</text>
+        </g>
+        <!-- 连线 -->
+        <g stroke="#64748b" stroke-width="2" fill="none">
+          <line x1="560" y1="66" x2="560" y2="92" marker-end="url(#ar52)"/>
+          <line x1="560" y1="146" x2="560" y2="172" marker-end="url(#ar52)"/>
+          <path d="M 480 220 L 285 248" marker-end="url(#ar52)"/>
+          <path d="M 640 220 L 835 248" marker-end="url(#ar52)"/>
+          <path d="M 285 308 L 480 336" marker-end="url(#ar52)"/>
+          <path d="M 835 308 L 640 336" marker-end="url(#ar52)"/>
+          <line x1="560" y1="384" x2="560" y2="410" marker-end="url(#ar52)"/>
+          <line x1="560" y1="452" x2="560" y2="470" marker-end="url(#ar52)"/>
+          <line x1="560" y1="596" x2="560" y2="624" marker-end="url(#ar52)"/>
+          <line x1="560" y1="674" x2="560" y2="708" marker-end="url(#ar52)"/>
+          <line x1="560" y1="770" x2="560" y2="796" marker-end="url(#ar52)"/>
+        </g>
+        <g stroke="#d97706" stroke-width="2" fill="none">
+          <line x1="790" y1="645" x2="836" y2="645" marker-end="url(#ar52r)"/>
+          <path d="M 970 704 L 970 741 L 874 741" marker-end="url(#ar52r)"/>
+        </g>
+        <line x1="250" y1="741" x2="224" y2="741" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar52)"/>
+      </svg>
+      <div class="fig-note">红色子图 resource_delete：只有观察到明确目标才允许进入删除链路，不允许臆造名称或 ID；黄色子图 email_notification：只能生成草稿或进入确认流程。</div>
+    </div>
+    <ol class="list">
+      <li>用户在 HR Agent 输入自然语言，可附带附件（简历、文档）。</li>
+      <li>前端调用 Agent 流式接口，后端在 LangGraph 主图入口写入本轮消息。</li>
+      <li><code>route_intent</code> 节点构建对话记忆（含历史产物），再跑「规则快通道 + 受控 ReAct 决策」，得到 intent 与目标节点。</li>
+      <li>条件边按 intent 分发到对应意图子图：JD 生成、JD 修改、评分标准修改、简历筛选、面试方案、试卷生成、资源删除、邮件草稿、普通对话。</li>
+      <li>需要用户确认的意图会在子图内 <code>interrupt</code> <span class="hl-blue">真暂停</span>，把确认载荷通过 SSE <code>interrupt</code> 事件推给前端，前端渲染确认卡片。</li>
+      <li>用户确认后恢复图执行，子图继续跑执行节点，产物写回 checkpoint 的 <code>artifacts</code>。</li>
+      <li>若缺少前置条件，节点返回缺失字段、建议和对应页面入口，<strong>不直接失败</strong>。</li>
+      <li>前端按 SSE 事件渲染步骤、流式文本、产物和下一步建议；<code>final</code> 事件结束本轮。</li>
+      <li>下一轮用户说「刚才那个」时，路由与编辑/删除链路优先从 checkpoint 中的 <code>artifacts</code> 反查，无需用户重复描述。</li>
+    </ol>
+
+    <h3 id="sec5-3">5.3 知识库问答流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-3 知识库问答流程（RAG：文档入库 + 检索问答两条链路）</div>
+      <svg viewBox="0 0 1120 430" role="img" aria-label="知识库问答流程">
+        <defs>
+          <marker id="ar53" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+          <marker id="ar53t" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0d9488"/></marker>
+        </defs>
+        <text x="30" y="34" font-size="14" font-weight="700" fill="#0d9488">链路 A · 文档入库</text>
+        <g font-size="12.8" text-anchor="middle">
+          <rect x="30" y="48" width="230" height="58" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="145" y="73" fill="#134e4a" font-weight="700">① 用户上传文档</text>
+          <rect x="300" y="48" width="230" height="58" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="415" y="73" fill="#134e4a" font-weight="700">② 保存文件并处理文本内容</text>
+          <rect x="570" y="48" width="230" height="58" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="685" y="73" fill="#134e4a" font-weight="700">③ 文档切片并向量化</text>
+          <rect x="840" y="48" width="250" height="58" rx="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="965" y="73" fill="#134e4a" font-weight="700">③ 写入 PostgreSQL + pgvector</text>
+          <text x="965" y="93" fill="#134e4a" font-size="11.5">向量库</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2">
+          <line x1="260" y1="77" x2="296" y2="77" marker-end="url(#ar53)"/>
+          <line x1="530" y1="77" x2="566" y2="77" marker-end="url(#ar53)"/>
+          <line x1="800" y1="77" x2="836" y2="77" marker-end="url(#ar53)"/>
+        </g>
+        <text x="30" y="160" font-size="14" font-weight="700" fill="#2563eb">链路 B · 检索问答</text>
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="30" y="174" width="180" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="120" y="199" fill="#1e3a8a" font-weight="700">④ 用户在知识助手</text>
+          <text x="120" y="218" fill="#1e3a8a" font-weight="700">输入问题</text>
+          <rect x="250" y="174" width="220" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="360" y="199" fill="#1e3a8a" font-weight="700">⑤ 知识库选择（自动）</text>
+          <text x="360" y="218" fill="#1e3a8a">+ 查询增强</text>
+          <rect x="510" y="174" width="220" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="620" y="199" fill="#1e3a8a" font-weight="700">⑤ 向量召回 + 文本匹配</text>
+          <text x="620" y="218" fill="#1e3a8a">+ rerank</text>
+          <rect x="770" y="174" width="320" height="60" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+          <text x="930" y="199" fill="#78350f" font-weight="700">⑥ 按最低相似度阈值过滤召回结果</text>
+          <text x="930" y="218" fill="#78350f" font-size="11.5">低于阈值的召回结果不参与回答（BR-010）</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2">
+          <line x1="210" y1="204" x2="246" y2="204" marker-end="url(#ar53)"/>
+          <line x1="470" y1="204" x2="506" y2="204" marker-end="url(#ar53)"/>
+          <line x1="730" y1="204" x2="766" y2="204" marker-end="url(#ar53)"/>
+        </g>
+        <line x1="965" y1="106" x2="965" y2="140" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4"/>
+        <path d="M 965 140 L 620 140 L 620 170" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar53t)"/>
+        <text x="790" y="132" font-size="11.5" fill="#0d9488">向量库供召回</text>
+        <g font-size="12.8" text-anchor="middle">
+          <rect x="510" y="300" width="240" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="630" y="325" fill="#1e3a8a" font-weight="700">⑦ 相关上下文交给 LLM</text>
+          <text x="630" y="344" fill="#1e3a8a">生成回答</text>
+          <rect x="180" y="300" width="260" height="60" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="310" y="325" fill="#064e3b" font-weight="700">⑧ 用户查看回答</text>
+          <text x="310" y="344" fill="#064e3b">和来源上下文</text>
+          <rect x="790" y="300" width="300" height="76" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+          <text x="940" y="325" fill="#7f1d1d" font-weight="700">全部低于阈值 → 按「资料不足」处理</text>
+          <text x="940" y="345" fill="#7f1d1d" font-size="11.5">不输出确定性结论</text>
+          <text x="940" y="363" fill="#7f1d1d" font-size="11.5">提示不确定</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2" fill="none">
+          <path d="M 860 234 L 630 296" marker-end="url(#ar53)"/>
+          <line x1="510" y1="330" x2="444" y2="330" marker-end="url(#ar53)"/>
+        </g>
+        <path d="M 1000 234 L 960 296" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#ar53)"/>
+        <text x="700" y="266" font-size="11.5" fill="#64748b">有达标结果</text>
+        <text x="1010" y="266" font-size="11.5" fill="#dc2626">全部低于阈值</text>
+      </svg>
+      <div class="fig-note">图中编号与 5.3 正文步骤一一对应；步骤 3（切片向量化并写入）与步骤 5（选择/增强/召回/匹配/rerank）各展开为两个框。</div>
+    </div>
+    <ol class="list">
+      <li>用户上传文档。</li>
+      <li>系统保存文件并处理文本内容。</li>
+      <li>系统将文档切片并向量化，写入 <span class="hl-blue">PostgreSQL + pgvector</span>。</li>
+      <li>用户在知识助手输入问题。</li>
+      <li>系统进行知识库选择、查询增强、向量召回、文本匹配和 rerank。</li>
+      <li>系统按<mark>最低相似度阈值</mark>过滤召回结果；全部低于阈值时按「资料不足」处理。</li>
+      <li>系统将相关上下文交给 LLM 生成回答。</li>
+      <li>用户查看回答和来源上下文。</li>
+    </ol>
+
+    <h3 id="sec5-4">5.4 培训考试流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-4 培训考试流程（管理员出题 → 参与者答题 → 系统记录）</div>
+      <svg viewBox="0 0 1120 210" role="img" aria-label="培训考试流程">
+        <defs>
+          <marker id="ar54" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+        </defs>
+        <g font-size="11.5" text-anchor="middle" font-weight="700">
+          <text x="102" y="30" fill="#2563eb">培训管理员</text>
+          <text x="285" y="30" fill="#2563eb">培训管理员</text>
+          <text x="468" y="30" fill="#7c3aed">系统</text>
+          <text x="651" y="30" fill="#2563eb">培训管理员</text>
+          <text x="834" y="30" fill="#0d9488">考试参与者</text>
+          <text x="1017" y="30" fill="#7c3aed">系统</text>
+        </g>
+        <g font-size="12" text-anchor="middle">
+          <rect x="20" y="44" width="165" height="100" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="102" y="68" fill="#1e3a8a" font-weight="700">① 选择知识库文档</text>
+          <text x="102" y="88" fill="#1e3a8a">作为出题依据（也可在</text>
+          <text x="102" y="106" fill="#1e3a8a">Agent 对话中直接</text>
+          <text x="102" y="124" fill="#1e3a8a">上传参考附件）</text>
+          <rect x="203" y="44" width="165" height="100" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="285" y="68" fill="#1e3a8a" font-weight="700">② 输入试卷配置</text>
+          <text x="285" y="88" fill="#1e3a8a">或通过 Agent 表达</text>
+          <text x="285" y="106" fill="#1e3a8a">考试需求</text>
+          <rect x="386" y="44" width="165" height="100" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="468" y="68" fill="#4c1d95" font-weight="700">③ 解析考试意图</text>
+          <text x="468" y="88" fill="#4c1d95">生成试卷</text>
+          <rect x="569" y="44" width="165" height="100" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="651" y="68" fill="#1e3a8a" font-weight="700">④ 保存试卷</text>
+          <text x="651" y="88" fill="#1e3a8a">并生成分享链接</text>
+          <rect x="752" y="44" width="165" height="100" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="834" y="68" fill="#134e4a" font-weight="700">⑤ 通过链接答题</text>
+          <text x="834" y="88" fill="#134e4a">并提交</text>
+          <rect x="935" y="44" width="165" height="100" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="1017" y="68" fill="#4c1d95" font-weight="700">⑥ 记录考试结果</text>
+          <text x="1017" y="88" fill="#4c1d95">支持查看和导出</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2">
+          <line x1="185" y1="94" x2="199" y2="94" marker-end="url(#ar54)"/>
+          <line x1="368" y1="94" x2="382" y2="94" marker-end="url(#ar54)"/>
+          <line x1="551" y1="94" x2="565" y2="94" marker-end="url(#ar54)"/>
+          <line x1="734" y1="94" x2="748" y2="94" marker-end="url(#ar54)"/>
+          <line x1="917" y1="94" x2="931" y2="94" marker-end="url(#ar54)"/>
+        </g>
+        <text x="560" y="185" text-anchor="middle" font-size="12" fill="#64748b">分享链接是否免登录访问，由业务验收确认（试点默认允许免登录答题，见 6.12）</text>
+      </svg>
+    </div>
+    <ol class="list">
+      <li>培训管理员在试卷生成页选择已有知识库中的文档作为出题依据（也可在 Agent 对话中直接上传参考附件）。</li>
+      <li>管理员输入试卷配置或通过 Agent 表达考试需求。</li>
+      <li>系统解析考试意图，生成试卷。</li>
+      <li>管理员保存试卷并生成分享链接。</li>
+      <li>考试参与者通过链接答题并提交。</li>
+      <li>系统记录考试结果，支持查看和导出。</li>
+    </ol>
+
+    <h3 id="sec5-5">5.5 系统管理流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-5 系统管理流程（超级管理员）</div>
+      <svg viewBox="0 0 1120 150" role="img" aria-label="系统管理流程">
+        <defs>
+          <marker id="ar55" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+        </defs>
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="20" y="36" width="195" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="117" y="66" fill="#7f1d1d" font-weight="700">① 超级管理员</text>
+          <text x="117" y="86" fill="#7f1d1d">登录系统</text>
+          <rect x="245" y="36" width="195" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="342" y="66" fill="#7f1d1d" font-weight="700">② 管理用户信息、</text>
+          <text x="342" y="86" fill="#7f1d1d">角色和权限</text>
+          <rect x="470" y="36" width="195" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="567" y="66" fill="#7f1d1d" font-weight="700">③ 配置邮箱服务</text>
+          <text x="567" y="86" fill="#7f1d1d">并进行连接测试</text>
+          <rect x="695" y="36" width="195" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="792" y="66" fill="#7f1d1d" font-weight="700">④ 查看邮件抓取日志</text>
+          <text x="792" y="86" fill="#7f1d1d">和最近邮件</text>
+          <rect x="920" y="36" width="195" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="1017" y="66" fill="#7f1d1d" font-weight="700">⑤ 健康检查和日志</text>
+          <text x="1017" y="86" fill="#7f1d1d">确认系统状态</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2">
+          <line x1="215" y1="72" x2="241" y2="72" marker-end="url(#ar55)"/>
+          <line x1="440" y1="72" x2="466" y2="72" marker-end="url(#ar55)"/>
+          <line x1="665" y1="72" x2="691" y2="72" marker-end="url(#ar55)"/>
+          <line x1="890" y1="72" x2="916" y2="72" marker-end="url(#ar55)"/>
+        </g>
+      </svg>
+    </div>
+    <ol class="list">
+      <li>超级管理员登录系统。</li>
+      <li>管理用户信息、角色和权限。</li>
+      <li>配置邮箱服务并进行连接测试。</li>
+      <li>查看邮件抓取日志和最近邮件。</li>
+      <li>通过健康检查和日志确认系统状态。</li>
+    </ol>
+
+    <h3 id="sec5-6">5.6 面试评价流程</h3>
+    <div class="figure">
+      <div class="fig-title">5-6 面试评价流程（建会 → 三种材料来源 → 转写配对 → 混合评分 → 待定分支 → 修订留痕）</div>
+      <svg viewBox="0 0 1120 900" role="img" aria-label="面试评价流程">
+        <defs>
+          <marker id="ar56" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+          <marker id="ar56r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/></marker>
+        </defs>
+        <g font-size="13" text-anchor="middle">
+          <rect x="330" y="16" width="460" height="56" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="560" y="39" fill="#1e3a8a" font-weight="700">① HR 在智能面试页选择一位已评分候选人</text>
+          <text x="560" y="59" fill="#1e3a8a" font-size="12">补充会议主题与时间，点【开始面试】</text>
+
+          <rect x="330" y="102" width="460" height="56" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="560" y="125" fill="#1e3a8a" font-weight="700">② 调用腾讯会议 MCP 创建会议</text>
+          <text x="560" y="145" fill="#1e3a8a" font-size="12">回写会议号、入会链接、密码和会议状态</text>
+        </g>
+        <rect x="330" y="176" width="460" height="30" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="560" y="196" text-anchor="middle" font-size="13" font-weight="700" fill="#4c1d95">③ 面试结束后，HR 从三种材料中择一提供</text>
+        <g font-size="12.3" text-anchor="middle">
+          <rect x="60" y="224" width="300" height="66" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="210" y="248" fill="#4c1d95" font-weight="700">本地上传音视频</text>
+          <text x="210" y="268" fill="#4c1d95" font-size="11.5">单文件 ≤ 500MB（INTERVIEW_MEDIA_MAX_MB）</text>
+          <text x="210" y="284" fill="#4c1d95" font-size="11.5">服务端转写依赖 ffmpeg</text>
+          <rect x="410" y="224" width="300" height="66" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="248" fill="#4c1d95" font-weight="700">上传文档</text>
+          <text x="560" y="268" fill="#4c1d95" font-size="11.5">逐字稿 / 纪要</text>
+          <rect x="760" y="224" width="300" height="66" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="910" y="248" fill="#4c1d95" font-weight="700">拉取腾讯会议录制转写 ★ 优先</text>
+          <text x="910" y="268" fill="#4c1d95" font-size="11.5">材料来源优先级：录制转写 &gt; 本地音视频 &gt; 文档</text>
+        </g>
+        <g font-size="13" text-anchor="middle">
+          <rect x="330" y="312" width="460" height="52" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+          <text x="560" y="334" fill="#78350f" font-weight="700">④ 先确认候选人姓名（说话人可能未标注）</text>
+          <text x="560" y="353" fill="#78350f" font-size="12">再执行转写；未确认时分析入口置灰或先弹出确认</text>
+
+          <rect x="330" y="394" width="460" height="52" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="416" fill="#4c1d95" font-weight="700">⑤ 逐字稿分段 + 说话人识别</text>
+          <text x="560" y="435" fill="#4c1d95" font-size="12">配对出「一问一答」列表</text>
+
+          <rect x="330" y="476" width="460" height="66" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="499" fill="#4c1d95" font-weight="700">⑥ 每组问答判定：是否回应问题 / 信息量档位 / 追问深度</text>
+          <text x="560" y="519" fill="#dc2626" font-size="12" font-weight="700">命中的确定性规则直接覆盖模型结论（BR-012）</text>
+
+          <rect x="330" y="572" width="460" height="56" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="560" y="595" fill="#4c1d95" font-weight="700">⑦ 可核对维度规则推导 + 其余维度模型打分</text>
+          <text x="560" y="615" fill="#4c1d95" font-size="12">加权得到总分，并生成风险提示</text>
+
+          <rect x="390" y="658" width="340" height="46" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+          <text x="560" y="686" fill="#78350f" font-weight="700">⑧ 触发「结论待定」条件？</text>
+
+          <rect x="800" y="640" width="300" height="110" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+          <text x="950" y="664" fill="#7f1d1d" font-weight="700">是 → 结论必须为「待定」</text>
+          <text x="950" y="684" fill="#7f1d1d" font-size="11.5">不给录用建议，只给待定原因：</text>
+          <text x="950" y="702" fill="#7f1d1d" font-size="11.5">有效问答样本不足 / 说话人无法确认 /</text>
+          <text x="950" y="720" fill="#7f1d1d" font-size="11.5">关键维度无法评分 /</text>
+          <text x="950" y="738" fill="#7f1d1d" font-size="11.5">评价文本与逐字稿明显不符</text>
+
+          <rect x="330" y="742" width="460" height="52" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="560" y="764" fill="#064e3b" font-weight="700">⑨ HR 人工修订维度分 / 总分</text>
+          <text x="560" y="783" fill="#064e3b" font-size="12">记录原值、新值、修订人和时间（BR-014）</text>
+
+          <rect x="330" y="824" width="460" height="52" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="560" y="846" fill="#064e3b" font-weight="700">⑩ 评价结果与逐字稿随面试记录保存</text>
+          <text x="560" y="865" fill="#064e3b" font-size="12">可在面试记录 Tab 回看</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2" fill="none">
+          <line x1="560" y1="72" x2="560" y2="98" marker-end="url(#ar56)"/>
+          <line x1="560" y1="158" x2="560" y2="172" marker-end="url(#ar56)"/>
+          <path d="M 480 206 L 210 220" marker-end="url(#ar56)"/>
+          <line x1="560" y1="206" x2="560" y2="220" marker-end="url(#ar56)"/>
+          <path d="M 640 206 L 910 220" marker-end="url(#ar56)"/>
+          <path d="M 210 290 L 480 308" marker-end="url(#ar56)"/>
+          <line x1="560" y1="290" x2="560" y2="308" marker-end="url(#ar56)"/>
+          <path d="M 910 290 L 640 308" marker-end="url(#ar56)"/>
+          <line x1="560" y1="364" x2="560" y2="390" marker-end="url(#ar56)"/>
+          <line x1="560" y1="446" x2="560" y2="472" marker-end="url(#ar56)"/>
+          <line x1="560" y1="542" x2="560" y2="568" marker-end="url(#ar56)"/>
+          <line x1="560" y1="628" x2="560" y2="654" marker-end="url(#ar56)"/>
+          <line x1="560" y1="704" x2="560" y2="738" marker-end="url(#ar56)"/>
+          <line x1="560" y1="794" x2="560" y2="820" marker-end="url(#ar56)"/>
+        </g>
+        <line x1="730" y1="681" x2="796" y2="681" stroke="#dc2626" stroke-width="2" marker-end="url(#ar56r)"/>
+        <text x="575" y="726" font-size="11.5" fill="#64748b">否（可正常评价）</text>
+        <text x="763" y="672" text-anchor="middle" font-size="11.5" fill="#dc2626">是</text>
+      </svg>
+    </div>
+    <ol class="list">
+      <li>HR 在智能面试页选择一位已评分候选人，补充会议主题与时间，点【开始面试】。</li>
+      <li>系统调用腾讯会议 MCP 创建会议，回写会议号、入会链接、密码和会议状态。</li>
+      <li>面试结束后，HR 从三种材料中择一提供：本地上传音视频、上传文档（逐字稿/纪要）、直接拉取腾讯会议录制转写。</li>
+      <li>系统先确认候选人姓名（说话人可能未标注），再执行转写。</li>
+      <li>转写完成后，系统对逐字稿做分段与说话人识别，配对出「一问一答」列表。</li>
+      <li>系统对每组问答判定「是否回应问题」「信息量档位」「追问深度」，<span class="hl-red">命中的确定性规则直接覆盖模型结论</span>。</li>
+      <li>系统按可核对维度推导分数，再让模型对其余维度打分，加权得到总分，并生成风险提示。</li>
+      <li>若触发「结论待定」条件，系统<span class="hl-red">不给出录用建议，只给出待定原因</span>。</li>
+      <li>HR 可对维度分数或总分做人工修订，修订需记录原值、新值、修订人和时间。</li>
+      <li>评价结果与逐字稿随面试记录保存，可在面试记录 Tab 回看。</li>
+    </ol>
+  </section>
+
+  <!-- ================= 6 功能需求 ================= -->
+  <section id="sec6">
+    <h2><span class="no">6</span>功能需求</h2>
+
+    <div class="figure">
+      <div class="fig-title">6-0 招聘数据链实体关联图（贯穿 6.3–6.5.1 的强约束）</div>
+      <svg viewBox="0 0 1120 390" role="img" aria-label="招聘数据链实体关联">
+        <defs>
+          <marker id="ar60" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+          <marker id="ar60r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/></marker>
+        </defs>
+        <g font-size="13" text-anchor="middle">
+          <rect x="40" y="150" width="180" height="70" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="130" y="178" fill="#1e3a8a" font-weight="700" font-size="15">JD</text>
+          <text x="130" y="200" fill="#1e3a8a" font-size="11.5">标题+正文必填 · 默认草稿</text>
+
+          <rect x="320" y="40" width="210" height="70" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+          <text x="425" y="68" fill="#134e4a" font-weight="700" font-size="15">评分标准</text>
+          <text x="425" y="90" fill="#134e4a" font-size="11.5">默认总分 100 · 维度化存储</text>
+
+          <rect x="320" y="250" width="210" height="70" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+          <text x="425" y="278" fill="#134e4a" font-weight="700" font-size="15">简历评估记录</text>
+          <text x="425" y="300" fill="#134e4a" font-size="11.5">姓名 / 岗位 / 总分 / 维度 / 理由</text>
+
+          <rect x="640" y="150" width="210" height="70" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="745" y="178" fill="#4c1d95" font-weight="700" font-size="15">面试方案</text>
+          <text x="745" y="200" fill="#4c1d95" font-size="11.5">重点 / 问题 / 维度 / 评分建议</text>
+
+          <rect x="640" y="280" width="210" height="70" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+          <text x="745" y="308" fill="#7c2d12" font-weight="700" font-size="15">面试记录 interviews</text>
+          <text x="745" y="330" fill="#7c2d12" font-size="11.5">会议 / 材料 / 转写 / 评价</text>
+
+          <rect x="920" y="270" width="180" height="90" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="1010" y="298" fill="#7c2d12" font-weight="700">逐字稿</text>
+          <text x="1010" y="320" fill="#7c2d12" font-weight="700">四维评分 + 证据</text>
+          <text x="1010" y="342" fill="#7c2d12" font-weight="700">人工修订留痕</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2" fill="none">
+          <path d="M 220 168 L 316 88" marker-end="url(#ar60)"/>
+          <path d="M 530 268 L 636 196" marker-end="url(#ar60)"/>
+          <line x1="530" y1="300" x2="636" y2="312" marker-end="url(#ar60)"/>
+          <line x1="850" y1="315" x2="916" y2="315" marker-end="url(#ar60)"/>
+        </g>
+        <path d="M 220 202 L 316 272" fill="none" stroke="#dc2626" stroke-width="2.5" marker-end="url(#ar60r)"/>
+        <line x1="425" y1="110" x2="425" y2="246" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ar60)"/>
+        <g font-size="11.8">
+          <text x="185" y="120" fill="#475569">生成 / 可绑定</text>
+          <text x="130" y="252" fill="#dc2626" font-weight="700">必须关联（BR-002）</text>
+          <text x="437" y="180" fill="#0d9488">可选输入</text>
+          <text x="642" y="236" fill="#dc2626" font-weight="700">必须基于（BR-003）</text>
+          <text x="536" y="272" fill="#475569">一场面试关联一位</text>
+          <text x="536" y="286" fill="#475569">候选人评估记录</text>
+        </g>
+        <text x="40" y="368" font-size="12" fill="#64748b">实线红箭头 = 强制关联约束；虚线 = 可选输入。删除 JD 前应确认是否存在关联评分标准或简历评估记录（见 6.3 / 6.12）。</text>
+      </svg>
+    </div>
+
+    <h3 id="sec6-1">6.1 认证与用户管理</h3>
+    <ul class="list">
+      <li>支持用户注册、登录、刷新 Token、获取当前用户。</li>
+      <li>支持用户列表、详情、更新、删除。</li>
+      <li>支持管理员创建用户、分配角色、创建角色、删除角色。</li>
+      <li>支持超级管理员角色校验。</li>
+      <li>登录失败、Token 过期、无权限时返回明确错误。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li>注册时用户名、邮箱应<strong>唯一</strong>。</li>
+      <li>登录成功后返回访问令牌和令牌类型。</li>
+      <li>Token 失效后前端应引导用户重新登录。</li>
+      <li><span class="hl-red">普通用户不得调用用户列表、角色管理、邮箱管理等管理员接口。</span></li>
+      <li>超级管理员角色以系统内角色或 <code>is_superuser</code> 校验为准，<span class="hl-red">不能只依赖前端菜单控制</span>。</li>
+    </ul>
+
+    <h3 id="sec6-2">6.2 HR Agent</h3>
+    <ul class="list">
+      <li>支持普通对话接口和流式对话接口。</li>
+      <li>支持附件元数据传入（简历、文档，<mark>单轮最多 20 份</mark>）。</li>
+      <li>支持以下意图：<span class="chip">jd</span>（生成 JD + 评分标准）、<span class="chip">jd_edit</span>（修改 JD）、<span class="chip">criteria_edit</span>（修改评分标准）、<span class="chip">resume_screening</span>（简历批量评分）、<span class="chip">interview_plan</span>（面试方案）、<span class="chip">exam_generate</span>（试卷生成）、<span class="chip">resource_delete</span>（按描述删除资源）、<span class="chip">email_notification</span>（邮件草稿，来自技能包）、<span class="chip">general</span>（普通对话）。</li>
+      <li>支持根据前置条件返回缺失信息。</li>
+      <li>支持输出步骤、产物、建议、路由和执行状态。</li>
+      <li><span class="hl-red">邮件类动作只能生成草稿或进入确认流程，不允许未经确认自动发送。</span></li>
+      <li>支持多轮指代：用户说「刚才那份 JD」「上一个候选人」时，能从本轮上下文或历史产物中定位对象。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li><strong>决策来源</strong>：路由优先走<span class="hl-blue">规则快通道（关键词）</span>，未命中再走<span class="hl-blue">受控 ReAct 决策</span>；决策输出 <code>mode</code>、<code>action</code>、<code>intent</code>、<code>thought</code>、<code>observation</code>、<code>confidence</code>、<code>reply</code>，其中 <code>mode</code> 与 <code>action</code> 必须自洽。</li>
+      <li><strong>保守优先</strong>：不确定时选择普通对话，避免误触发写操作；删除类请求只有在观察到明确目标时才允许进入删除链路，<span class="hl-red">不允许臆造名称或 ID</span>。</li>
+      <li><strong>流程约束</strong>：确认节点是图上的<span class="hl-blue">真暂停（<code>interrupt</code>）</span>，不是提示词里的一句「请确认」。<span class="hl-red">用户确认前不会执行写操作。</span></li>
+      <li><strong>写操作留痕</strong>：JD、评分标准、面试方案、试卷、简历评分记录、邮件草稿的生成与修改都应落到可查询的对象上；删除应返回删除对象的名称与数量。</li>
+      <li><strong>产物累积</strong>：跨轮产物保存在图状态中（<mark>上限 50 条</mark>），编辑/删除链路优先图状态反查，其次回退到会话消息中的历史响应。</li>
+      <li><strong>返回结构</strong>：<code>message</code>、<code>intent</code>、<code>route</code>、<code>steps</code>、<code>artifacts</code>、<code>suggestions</code>、<code>requires_confirmation</code>、<code>missing_fields</code>。</li>
+      <li><strong>流式事件契约</strong>：<code>progress</code>（节点/步骤进度）、<code>delta</code>（文本增量，带 <code>section</code>）、<code>artifact</code>（产物就绪）、<code>interrupt</code>（等待确认，含 <code>thread_id</code> 与 <code>payload</code>）、<code>final</code>（本轮终态，<span class="hl-red">每轮有且仅有一个</span>）、<code>error</code>。</li>
+      <li><strong>附件直通</strong>：<code>/agent/resume-screen/stream</code>、<code>/agent/interview-plan/stream</code>、<code>/agent/exam/stream</code>、<code>/agent/exam/document-stream</code> 等端点带预设意图，跳过路由决策直达对应执行节点。</li>
+    </ul>
+    <div class="callout info"><span class="ct">🔑 SSE 事件契约速览</span>
+      <code>progress</code> 进度 → <code>delta</code> 流式文本 → <code>artifact</code> 产物就绪 →（如需确认）<code>interrupt</code> 暂停等待 → <code>final</code> 终态收尾；异常走 <code>error</code>。完整编排见图 5-2。
+    </div>
+
+    <h3 id="sec6-3">6.3 JD 与评分标准</h3>
+    <ul class="list">
+      <li>支持根据岗位需求生成 JD。</li>
+      <li>支持保存、查询、更新、删除 JD。</li>
+      <li>支持生成并保存评分标准。</li>
+      <li>支持按岗位、状态或关键字查询历史记录。</li>
+      <li>支持 JD 与评分标准作为后续简历评分输入。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li>JD 必填字段至少包括<strong>标题和正文内容</strong>。</li>
+      <li>可选字段包括部门、地点、薪资范围、经验、学历、岗位类型、技能列表、状态、元数据。</li>
+      <li>JD 默认状态为<mark>草稿</mark>，业务可根据需要扩展为已发布、归档等状态。</li>
+      <li>评分标准默认总分为 <mark>100 分</mark>。</li>
+      <li>评分标准应支持<strong>维度化存储</strong>，包括维度名称、权重、满分和评分说明。</li>
+      <li>删除 JD 前应确认是否存在关联评分标准或简历评估记录；<span class="hl-amber">如果当前实现未做强约束，验收时需确认业务可接受</span>。</li>
+    </ul>
+
+    <h3 id="sec6-4">6.4 简历筛选</h3>
+    <ul class="list">
+      <li>支持 <strong>PDF、DOC、DOCX、TXT、MD</strong> 等简历格式。</li>
+      <li>支持上传文件大小限制（<mark>默认 10MB</mark>）。</li>
+      <li>支持自动解析简历内容。</li>
+      <li>支持结合 JD 或评分标准进行匹配评分。</li>
+      <li>支持查看评分结果、评分指标、AI 建议和历史记录。</li>
+      <li>支持状态更新、删除和压缩包导出。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li><span class="hl-red">简历评估必须关联一个 JD。</span></li>
+      <li>评分标准可选；若未选择，系统可使用 JD 内容或默认评估逻辑。</li>
+      <li>评估结果至少包括候选人姓名、应聘岗位、工作年限、教育背景、总分、评分维度和评分理由。</li>
+      <li>支持候选人状态更新，<span class="hl-amber">状态枚举应在产品验收时固定</span>。</li>
+      <li><span class="hl-amber">同一候选人重复上传的处理规则需在上线前确认</span>：允许重复、覆盖旧记录或提示用户选择。</li>
+      <li><span class="hl-red">AI 评分结果不作为淘汰或录用的最终依据。</span></li>
+    </ul>
+
+    <h3 id="sec6-5">6.5 面试方案</h3>
+    <ul class="list">
+      <li>支持基于候选人简历、JD 和评分结果生成面试方案。</li>
+      <li>支持保存、查询、更新、删除面试方案。</li>
+      <li>面试方案应包含<strong>面试重点、问题建议、考察维度、评分建议</strong>。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li><span class="hl-red">面试方案必须关联一条简历评估记录。</span></li>
+      <li>创建时必须包含候选人姓名、候选人岗位和方案正文。</li>
+      <li>方案内容应覆盖技术能力、项目经验、岗位匹配度、风险点和追问建议。</li>
+      <li>面试方案保存后允许 HR 编辑，<strong>不要求完全采用 AI 原文</strong>。</li>
+    </ul>
+
+    <h3 id="sec6-5-1">6.5.1 智能面试（会议 + 转写 + 评价）</h3>
+    <p><strong>功能范围：</strong></p>
+    <ul class="list">
+      <li>支持为候选人发起腾讯会议（主题、起止时间、时区、等候室开关），回写会议号、入会链接、密码。</li>
+      <li>支持查询会议状态、手动同步状态、取消会议。</li>
+      <li>支持三种材料来源：本地上传音视频、上传文档（逐字稿/纪要）、拉取腾讯会议录制转写。</li>
+      <li>支持在分析前修正候选人姓名，并记录该项修正。</li>
+      <li>支持展示录制设置检查结果（如会议是否开启云录制）。</li>
+      <li>支持逐字稿分段、说话人识别、问答配对、四维评分、风险提示与结论。</li>
+      <li>支持人工修订评分并留痕。</li>
+    </ul>
+
+    <div class="figure">
+      <div class="fig-title">6-1 四维评分权重与评分来源（总分 100，加权计算）</div>
+      <svg viewBox="0 0 780 380" role="img" aria-label="四维评分权重环图">
+        <g transform="rotate(-90 180 180)">
+          <circle cx="180" cy="180" r="110" fill="none" stroke="#2563eb" stroke-width="46" stroke-dasharray="241.90 449.25" stroke-dashoffset="0"/>
+          <circle cx="180" cy="180" r="110" fill="none" stroke="#0d9488" stroke-width="46" stroke-dasharray="241.90 449.25" stroke-dashoffset="-241.90"/>
+          <circle cx="180" cy="180" r="110" fill="none" stroke="#f59e0b" stroke-width="46" stroke-dasharray="103.67 587.48" stroke-dashoffset="-483.80"/>
+          <circle cx="180" cy="180" r="110" fill="none" stroke="#8b5cf6" stroke-width="46" stroke-dasharray="103.67 587.48" stroke-dashoffset="-587.48"/>
+        </g>
+        <text x="180" y="172" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">四维加权</text>
+        <text x="180" y="198" text-anchor="middle" font-size="13" fill="#64748b">总分 100</text>
+        <g font-size="13.5">
+          <rect x="360" y="52" width="18" height="18" rx="4" fill="#2563eb"/>
+          <text x="388" y="66" fill="#0f172a" font-weight="700">问答一致性 · 35%</text>
+          <text x="388" y="88" fill="#475569" font-size="12.5">规则推导：由「是否回应问题」判定</text>
+          <rect x="360" y="112" width="18" height="18" rx="4" fill="#0d9488"/>
+          <text x="388" y="126" fill="#0f172a" font-weight="700">事实信息量 · 35%</text>
+          <text x="388" y="148" fill="#475569" font-size="12.5">规则推导：由「信息量档位」判定</text>
+          <rect x="360" y="172" width="18" height="18" rx="4" fill="#f59e0b"/>
+          <text x="388" y="186" fill="#0f172a" font-weight="700">逻辑条理性 · 15%</text>
+          <text x="388" y="208" fill="#475569" font-size="12.5">模型按 rubric 打分</text>
+          <rect x="360" y="232" width="18" height="18" rx="4" fill="#8b5cf6"/>
+          <text x="388" y="246" fill="#0f172a" font-weight="700">表达组织能力 · 15%</text>
+          <text x="388" y="268" fill="#475569" font-size="12.5">模型按 rubric 打分</text>
+        </g>
+        <rect x="360" y="296" width="400" height="62" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+        <text x="376" y="320" font-size="12.8" fill="#78350f" font-weight="700">追问深度 ≠ 候选人得分维度</text>
+        <text x="376" y="342" font-size="12.3" fill="#78350f">作为「面试执行度」单独呈现，用于评价面试官是否深挖</text>
+        <text x="180" y="342" text-anchor="middle" font-size="12" fill="#64748b">每个维度必须能指回逐字稿中的具体问答</text>
+        <text x="180" y="362" text-anchor="middle" font-size="12" fill="#dc2626" font-weight="700">不允许只给分数不给依据</text>
+      </svg>
+    </div>
+
+    <div class="figure">
+      <div class="fig-title">6-2 转写与分析状态机（状态必须可观测，失败原因写入记录）</div>
+      <svg viewBox="0 0 1120 280" role="img" aria-label="转写与分析状态机">
+        <defs>
+          <marker id="ar62" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b"/></marker>
+          <marker id="ar62r" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/></marker>
+        </defs>
+        <g font-size="13" text-anchor="middle" font-family="Menlo,Consolas,monospace">
+          <rect x="20" y="70" width="150" height="52" rx="26" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+          <text x="95" y="101" fill="#475569" font-weight="700">not_started</text>
+          <rect x="230" y="70" width="160" height="52" rx="26" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+          <text x="310" y="101" fill="#1e3a8a" font-weight="700">transcribing</text>
+          <rect x="450" y="70" width="190" height="52" rx="26" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+          <text x="545" y="101" fill="#134e4a" font-weight="700">transcript_ready</text>
+          <rect x="700" y="70" width="150" height="52" rx="26" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+          <text x="775" y="101" fill="#4c1d95" font-weight="700">analyzing</text>
+          <rect x="910" y="70" width="150" height="52" rx="26" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+          <text x="985" y="101" fill="#064e3b" font-weight="700">completed</text>
+          <rect x="450" y="190" width="170" height="52" rx="26" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+          <text x="535" y="221" fill="#7f1d1d" font-weight="700">failed</text>
+        </g>
+        <g stroke="#64748b" stroke-width="2">
+          <line x1="170" y1="96" x2="226" y2="96" marker-end="url(#ar62)"/>
+          <line x1="390" y1="96" x2="446" y2="96" marker-end="url(#ar62)"/>
+          <line x1="640" y1="96" x2="696" y2="96" marker-end="url(#ar62)"/>
+          <line x1="850" y1="96" x2="906" y2="96" marker-end="url(#ar62)"/>
+        </g>
+        <g stroke="#dc2626" stroke-width="2" fill="none">
+          <path d="M 310 122 L 480 186" marker-end="url(#ar62r)"/>
+          <path d="M 775 122 L 590 186" marker-end="url(#ar62r)"/>
+        </g>
+        <g font-size="11.5" fill="#64748b" text-anchor="middle">
+          <text x="198" y="86">开始转写</text>
+          <text x="418" y="86">转写完成</text>
+          <text x="668" y="86">开始分析</text>
+          <text x="878" y="86">评分产出</text>
+          <text x="535" y="264" fill="#dc2626">转写 / 分析失败均可进入 failed，失败原因写入记录</text>
+        </g>
+      </svg>
+    </div>
+
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li>一场面试（<code>interviews</code> 一条记录）<span class="hl-red">必须关联一位候选人的简历评估记录</span>。</li>
+      <li>会议时间采用 <strong>ISO 8601 且保留时区</strong>；结束时间必须晚于开始时间。</li>
+      <li>未配置腾讯会议 Token 时，建会应返回明确错误（<mark>503 提示未配置</mark>），而不是静默失败。</li>
+      <li>上传音视频单文件大小受 <code>INTERVIEW_MEDIA_MAX_MB</code> 限制（<mark>默认 500MB</mark>）；服务端转写依赖 <code>ffmpeg</code>。</li>
+      <li><span class="hl-red">分析前必须确认候选人姓名</span>；未确认时分析入口应置灰或先弹出确认。</li>
+      <li>评分维度固定为四项，权重：<span class="hl-blue">问答一致性 35%、事实信息量 35%、逻辑条理性 15%、表达组织能力 15%</span>。（见图 6-1）</li>
+      <li>问答一致性与事实信息量由<strong>规则</strong>从「是否回应问题」「信息量档位」推导；逻辑条理性与表达组织能力由<strong>模型</strong>按 rubric 打分。</li>
+      <li><span class="hl-red">每个维度必须能指回逐字稿中的具体问答；不允许只给分数不给依据。</span></li>
+      <li>追问深度不作为候选人得分维度，作为<span class="hl-blue">「面试执行度」</span>单独呈现，用于评价面试官是否深挖。</li>
+      <li>出现以下任一情况时，<span class="hl-red">结论必须为「待定」，不得给出录用/不录用建议</span>：有效问答样本不足、候选人说话人无法确认、关键维度无法评分、评价文本与逐字稿明显不符。</li>
+      <li>人工修订只允许 HR 在评价结果页操作，修订必须记录<strong>修订人、时间、原值和新值</strong>；修订后总分重新计算并标记为<mark>「已人工修订」</mark>。</li>
+      <li>转写与分析状态必须可观测：<code>not_started</code>、<code>transcribing</code>、<code>transcript_ready</code>、<code>analyzing</code>、<code>completed</code>、<code>failed</code>，失败原因写入记录。（见图 6-2）</li>
+    </ul>
+    <div class="callout danger"><span class="ct">🚫 智能面试三条红线</span>
+      ① 未确认候选人姓名不得开始分析；② 命中确定性规则时代码结论覆盖模型结论（BR-012）；③ 结论「待定」时不得输出录用或淘汰建议（BR-013）。
+    </div>
+
+    <h3 id="sec6-6">6.6 知识库与知识助手</h3>
+    <ul class="list">
+      <li>支持文档上传、处理、切片和删除。</li>
+      <li>支持知识库集合创建、更新、删除。</li>
+      <li>支持知识库问答、自动选择知识库。</li>
+      <li>支持查询增强、向量召回、文本匹配、rerank。</li>
+      <li>对解析失败、空文档、无相关结果应返回明确提示。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li>知识库名称<strong>必填</strong>，支持描述、公开状态、可搜索状态、分类、标签和元数据。</li>
+      <li>文档上传可绑定知识库，也可以作为未归类文档保存。</li>
+      <li>文档处理后应保存提取文本、文件哈希、文件大小、MIME 类型和切片信息。</li>
+      <li>知识问答应优先基于知识库内容回答；<span class="hl-red">无相关内容时应提示不确定</span>。</li>
+      <li>用户删除文档时，应同步考虑文档切片和向量数据清理。</li>
+    </ul>
+
+    <h3 id="sec6-7">6.7 试卷与考试</h3>
+    <ul class="list">
+      <li>支持基于文档生成试卷。</li>
+      <li>支持配置题型、难度、题量、分值。</li>
+      <li>支持试卷列表、详情、更新、删除。</li>
+      <li>支持考试分享链接。</li>
+      <li>支持提交答案、记录考试结果、查看和导出结果。</li>
+    </ul>
+    <p><strong>详细规则：</strong></p>
+    <ul class="list">
+      <li>试卷生成请求应包括<strong>标题、科目、总分</strong>，可选难度、时长、题型、题量、知识文件和特殊要求。</li>
+      <li>试卷保存后应支持列表、详情、更新、删除。</li>
+      <li>考试提交应记录考试 ID、学生姓名、部门、答案和试卷内容。</li>
+      <li><span class="hl-amber">分享链接是否免登录访问，应由业务验收确认。</span></li>
+      <li><span class="hl-amber">若试卷已被提交答题，是否允许修改或删除，需在上线前明确。</span></li>
+    </ul>
+
+    <h3 id="sec6-8">6.8 邮箱配置</h3>
+    <ul class="list">
+      <li>支持邮箱配置新增、查询、更新、删除。</li>
+      <li>支持连接测试。</li>
+      <li>支持手动抓取邮件、查看抓取日志和最近邮件。</li>
+      <li><span class="hl-red">邮箱配置仅允许超级管理员操作。</span></li>
+    </ul>
+
+    <h3 id="sec6-9">6.9 统计看板</h3>
+    <ul class="list">
+      <li>支持工作台概览。</li>
+      <li>支持招聘趋势、培训完成情况和近期活动查询。</li>
+    </ul>
+
+    <h3 id="sec6-10">6.10 页面级需求</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>页面</th><th>主要操作</th><th>关键状态</th><th>异常提示</th></tr></thead>
+        <tbody>
+          <tr><td><strong>登录页</strong></td><td>登录、跳转注册</td><td>未登录、登录中、登录成功</td><td>账号密码错误、Token 异常</td></tr>
+          <tr><td><strong>工作台</strong></td><td>查看统计和活动</td><td>加载中、正常、无数据</td><td>统计接口失败</td></tr>
+          <tr><td><strong>HR Agent</strong></td><td>输入消息、上传附件、执行任务</td><td>等待输入、执行中、需确认、完成、失败</td><td>意图不明确、缺少字段、工具失败</td></tr>
+          <tr><td><strong>JD 生成</strong></td><td>输入需求、生成、保存、编辑、删除</td><td>草稿、已保存、生成中</td><td>缺少岗位信息、生成失败</td></tr>
+          <tr><td><strong>简历筛选</strong></td><td>上传简历、选择 JD、查看评分、导出</td><td>上传中、评估中、完成、失败</td><td>格式错误、大小超限、解析失败</td></tr>
+          <tr><td><strong>智能面试</strong></td><td>选择候选人、生成方案、建会、上传材料、转写、分析、修订评分</td><td>待选择、方案生成中、待开会、转写中、分析中、已完成、待定、失败</td><td>缺少候选人、未配置会议 Token、未确认姓名、音视频解析失败、评分失败</td></tr>
+          <tr><td><strong>试卷生成</strong></td><td>上传资料、配置试卷、生成、保存</td><td>配置中、生成中、已保存</td><td>文档不可用、题型配置错误</td></tr>
+          <tr><td><strong>考试管理</strong></td><td>查看试卷、分享、结果</td><td>未发布、可分享、有结果</td><td>试卷不存在、结果导出失败</td></tr>
+          <tr><td><strong>知识库管理</strong></td><td>创建知识库、上传文档、处理、删除</td><td>未处理、处理中、已处理</td><td>文档解析失败</td></tr>
+          <tr><td><strong>知识问答</strong></td><td>输入问题、选择知识库、查看回答</td><td>查询中、已回答、无结果</td><td>无相关知识、LLM 失败</td></tr>
+          <tr><td><strong>用户管理</strong></td><td>创建、编辑、删除、分配角色</td><td>正常、禁用、删除确认</td><td>权限不足、用户重复</td></tr>
+          <tr><td><strong>邮箱管理</strong></td><td>配置、测试、抓取、查看日志</td><td>未配置、测试中、可用、失败</td><td>SMTP/IMAP 连接失败</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="sec6-10-1">6.10.1 页面字段与交互规则</h3>
+
+    <h4>登录页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>用户名或邮箱、密码</td></tr>
+          <tr><td>主按钮</td><td>登录</td></tr>
+          <tr><td>校验规则</td><td>账号和密码不能为空</td></tr>
+          <tr><td>成功行为</td><td>保存 Token 和用户信息，跳转工作台</td></tr>
+          <tr><td>失败行为</td><td>展示账号密码错误或认证失败提示，<strong>不清空账号</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>JD 生成页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>岗位名称、部门、地点、薪资范围、经验要求、学历要求、岗位类型、技能、岗位需求描述</td></tr>
+          <tr><td>必填字段</td><td><strong>岗位名称或岗位需求描述至少填写一项</strong>；保存时 JD 标题和正文必填</td></tr>
+          <tr><td>主按钮</td><td>生成 JD、保存 JD、编辑、删除</td></tr>
+          <tr><td>生成中状态</td><td>禁用重复生成按钮，展示流式输出或加载状态</td></tr>
+          <tr><td>保存成功</td><td>进入已保存状态，列表可查询，保留可编辑能力</td></tr>
+          <tr><td>删除规则</td><td>删除前二次确认；删除成功后列表移除</td></tr>
+          <tr><td>异常</td><td>缺少输入提示补充；生成失败保留原输入并允许重试</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>评分标准页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>JD 内容、岗位标题、总分、评分维度、权重、评分说明</td></tr>
+          <tr><td>必填字段</td><td>标题、评分标准正文</td></tr>
+          <tr><td>绑定规则</td><td>可绑定 JD；绑定后用于后续简历评估</td></tr>
+          <tr><td>编辑规则</td><td>支持调整维度、权重和说明</td></tr>
+          <tr><td>校验规则</td><td>总分默认 100；<span class="hl-amber">维度权重口径应在保存前人工确认</span></td></tr>
+          <tr><td>删除规则</td><td>删除前二次确认</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>简历筛选页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>简历文件、JD、可选评分标准</td></tr>
+          <tr><td>必填字段</td><td><strong>简历文件、JD</strong></td></tr>
+          <tr><td>文件规则</td><td>支持 PDF、DOC、DOCX、TXT、MD；单文件默认最大 10MB</td></tr>
+          <tr><td>主按钮</td><td>上传、开始评估、查看详情、更新状态、导出、删除</td></tr>
+          <tr><td>评估中状态</td><td>展示评估中，不允许重复提交同一文件</td></tr>
+          <tr><td>结果展示</td><td>候选人姓名、岗位、工作年限、学历、学校、总分、维度评分、评分理由</td></tr>
+          <tr><td>状态规则</td><td>默认状态为<mark>待复核</mark>；HR 可更新为进入面试、暂缓、淘汰等试点状态</td></tr>
+          <tr><td>异常</td><td>文件格式错误、大小超限、解析失败、AI 评估失败均需明确提示</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>智能面试页</h4>
+    <p>页面按三个 Tab 组织：<span class="hl-blue">简历预览 / 面试方案 / 面试记录</span>。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>候选人来源</td><td><strong>仅可选择已完成简历评分的候选人</strong></td></tr>
+          <tr><td>简历预览 Tab</td><td>展示简历原文、评分维度与总分，作为面试提问依据</td></tr>
+          <tr><td>面试方案 Tab</td><td>基于简历与 JD 生成方案；支持编辑、保存、删除</td></tr>
+          <tr><td>会议参数</td><td>会议主题（默认「面试 - 候选人 - 岗位」）、开始时间（默认 30 分钟后）、时长（默认 60 分钟）、时区、等候室开关</td></tr>
+          <tr><td>主按钮（方案）</td><td>生成方案、保存方案、开始面试</td></tr>
+          <tr><td>主按钮（记录）</td><td>同步会议状态、取消会议、上传音视频、上传文档、拉取腾讯会议转写、开始分析、修订分数</td></tr>
+          <tr><td>会前提示</td><td>展示录制设置检查结果；未开启云录制时提示「录制转写不可用」</td></tr>
+          <tr><td>姓名确认</td><td><span class="hl-red">分析前必须确认候选人姓名</span>；姓名变更会触发重新推断说话人</td></tr>
+          <tr><td>结果展示</td><td>总分、四个维度分数与依据、引用的问答原文、面试执行度、风险提示、结论、规则版本号</td></tr>
+          <tr><td>结论待定</td><td><span class="hl-red">以醒目提示呈现待定原因，不展示录用建议</span></td></tr>
+          <tr><td>修订</td><td>支持修改维度分与总分；修订后展示「已人工修订」标记与修订记录</td></tr>
+          <tr><td>异常</td><td>未配置会议 Token、会议创建失败、音视频过大、未安装 ffmpeg、转写为空、分析失败均需明确提示并保留已上传材料</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>知识库管理页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>知识库名称、描述、分类、标签、公开状态、可搜索状态</td></tr>
+          <tr><td>必填字段</td><td>知识库名称</td></tr>
+          <tr><td>文档操作</td><td>上传、处理、查看切片、删除</td></tr>
+          <tr><td>处理状态</td><td>已上传、处理中、已处理、处理失败</td></tr>
+          <tr><td>删除规则</td><td>删除文档前二次确认；删除知识库前确认是否包含文档</td></tr>
+          <tr><td>异常</td><td>文档解析失败时允许重新处理或重新上传</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>知识问答页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>问题、可选知识库</td></tr>
+          <tr><td>必填字段</td><td>问题</td></tr>
+          <tr><td>主按钮</td><td>提问、重新生成</td></tr>
+          <tr><td>结果展示</td><td>回答、相关文档或依据、低置信度提示</td></tr>
+          <tr><td>异常</td><td><span class="hl-red">无相关知识时提示资料不足，不输出确定性结论</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>试卷生成页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>试卷名称、科目、描述、难度、时长、总分、题型与题量配置、知识库文件（从已有知识库中选择）、特殊要求</td></tr>
+          <tr><td>必填字段</td><td><strong>试卷名称、科目、总分</strong></td></tr>
+          <tr><td>主按钮</td><td>AI 生成试卷、保存试卷、编辑、补题</td></tr>
+          <tr><td>生成中状态</td><td>展示流式生成或加载状态，禁止重复提交</td></tr>
+          <tr><td>结果展示</td><td>试题、答案、解析、分值；题量与配置不一致时提示已自动补题</td></tr>
+          <tr><td>异常</td><td>未选择知识库文件、题型配置错误、生成失败均需明确提示</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>考试管理页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>主要操作</td><td>查看试卷、更新、删除、生成分享链接、查看考试结果、导出</td></tr>
+          <tr><td>发布规则</td><td>试点默认保存后可生成分享链接</td></tr>
+          <tr><td>修改规则</td><td><span class="hl-amber">已有答题结果的试卷不建议直接修改；如需修改应复制为新版本</span></td></tr>
+          <tr><td>删除规则</td><td>删除前提示可能影响分享链接和结果关联</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>用户与角色管理页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>用户字段</td><td>用户名、邮箱、姓名、手机号、部门、职位、员工编号、角色、是否启用</td></tr>
+          <tr><td>角色字段</td><td>角色名称、描述、是否内置</td></tr>
+          <tr><td>权限</td><td><span class="hl-red">仅超级管理员可访问</span></td></tr>
+          <tr><td>删除规则</td><td>删除用户和角色均需二次确认；内置角色不建议删除</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>邮箱管理页</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:160px">项</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td>输入字段</td><td>邮箱地址、SMTP/IMAP 主机、端口、用户名、密码或授权码、启用状态</td></tr>
+          <tr><td>权限</td><td><span class="hl-red">仅超级管理员可访问</span></td></tr>
+          <tr><td>主按钮</td><td>保存配置、测试连接、抓取邮件、查看日志</td></tr>
+          <tr><td>安全规则</td><td><span class="hl-red">密码或授权码不得在前端明文回显</span></td></tr>
+          <tr><td>异常</td><td>认证失败、主机不可达、端口错误需返回明确提示</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="sec6-11">6.11 业务规则汇总</h3>
+    <div class="callout danger"><span class="ct">🚫 15 条业务规则是本项目的验收底线</span>其中 BR-001 / BR-004 / BR-005 / BR-010 / BR-011 / BR-012 / BR-013 / BR-014 为强约束红线，任何实现不得违反。</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:110px">规则编号</th><th>规则</th></tr></thead>
+        <tbody>
+          <tr><td><strong>BR-001</strong></td><td><span class="hl-red">AI 生成内容必须允许用户编辑和确认。</span></td></tr>
+          <tr><td><strong>BR-002</strong></td><td><span class="hl-red">简历评分必须关联 JD。</span></td></tr>
+          <tr><td><strong>BR-003</strong></td><td><span class="hl-red">面试方案必须基于已存在的简历评估记录。</span></td></tr>
+          <tr><td><strong>BR-004</strong></td><td><span class="hl-red">邮件发送类动作必须经过人工确认。</span></td></tr>
+          <tr><td><strong>BR-005</strong></td><td><span class="hl-red">管理类接口必须进行后端权限校验。</span></td></tr>
+          <tr><td><strong>BR-006</strong></td><td>上传文件必须校验大小和格式。</td></tr>
+          <tr><td><strong>BR-007</strong></td><td>外部 AI 服务失败时，系统应返回明确失败原因或重试建议。</td></tr>
+          <tr><td><strong>BR-008</strong></td><td>候选人信息、简历内容、考试结果应按敏感数据处理。</td></tr>
+          <tr><td><strong>BR-009</strong></td><td>删除资源前应进行二次确认。</td></tr>
+          <tr><td><strong>BR-010</strong></td><td><span class="hl-red">无知识库相关内容时，不应强行生成确定性回答；低于相似度阈值的召回结果不参与回答。</span></td></tr>
+          <tr><td><strong>BR-011</strong></td><td><span class="hl-red">面试评价必须基于已确认候选人的逐字稿，且每个维度需引用具体问答作为依据。</span></td></tr>
+          <tr><td><strong>BR-012</strong></td><td><span class="hl-red">面试评价的确定性判据以规则文件为准；命中规则时以代码结论覆盖模型结论。</span></td></tr>
+          <tr><td><strong>BR-013</strong></td><td><span class="hl-red">面试结论为「待定」时，不得输出录用或淘汰建议。</span></td></tr>
+          <tr><td><strong>BR-014</strong></td><td><span class="hl-red">人工修订评价后，总分重新计算并保留修订痕迹，不得静默覆盖原始评分。</span></td></tr>
+          <tr><td><strong>BR-015</strong></td><td><span class="hl-red">Agent 的写操作（生成、修改、删除、邮件草稿）必须落到可查询对象或进入确认流程。</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="sec6-12">6.12 待定业务口径收敛</h3>
+    <div class="callout warn"><span class="ct">⚠ 试点默认口径</span>以下事项在试点默认按本表执行；如企业另有规则，需在<strong>需求评审会上变更确认</strong>。</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>事项</th><th>试点默认口径</th><th>变更影响</th></tr></thead>
+        <tbody>
+          <tr><td>考试分享页是否免登录</td><td><mark>默认允许免登录答题</mark></td><td>影响前端路由和后端鉴权</td></tr>
+          <tr><td>已有答题结果的试卷是否允许修改</td><td><mark>默认不直接修改，复制为新版本</mark></td><td>影响试卷版本管理</td></tr>
+          <tr><td>同一简历重复上传</td><td><mark>默认允许重复记录，不覆盖旧记录</mark></td><td>影响去重和历史记录</td></tr>
+          <tr><td>JD 删除时存在关联评估</td><td><mark>默认允许软删除或逻辑下线，不物理删除关联数据</mark></td><td>影响数据一致性</td></tr>
+          <tr><td>候选人状态枚举</td><td><mark>待复核、进入面试、暂缓、淘汰</mark></td><td>影响列表筛选和统计</td></tr>
+          <tr><td>知识库权限</td><td><mark>试点默认登录用户可问答，管理权限按角色控制</mark></td><td>影响普通员工范围</td></tr>
+          <tr><td>邮件发送</td><td><mark>默认只生成草稿或确认后发送</mark></td><td>影响自动化边界</td></tr>
+          <tr><td>面试评价用途</td><td><mark>默认仅作为面试官复核与横向比较的参考，不进入正式录用审批流</mark></td><td>影响与 ATS 的集成</td></tr>
+          <tr><td>面试结论阈值</td><td><mark>默认四维均需可评分且有效问答不少于 3 组，否则结论待定</mark></td><td>影响评分覆盖率与待定率</td></tr>
+          <tr><td>面试音视频保存期限</td><td><mark>默认与企业个人信息保存策略一致，需在上线前书面确认</mark></td><td>影响存储成本与合规</td></tr>
+          <tr><td>面试材料来源优先级</td><td><mark>腾讯会议录制转写优先，其次本地上传音视频，最后文档</mark></td><td>影响转写质量与人工成本</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 7 非功能需求 ================= -->
+  <section id="sec7">
+    <h2><span class="no">7</span>非功能需求</h2>
+
+    <h3 id="sec7-1">7.1 性能</h3>
+    <ul class="list">
+      <li>常规列表查询应在可接受时间内返回，避免前端长时间空白。</li>
+      <li>LLM 生成类任务应优先使用<strong>流式响应或进度提示</strong>。</li>
+      <li>文档上传和简历上传应限制文件大小，当前配置默认最大 <mark>10MB</mark>。</li>
+    </ul>
+    <p><strong>建议指标：</strong></p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>场景</th><th>试点环境指标</th></tr></thead>
+        <tbody>
+          <tr><td>普通列表查询</td><td>试点环境下 <span class="hl-blue">3 秒内</span>返回</td></tr>
+          <tr><td>登录和权限校验</td><td>试点环境下 <span class="hl-blue">2 秒内</span>返回</td></tr>
+          <tr><td>长文本生成</td><td><span class="hl-blue">5 秒内</span>出现首个进度或流式片段</td></tr>
+          <tr><td>文件上传</td><td>应显示上传进度或处理状态</td></tr>
+          <tr><td>面试转写</td><td><span class="hl-blue">45 分钟音视频在试点环境下 10 分钟内完成转写</span>，转写期间前端应显示进度且可离开页面</td></tr>
+          <tr><td>面试分析</td><td>转写就绪后 <span class="hl-blue">3 分钟内</span>产出评分结果</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="sec7-2">7.2 安全</h3>
+    <ul class="list">
+      <li><span class="hl-red">密码必须哈希存储。</span></li>
+      <li>API 使用 <strong>JWT Bearer Token</strong> 鉴权。</li>
+      <li><span class="hl-red">生产环境必须替换默认 <code>SECRET_KEY</code>、数据库密码和外部 API Key。</span></li>
+      <li>上传文件应限制格式和大小。</li>
+      <li>邮箱、Dify、LLM、腾讯会议 Token 等敏感配置不得暴露给普通用户；<span class="hl-red">腾讯会议 Token 等同于账号身份，不得下发到前端</span>。</li>
+      <li>面试音视频与逐字稿属于敏感数据，<span class="hl-red">访问需登录且只能访问自己创建的面试记录</span>。</li>
+    </ul>
+
+    <h3 id="sec7-3">7.3 可用性</h3>
+    <ul class="list">
+      <li>前端菜单应按业务模块组织。</li>
+      <li>表单错误、权限错误、上传失败、生成失败应有明确提示。</li>
+      <li>长任务要有进度反馈。</li>
+    </ul>
+
+    <h3 id="sec7-4">7.4 可维护性</h3>
+    <ul class="list">
+      <li>后端按 <code>endpoint</code>、<code>schema</code>、<code>model</code>、<code>service</code> 分层。</li>
+      <li>前端 API 请求统一维护在 <code>src/api</code>。</li>
+      <li>新增业务功能应补充接口、服务、页面和测试用例。</li>
+    </ul>
+
+    <h3 id="sec7-5">7.5 合规与人工确认</h3>
+    <div class="callout danger"><span class="ct">🚫 合规底线</span>AI 输出只能作为辅助建议，不作为最终录用、淘汰或评价决定；关键通知和候选人沟通内容应由 HR 审核确认。</div>
+    <ul class="list">
+      <li><span class="hl-red">AI 输出只能作为辅助建议，不作为最终录用、淘汰或评价决定。</span></li>
+      <li>关键通知和候选人沟通内容应由 <strong>HR 审核确认</strong>。</li>
+      <li>简历和候选人信息属于敏感个人信息，<span class="hl-amber">上线前需确认存储、访问和删除策略</span>。</li>
+    </ul>
+
+    <h3 id="sec7-6">7.6 可观测性</h3>
+    <ul class="list">
+      <li>后端应记录启动、数据库初始化、外部服务调用失败、权限失败、文件解析失败等关键日志。</li>
+      <li>上线环境应具备日志查询方式。</li>
+      <li>企业生产化阶段建议补充集中日志、告警和调用链追踪。</li>
+    </ul>
+
+    <h3 id="sec7-7">7.7 可恢复性</h3>
+    <ul class="list">
+      <li>数据库需要定期备份。</li>
+      <li>上传目录需要持久化和备份。</li>
+      <li>上线前应保存旧版本前端资源和后端包或镜像。</li>
+      <li>发生严重故障时应可回滚到上一版本。</li>
+    </ul>
+  </section>
+
+  <!-- ================= 8 功能边界与优先级 ================= -->
+  <section id="sec8">
+    <h2><span class="no">8</span>功能边界与优先级</h2>
+
+    <div class="figure">
+      <div class="fig-title">8-1 优先级分布（P0 五项闭环 · P1 三项增强 · P2 后续迭代）</div>
+      <svg viewBox="0 0 1120 420" role="img" aria-label="功能优先级分布">
+        <g font-size="15" font-weight="700" text-anchor="middle">
+          <rect x="20" y="16" width="520" height="36" rx="8" fill="#dc2626"/><text x="280" y="40" fill="#fff">P0 · 必须交付（5 项）</text>
+          <rect x="570" y="16" width="300" height="36" rx="8" fill="#d97706"/><text x="720" y="40" fill="#fff">P1 · 重要增强（3 项）</text>
+          <rect x="900" y="16" width="200" height="36" rx="8" fill="#64748b"/><text x="1000" y="40" fill="#fff">P2 · 后续迭代</text>
+        </g>
+        <g font-size="12.8">
+          <rect x="20" y="64" width="520" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="36" y="88" fill="#7f1d1d" font-weight="700">登录鉴权、用户权限、健康检查</text>
+          <text x="36" y="110" fill="#9f1239" font-size="11.5">验收：用户能安全进入系统，敏感接口受保护</text>
+          <rect x="20" y="132" width="520" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="36" y="156" fill="#7f1d1d" font-weight="700">JD 生成、评分标准、简历筛选、面试方案</text>
+          <text x="36" y="178" fill="#9f1239" font-size="11.5">验收：招聘主流程可闭环</text>
+          <rect x="20" y="200" width="520" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="36" y="224" fill="#7f1d1d" font-weight="700">智能面试：建会、转写、配对、评分、修订</text>
+          <text x="36" y="246" fill="#9f1239" font-size="11.5">验收：面试过程可留痕、评价可复核</text>
+          <rect x="20" y="268" width="520" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="36" y="292" fill="#7f1d1d" font-weight="700">文档上传、知识库问答</text>
+          <text x="36" y="314" fill="#9f1239" font-size="11.5">验收：企业资料可检索问答</text>
+          <rect x="20" y="336" width="520" height="58" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="36" y="360" fill="#7f1d1d" font-weight="700">试卷生成、考试管理、结果查看</text>
+          <text x="36" y="382" fill="#9f1239" font-size="11.5">验收：培训考试可闭环</text>
+
+          <rect x="570" y="64" width="300" height="58" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+          <text x="586" y="88" fill="#78350f" font-weight="700">HR Agent 对话编排与流式响应</text>
+          <text x="586" y="110" fill="#92400e" font-size="11.5">验收：自然语言可触发或引导业务流程</text>
+          <rect x="570" y="132" width="300" height="58" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+          <text x="586" y="156" fill="#78350f" font-weight="700">邮箱配置和邮件 Skill</text>
+          <text x="586" y="178" fill="#92400e" font-size="11.5">验收：管理员可配置，通知需确认</text>
+          <rect x="570" y="200" width="300" height="58" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+          <text x="586" y="224" fill="#78350f" font-weight="700">统计看板</text>
+          <text x="586" y="246" fill="#92400e" font-size="11.5">验收：管理者可查看运营概览</text>
+
+          <rect x="900" y="64" width="200" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="916" y="88" fill="#475569" font-weight="700">更多自动化流程、渠道</text>
+          <text x="916" y="106" fill="#475569" font-weight="700">集成、复杂审批</text>
+          <text x="916" y="124" fill="#64748b" font-size="11.5">验收：后续迭代</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:90px">优先级</th><th>功能</th><th>验收重点</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge p0">P0</span></td><td>登录鉴权、用户权限、健康检查</td><td>用户能安全进入系统，敏感接口受保护</td></tr>
+          <tr><td><span class="badge p0">P0</span></td><td>JD 生成、评分标准、简历筛选、面试方案</td><td>招聘主流程可闭环</td></tr>
+          <tr><td><span class="badge p0">P0</span></td><td>智能面试：建会、转写、配对、评分、修订</td><td>面试过程可留痕、评价可复核</td></tr>
+          <tr><td><span class="badge p0">P0</span></td><td>文档上传、知识库问答</td><td>企业资料可检索问答</td></tr>
+          <tr><td><span class="badge p0">P0</span></td><td>试卷生成、考试管理、结果查看</td><td>培训考试可闭环</td></tr>
+          <tr><td><span class="badge p1">P1</span></td><td>HR Agent 对话编排与流式响应</td><td>自然语言可触发或引导业务流程</td></tr>
+          <tr><td><span class="badge p1">P1</span></td><td>邮箱配置和邮件 Skill</td><td>管理员可配置，通知需确认</td></tr>
+          <tr><td><span class="badge p1">P1</span></td><td>统计看板</td><td>管理者可查看运营概览</td></tr>
+          <tr><td><span class="badge p2">P2</span></td><td>更多自动化流程、渠道集成、复杂审批</td><td>后续迭代</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 9 版本规划 ================= -->
+  <section id="sec9">
+    <h2><span class="no">9</span>版本规划</h2>
+
+    <div class="figure">
+      <div class="fig-title">9-1 版本演进时间线（MVP → V2.0）</div>
+      <svg viewBox="0 0 1120 320" role="img" aria-label="版本演进时间线">
+        <line x1="40" y1="64" x2="1080" y2="64" stroke="#cbd5e1" stroke-width="3"/>
+        <g text-anchor="middle">
+          <circle cx="110" cy="64" r="10" fill="#2563eb"/>
+          <circle cx="330" cy="64" r="10" fill="#0d9488"/>
+          <circle cx="550" cy="64" r="10" fill="#7c3aed"/>
+          <circle cx="770" cy="64" r="13" fill="#ea580c" stroke="#fff" stroke-width="3"/>
+          <circle cx="990" cy="64" r="10" fill="#64748b"/>
+          <text x="110" y="40" font-size="16" font-weight="700" fill="#2563eb">MVP</text>
+          <text x="330" y="40" font-size="16" font-weight="700" fill="#0d9488">V1.0</text>
+          <text x="550" y="40" font-size="16" font-weight="700" fill="#7c3aed">V1.1</text>
+          <text x="770" y="38" font-size="16" font-weight="700" fill="#ea580c">V1.2 ★</text>
+          <text x="990" y="40" font-size="16" font-weight="700" fill="#64748b">V2.0</text>
+        </g>
+        <g font-size="12">
+          <rect x="10" y="94" width="200" height="176" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="26" y="120" fill="#1e3a8a">登录、JD、评分标准、</text>
+          <text x="26" y="140" fill="#1e3a8a">简历评分、知识库、</text>
+          <text x="26" y="160" fill="#1e3a8a">试卷生成</text>
+          <line x1="26" y1="224" x2="194" y2="224" stroke="#bfdbfe"/>
+          <text x="26" y="248" fill="#2563eb" font-weight="700" font-size="11.5">验证核心业务可行性</text>
+
+          <rect x="230" y="94" width="200" height="176" rx="10" fill="#f0fdfa" stroke="#5eead4"/>
+          <text x="246" y="120" fill="#134e4a">Agent 编排、面试方案、</text>
+          <text x="246" y="140" fill="#134e4a">考试管理、系统管理、</text>
+          <text x="246" y="160" fill="#134e4a">统计</text>
+          <line x1="246" y1="224" x2="414" y2="224" stroke="#99f6e4"/>
+          <text x="246" y="248" fill="#0d9488" font-weight="700" font-size="11.5">形成可试点的内部工作台</text>
+
+          <rect x="450" y="94" width="200" height="176" rx="10" fill="#f5f3ff" stroke="#c4b5fd"/>
+          <text x="466" y="120" fill="#4c1d95">邮件通知 Skill、更多导</text>
+          <text x="466" y="140" fill="#4c1d95">出能力、权限细化、</text>
+          <text x="466" y="160" fill="#4c1d95">错误体验优化</text>
+          <line x1="466" y1="224" x2="634" y2="224" stroke="#ddd6fe"/>
+          <text x="466" y="248" fill="#7c3aed" font-weight="700" font-size="11.5">提升业务连续性</text>
+
+          <rect x="670" y="94" width="200" height="176" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+          <text x="686" y="118" fill="#7c2d12">智能面试：腾讯会议建会、</text>
+          <text x="686" y="138" fill="#7c2d12">转写与分析、四维评分、</text>
+          <text x="686" y="158" fill="#7c2d12">人工修订；Agent 改为</text>
+          <text x="686" y="178" fill="#7c2d12">LangGraph 编排并支持</text>
+          <text x="686" y="198" fill="#7c2d12">编辑/删除资源</text>
+          <line x1="686" y1="224" x2="854" y2="224" stroke="#fed7aa"/>
+          <text x="686" y="248" fill="#ea580c" font-weight="700" font-size="11.5">面试过程留痕，评价可复核</text>
+
+          <rect x="890" y="94" width="200" height="176" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="906" y="120" fill="#475569">招聘渠道、审批、组织</text>
+          <text x="906" y="140" fill="#475569">架构、企业 SSO、</text>
+          <text x="906" y="160" fill="#475569">审计日志</text>
+          <line x1="906" y1="224" x2="1074" y2="224" stroke="#e2e8f0"/>
+          <text x="906" y="248" fill="#64748b" font-weight="700" font-size="11.5">进入更完整企业集成阶段</text>
+        </g>
+        <text x="560" y="302" text-anchor="middle" font-size="12" fill="#64748b">★ V1.2 为当前版本重点：智能面试全链路 + Agent LangGraph 化</text>
+      </svg>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:90px">版本</th><th>范围</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MVP</strong></td><td>登录、JD、评分标准、简历评分、知识库、试卷生成</td><td>验证核心业务可行性</td></tr>
+          <tr><td><strong>V1.0</strong></td><td>Agent 编排、面试方案、考试管理、系统管理、统计</td><td>形成可试点的内部工作台</td></tr>
+          <tr><td><strong>V1.1</strong></td><td>邮件通知 Skill、更多导出能力、权限细化、错误体验优化</td><td>提升业务连续性</td></tr>
+          <tr><td><strong class="hl-amber">V1.2</strong></td><td>智能面试：腾讯会议建会、转写与分析、四维评分、人工修订；Agent 改为 LangGraph 编排并支持编辑/删除资源</td><td>面试过程留痕，评价可复核</td></tr>
+          <tr><td><strong>V2.0</strong></td><td>招聘渠道、审批、组织架构、企业 SSO、审计日志</td><td>进入更完整企业集成阶段</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 10 需求评审准出标准 ================= -->
+  <section id="sec10">
+    <h2><span class="no">10</span>需求评审准出标准</h2>
+    <div class="callout ok"><span class="ct">✅ 评审通过须同时满足以下 5 项</span></div>
+    <ul class="list">
+      <li>每个 <span class="badge p0">P0</span> 功能均有明确<strong>用户、输入、输出、前置条件和验收标准</strong>。</li>
+      <li><strong>权限矩阵</strong>已确认。</li>
+      <li><strong>数据字典</strong>中的关键字段已确认。</li>
+      <li><span class="hl-red">AI 输出的人工确认边界</span>已确认。</li>
+      <li><strong>上线范围和范围外事项</strong>已由业务方确认。</li>
+    </ul>
+  </section>
+
+  <p style="text-align:center;color:#94a3b8;font-size:12.5px;margin-top:8px">
+    本页面由 03-需求文档.md 转换生成 · 全部样式、脚本与 13 张 SVG 图均内联，无外部依赖，可离线打开
+  </p>
+</div>
+
+<button class="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  // 目录滚动高亮（scroll-spy）
+  var links = Array.prototype.slice.call(document.querySelectorAll('#sidebar a[href^="#"]'));
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  function setActive(id){
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var current = targets[0] ? targets[0].id : null;
+      for(var i = 0; i < targets.length; i++){
+        if(targets[i].getBoundingClientRect().top <= 120) current = targets[i].id;
+        else break;
+      }
+      // 滚到页底时强制高亮最后一节（末节标题可能到不了判定线）
+      if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4){
+        current = targets[targets.length - 1].id;
+      }
+      if(current) setActive(current);
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  // 移动端点击目录后收起
+  links.forEach(function(a){
+    a.addEventListener('click', function(){
+      if(window.innerWidth <= 960) document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+})();
+</script>
+</body>
+</html>
