@@ -1,0 +1,96 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	route_intent(route_intent)
+	jd_prepare(jd_prepare)
+	jd_confirm(jd_confirm)
+	jd_execute(jd_execute)
+	skill_draft(skill_draft)
+	skill_send(skill_send)
+	chat(chat)
+	resume_exec(resume_exec)
+	interview_exec(interview_exec)
+	exam_exec(exam_exec)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> route_intent;
+	jd_confirm -.-> __end__;
+	jd_confirm -.-> jd_execute;
+	jd_prepare --> jd_confirm;
+	route_intent -.-> chat;
+	route_intent -.-> criteria_edit\3aparse;
+	route_intent -.-> exam_exec;
+	route_intent -.-> exam_generate\3aprepare;
+	route_intent -.-> interview_exec;
+	route_intent -.-> interview_plan\3aprepare;
+	route_intent -.-> jd_edit\3aparse;
+	route_intent -.-> jd_prepare;
+	route_intent -.-> resource_delete\3aparse;
+	route_intent -.-> resume_exec;
+	route_intent -.-> resume_screening\3aprepare;
+	route_intent -.-> skill_draft;
+	skill_draft -.-> __end__;
+	skill_draft -.-> skill_send;
+	chat --> __end__;
+	criteria_edit\3a__end__ --> __end__;
+	exam_exec --> __end__;
+	exam_generate\3aprepare --> __end__;
+	interview_exec --> __end__;
+	interview_plan\3aprepare --> __end__;
+	jd_edit\3a__end__ --> __end__;
+	jd_execute --> __end__;
+	resource_delete\3a__end__ --> __end__;
+	resume_exec --> __end__;
+	resume_screening\3aprepare --> __end__;
+	skill_send --> __end__;
+	subgraph jd_edit
+	jd_edit\3aparse(parse)
+	jd_edit\3alocate(locate)
+	jd_edit\3arewrite(rewrite)
+	jd_edit\3asave(save)
+	jd_edit\3a__end__(<p>__end__</p>)
+	jd_edit\3alocate -.-> jd_edit\3a__end__;
+	jd_edit\3alocate -.-> jd_edit\3arewrite;
+	jd_edit\3aparse --> jd_edit\3alocate;
+	jd_edit\3arewrite -.-> jd_edit\3a__end__;
+	jd_edit\3arewrite -.-> jd_edit\3asave;
+	jd_edit\3asave -.-> jd_edit\3a__end__;
+	end
+	subgraph criteria_edit
+	criteria_edit\3aparse(parse)
+	criteria_edit\3alocate(locate)
+	criteria_edit\3arewrite(rewrite)
+	criteria_edit\3asave(save)
+	criteria_edit\3a__end__(<p>__end__</p>)
+	criteria_edit\3alocate -.-> criteria_edit\3a__end__;
+	criteria_edit\3alocate -.-> criteria_edit\3arewrite;
+	criteria_edit\3aparse --> criteria_edit\3alocate;
+	criteria_edit\3arewrite -.-> criteria_edit\3a__end__;
+	criteria_edit\3arewrite -.-> criteria_edit\3asave;
+	criteria_edit\3asave -.-> criteria_edit\3a__end__;
+	end
+	subgraph resource_delete
+	resource_delete\3aparse(parse)
+	resource_delete\3aresolve(resolve)
+	resource_delete\3aexecute(execute)
+	resource_delete\3a__end__(<p>__end__</p>)
+	resource_delete\3aexecute -.-> resource_delete\3a__end__;
+	resource_delete\3aparse --> resource_delete\3aresolve;
+	resource_delete\3aresolve -.-> resource_delete\3a__end__;
+	resource_delete\3aresolve -.-> resource_delete\3aexecute;
+	end
+	subgraph interview_plan
+	interview_plan\3aprepare(prepare)
+	end
+	subgraph exam_generate
+	exam_generate\3aprepare(prepare)
+	end
+	subgraph resume_screening
+	resume_screening\3aprepare(prepare)
+	end
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
