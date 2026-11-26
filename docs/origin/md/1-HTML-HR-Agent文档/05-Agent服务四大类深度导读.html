@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent · Agent 服务四大类深度导读</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232563eb'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='white'%3EH%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --sidebar-w:288px;
+    --ink:#1e293b; --ink-soft:#475569; --line:#e2e8f0;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --red:#dc2626; --red-bg:#fef2f2;
+    --amber:#d97706; --amber-bg:#fffbeb;
+    --green:#059669; --green-bg:#ecfdf5;
+    --violet:#7c3aed; --violet-bg:#f5f3ff;
+    --teal:#0d9488; --teal-bg:#f0fdfa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--ink);background:#f8fafc;line-height:1.75;font-size:15px;
+  }
+  /* ---------- 侧边目录 ---------- */
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+    background:#0f172a;color:#cbd5e1;overflow-y:auto;z-index:50;
+    padding:20px 0 40px;scrollbar-width:thin;scrollbar-color:#334155 #0f172a;
+  }
+  #sidebar .brand{padding:0 20px 14px;border-bottom:1px solid #1e293b;margin-bottom:10px}
+  #sidebar .brand h1{font-size:17px;color:#f8fafc;letter-spacing:.5px}
+  #sidebar .brand p{font-size:12px;color:#64748b;margin-top:4px}
+  #sidebar ul{list-style:none}
+  #sidebar a{
+    display:block;color:#94a3b8;text-decoration:none;font-size:13.5px;
+    padding:5px 20px;border-left:3px solid transparent;transition:all .15s;
+  }
+  #sidebar a:hover{color:#e2e8f0;background:#1e293b}
+  #sidebar a.active{color:#38bdf8;border-left-color:#38bdf8;background:#1e293b;font-weight:600}
+  #sidebar .toc-l1>a{font-weight:600;color:#cbd5e1;font-size:14px;margin-top:6px}
+  #sidebar .toc-l2>a{padding-left:36px;font-size:12.8px}
+  #toc-toggle{
+    display:none;position:fixed;top:12px;left:12px;z-index:60;
+    background:#0f172a;color:#fff;border:none;border-radius:8px;
+    padding:8px 12px;font-size:14px;cursor:pointer;
+  }
+  /* ---------- 主内容 ---------- */
+  #main{margin-left:var(--sidebar-w);padding:36px 48px 80px;max-width:1280px}
+  .doc-header{
+    background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#0d9488);
+    color:#fff;border-radius:16px;padding:32px 36px;margin-bottom:28px;
+  }
+  .doc-header h1{font-size:28px;margin-bottom:8px}
+  .doc-header .meta{font-size:13px;opacity:.85}
+  .doc-header .meta span{margin-right:18px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;font-size:12.5px}
+  .legend span{background:rgba(255,255,255,.15);border-radius:20px;padding:3px 12px}
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px 32px;margin-bottom:24px}
+  h2{font-size:22px;color:#0f172a;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:10px}
+  h2 .no{
+    background:var(--blue);color:#fff;border-radius:8px;font-size:15px;
+    min-width:34px;height:30px;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;
+  }
+  h3{font-size:17.5px;color:#1e3a8a;margin:26px 0 10px;padding-left:10px;border-left:4px solid var(--blue)}
+  h4{font-size:15.5px;color:#334155;margin:20px 0 8px;padding-left:8px;border-left:3px solid var(--teal)}
+  p{margin:8px 0;color:var(--ink-soft)}
+  ul.list,ol.list{margin:8px 0 8px 22px;color:var(--ink-soft)}
+  ul.list li,ol.list li{margin:5px 0}
+  strong{color:var(--ink)}
+  .hl-red{color:var(--red);font-weight:700}
+  .hl-blue{color:var(--blue);font-weight:700}
+  .hl-green{color:var(--green);font-weight:700}
+  .hl-amber{color:var(--amber);font-weight:700}
+  mark{background:#fef08a;padding:0 3px;border-radius:3px}
+  code{
+    background:#f1f5f9;border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;font-size:13px;font-family:"SF Mono",Menlo,Consolas,monospace;color:#be185d;
+    overflow-wrap:anywhere;
+  }
+  pre.code{
+    background:#0f172a;color:#e2e8f0;border-radius:10px;padding:16px 20px;
+    font-size:13px;font-family:"SF Mono",Menlo,Consolas,monospace;
+    overflow-x:auto;margin:12px 0;line-height:1.7;
+  }
+  pre.code .k{color:#7dd3fc}
+  pre.code .c{color:#64748b}
+  pre.code .g{color:#86efac}
+  /* ---------- 表格 ---------- */
+  .tbl-wrap{overflow-x:auto;margin:12px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.8px}
+  th{background:#f1f5f9;color:#0f172a;text-align:left;font-weight:600}
+  th,td{border:1px solid var(--line);padding:8px 12px;vertical-align:top}
+  tbody tr:nth-child(even){background:#f8fafc}
+  tbody tr:hover{background:var(--blue-bg)}
+  /* ---------- 提示框 ---------- */
+  .callout{border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px;border-left:4px solid}
+  .callout .ct{font-weight:700;display:block;margin-bottom:2px}
+  .callout.danger{background:var(--red-bg);border-color:var(--red);color:#7f1d1d}
+  .callout.warn{background:var(--amber-bg);border-color:var(--amber);color:#78350f}
+  .callout.info{background:var(--blue-bg);border-color:var(--blue);color:#1e3a8a}
+  .callout.ok{background:var(--green-bg);border-color:var(--green);color:#064e3b}
+  /* ---------- 图 ---------- */
+  .figure{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  .figure .fig-title{font-weight:700;color:#334155;font-size:14.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .figure .fig-title::before{content:"图";background:var(--violet);color:#fff;font-size:11px;border-radius:5px;padding:1px 7px}
+  .figure .fig-note{font-size:12.5px;color:#64748b;margin-top:8px}
+  .figure svg{width:100%;height:auto;display:block}
+  svg text{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  /* ---------- 徽章 ---------- */
+  .chip{display:inline-block;background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:6px;padding:1px 8px;font-size:12.5px;font-family:Menlo,Consolas,monospace;margin:2px}
+  .chip.loc{background:#f8fafc;color:#64748b;border-color:var(--line);font-size:11.5px}
+  .chip.core{background:var(--teal-bg);color:var(--teal);border-color:#99f6e4}
+  .chip.edit{background:var(--violet-bg);color:var(--violet);border-color:#ddd6fe}
+  .chip.res{background:var(--amber-bg);color:var(--amber);border-color:#fde68a}
+  .chip.svc{background:var(--blue-bg);color:var(--blue);border-color:#bfdbfe}
+  .backtop{
+    position:fixed;right:24px;bottom:24px;width:42px;height:42px;border-radius:50%;
+    background:var(--blue);color:#fff;border:none;font-size:18px;cursor:pointer;
+    box-shadow:0 4px 12px rgba(37,99,235,.4);z-index:40;
+  }
+  @media (max-width:960px){
+    #sidebar{transform:translateX(-100%);transition:transform .25s;padding-top:56px}
+    #sidebar.open{transform:translateX(0)}
+    #toc-toggle{display:block}
+    #main{margin-left:0;padding:64px 18px 60px}
+    section{padding:20px 16px}
+  }
+</style>
+</head>
+<body>
+<button id="toc-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ 目录</button>
+<nav id="sidebar">
+  <div class="brand">
+    <h1>HR Agent · 代码深度导读</h1>
+    <p>HR Agent 文档 · 05 · Agent 服务四大类</p>
+  </div>
+  <ul>
+    <li class="toc-l1"><a href="#sec1">1. 全景：四个类的关系</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec1-1">1.1 继承与 MRO</a></li>
+        <li class="toc-l2"><a href="#sec1-2">1.2 调用关系总览</a></li>
+        <li class="toc-l2"><a href="#sec1-3">1.3 数据契约</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec2">2. AgentService 本体</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec2-1">2.1 chat() 兼容门面</a></li>
+        <li class="toc-l2"><a href="#sec2-2">2.2 五个意图 handler</a></li>
+        <li class="toc-l2"><a href="#sec2-3">2.3 流式执行器与事件协议</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec3">3. 功能域分类详解</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec3-1">3.1 A 工具注册与规划</a></li>
+        <li class="toc-l2"><a href="#sec3-2">3.2 B 自然语言解析</a></li>
+        <li class="toc-l2"><a href="#sec3-3">3.3 C Dify 生成层</a></li>
+        <li class="toc-l2"><a href="#sec3-4">3.4 D 落库与更新</a></li>
+        <li class="toc-l2"><a href="#sec3-5">3.5 E 上下文与指代解析</a></li>
+        <li class="toc-l2"><a href="#sec3-6">3.6 F 资源删除</a></li>
+        <li class="toc-l2"><a href="#sec3-7">3.7 G 招聘闭环推进</a></li>
+        <li class="toc-l2"><a href="#sec3-8">3.8 H 候选人解析防幻觉</a></li>
+        <li class="toc-l2"><a href="#sec3-9">3.9 I Skill 邮件</a></li>
+        <li class="toc-l2"><a href="#sec3-10">3.10 J 流式显示工程</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec4">4. 业务场景走读</a>
+      <ul>
+        <li class="toc-l2"><a href="#sec4-1">4.1 生成 JD</a></li>
+        <li class="toc-l2"><a href="#sec4-2">4.2 改 JD（两轮对话）</a></li>
+        <li class="toc-l2"><a href="#sec4-3">4.3 筛选→面试→试卷闭环</a></li>
+        <li class="toc-l2"><a href="#sec4-4">4.4 删除刚才生成的试卷</a></li>
+        <li class="toc-l2"><a href="#sec4-5">4.5 邮件 Skill</a></li>
+      </ul>
+    </li>
+    <li class="toc-l1"><a href="#sec5">5. 兜底机制总表</a></li>
+    <li class="toc-l1"><a href="#sec6">6. 建议阅读顺序</a></li>
+  </ul>
+</nav>
+
+<div id="main">
+  <div class="doc-header">
+    <h1>Agent 服务四大类深度导读</h1>
+    <div class="meta">
+      <span>系列：HR Agent 文档 · 05</span>
+      <span>范围：backend/app/services/agent_service.py + app/agent/chains/{core,editing,resources}.py</span>
+      <span>更新：2026-11</span>
+    </div>
+    <div class="legend">
+      <span>🧭 按功能域读，不按文件读</span>
+      <span>🔗 关键方法均标注 文件:行号</span>
+      <span>🛡️ 兜底与安全设计贯穿全篇</span>
+      <span>📴 全部样式 / 脚本 / SVG 内联，可离线打开</span>
+    </div>
+  </div>
+
+  <!-- ================= 1. 全景 ================= -->
+  <section id="sec1">
+    <h2><span class="no">1</span>全景：四个类的关系</h2>
+    <p>本篇深潜的四个类，逻辑上是<strong>同一个巨型服务类的四个章节</strong>：</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>文件</th><th>类</th><th>体量</th><th>一句话分工</th></tr></thead>
+      <tbody>
+        <tr><td><code>app/services/agent_service.py</code></td><td><span class="chip svc">AgentService</span></td><td>~1042 行</td><td><strong>流程剧本</strong>：chat 门面 + 5 个意图 handler（规划）+ 4 个 stream 执行器（执行）</td></tr>
+        <tr><td><code>app/agent/chains/core.py</code></td><td><span class="chip core">_AgentServiceCoreMixin</span></td><td>~1144 行</td><td><strong>舞台机关</strong>：工具注册、流式事件封装、招聘闭环、候选人解析、Skill 邮件、试卷显示工程</td></tr>
+        <tr><td><code>app/agent/chains/editing.py</code></td><td><span class="chip edit">_AgentServiceEditingMixin</span></td><td>~588 行</td><td><strong>修订车间</strong>：JD / 评分标准修改请求解析、目标定位（挂起上下文）、LLM 重写、更新 payload</td></tr>
+        <tr><td><code>app/agent/chains/resources.py</code></td><td><span class="chip res">_AgentServiceResourcesMixin</span></td><td>~1206 行</td><td><strong>后台工厂</strong>：LLM+正则解析、Dify 生成与协议适配、落库、资源删除、数据规范化</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="sec1-1">1.1 继承与 MRO：物理拆分，不是逻辑分层</h3>
+    <p>接线只有两处——<code>agent_service.py:32-34</code> 的三行 import，和 <code>agent_service.py:67</code> 的类声明：</p>
+    <pre class="code"><span class="k">class</span> AgentService(
+    _AgentServiceCoreMixin,        <span class="c"># 父类 1（core.py）</span>
+    _AgentServiceEditingMixin,     <span class="c"># 父类 2（editing.py）</span>
+    _AgentServiceResourcesMixin,   <span class="c"># 父类 3（resources.py）</span>
+):</pre>
+    <ul class="list">
+      <li>三个 mixin <strong>没有 <code>__init__</code>、不独立实例化</strong>。它们的方法直接用 <code>self.db</code>、<code>self.tool_registry</code>、<code>self.llm_service</code>——这些属性全部由宿主 <code>AgentService.__init__</code>（agent_service.py:74）提供。</li>
+      <li>方法查找顺序（MRO）：<code>AgentService</code> 本类 → Core → Editing → Resources。本文件里每一个搜不到 <code>def</code> 的 <code>self._xxx()</code> 调用，都来自 mixin。</li>
+      <li>mixin 之间<strong>互相交叉调用</strong>：editing 调 resources 的 <code>_recent_generated_resources</code> / <code>_match_delete_resources</code>；resources 调 core 的 <code>_stream_text</code>；core 调 resources 的 <code>_parse_requirements</code> / <code>_generate_jd</code>。所以<span class="hl-red">不能把它们理解为依赖分层</span>，宿主类才是完整实体。</li>
+    </ul>
+    <div class="callout warn"><span class="ct">⚠️ 拆分痕迹：不要被 import 误导</span>
+      editing.py 头部 import 了 <code>DifyService</code>、<code>ExamService</code>、<code>hashlib</code> 等大量它根本用不到的模块——这是从原单文件机械切割时留下的。editing 实际只用 <code>LLMService</code>，不调 Dify。
+    </div>
+
+    <h3 id="sec1-2">1.2 调用关系总览</h3>
+    <p>编排已迁移到 LangGraph（<code>app/agent/graph.py</code>）。图节点（<code>app/agent/nodes/*.py</code>）持有 <code>AgentService</code> 实例并回调它的方法——以下调用边均在源码中核实：</p>
+    <div class="figure">
+      <div class="fig-title">① LangGraph 节点 → AgentService → 三 Mixin 调用关系</div>
+      <svg viewBox="0 0 1060 640" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#2563eb"/></marker>
+          <marker id="arr1g" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#94a3b8"/></marker>
+          <marker id="arr1t" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#0d9488"/></marker>
+        </defs>
+        <!-- 节点层 -->
+        <text x="20" y="28" font-size="13" fill="#64748b" font-weight="700">LangGraph 图节点（app/agent/nodes/）</text>
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="20" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="95" y="63" fill="#1e293b" font-weight="700">routing.py</text>
+          <text x="95" y="82" fill="#64748b" font-size="11">route_intent 决策</text>
+          <rect x="190" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="265" y="63" fill="#1e293b" font-weight="700">planning.py</text>
+          <text x="265" y="82" fill="#64748b" font-size="11">筛选 / 试卷规划</text>
+          <rect x="360" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="435" y="63" fill="#1e293b" font-weight="700">jd.py</text>
+          <text x="435" y="82" fill="#64748b" font-size="11">JD 确认后执行</text>
+          <rect x="530" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="605" y="63" fill="#1e293b" font-weight="700">editing.py</text>
+          <text x="605" y="82" fill="#64748b" font-size="11">JD / 评分标准修改</text>
+          <rect x="700" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="775" y="63" fill="#1e293b" font-weight="700">resources.py</text>
+          <text x="775" y="82" fill="#64748b" font-size="11">删除定位与执行</text>
+          <rect x="870" y="42" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="945" y="63" fill="#1e293b" font-weight="700">skill.py</text>
+          <text x="945" y="82" fill="#64748b" font-size="11">邮件草稿流式</text>
+        </g>
+        <!-- 节点 -> AgentService 边 -->
+        <g stroke="#2563eb" stroke-width="1.6" fill="none">
+          <line x1="95" y1="94" x2="230" y2="196" marker-end="url(#arr1)"/>
+          <line x1="265" y1="94" x2="330" y2="196" marker-end="url(#arr1)"/>
+          <line x1="435" y1="94" x2="470" y2="196" marker-end="url(#arr1)"/>
+          <line x1="605" y1="94" x2="600" y2="196" marker-end="url(#arr1)"/>
+          <line x1="775" y1="94" x2="730" y2="196" marker-end="url(#arr1)"/>
+          <line x1="945" y1="94" x2="830" y2="196" marker-end="url(#arr1)"/>
+        </g>
+        <g font-size="10.5" fill="#2563eb" text-anchor="middle">
+          <text x="140" y="150">记忆 + 规则/受控ReAct</text>
+          <text x="270" y="168">_handle_*_chat</text>
+          <text x="452" y="150">_run_recruitment_agent</text>
+          <text x="640" y="168">_parse_jd_edit_request →</text>
+          <text x="640" y="182">_rewrite_jd_content</text>
+          <text x="800" y="150">_parse_delete_request →</text>
+          <text x="800" y="164">_delete_matched_resources</text>
+          <text x="930" y="182">_stream_skill_draft_response</text>
+        </g>
+        <!-- AgentService -->
+        <rect x="150" y="200" width="760" height="130" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="530" y="228" font-size="15" fill="#1e3a8a" font-weight="700" text-anchor="middle">AgentService（agent_service.py · 唯一被实例化的类）</text>
+        <g font-size="12" text-anchor="middle">
+          <rect x="175" y="244" width="220" height="66" rx="8" fill="#fff" stroke="#bfdbfe"/>
+          <text x="285" y="266" fill="#1e293b" font-weight="700">chat() 兼容门面 :101</text>
+          <text x="285" y="284" fill="#64748b" font-size="11">委托 AgentGraphService.run_chat</text>
+          <text x="285" y="299" fill="#64748b" font-size="11">懒加载单例 · 无 checkpointer</text>
+          <rect x="415" y="244" width="230" height="66" rx="8" fill="#fff" stroke="#bfdbfe"/>
+          <text x="530" y="266" fill="#1e293b" font-weight="700">5 个意图 handler（规划）</text>
+          <text x="530" y="284" fill="#64748b" font-size="11">general / resume / interview</text>
+          <text x="530" y="299" fill="#64748b" font-size="11">exam / fallback</text>
+          <rect x="665" y="244" width="220" height="66" rx="8" fill="#fff" stroke="#bfdbfe"/>
+          <text x="775" y="266" fill="#1e293b" font-weight="700">4 个 stream 执行器（执行）</text>
+          <text x="775" y="284" fill="#64748b" font-size="11">recruitment / resume_screening</text>
+          <text x="775" y="299" fill="#64748b" font-size="11">interview_plan / exam ×2</text>
+        </g>
+        <!-- 继承边 -->
+        <g stroke="#0d9488" stroke-width="1.8" stroke-dasharray="7 5" fill="none">
+          <line x1="230" y1="420" x2="300" y2="330" marker-end="url(#arr1t)"/>
+          <line x1="530" y1="420" x2="530" y2="330" marker-end="url(#arr1t)"/>
+          <line x1="830" y1="420" x2="760" y2="330" marker-end="url(#arr1t)"/>
+        </g>
+        <text x="530" y="372" font-size="12" fill="#0d9488" text-anchor="middle" font-weight="700">多重继承混入（MRO：本类 → Core → Editing → Resources）</text>
+        <!-- mixin 层 -->
+        <g font-size="12.5" text-anchor="middle">
+          <rect x="60" y="420" width="340" height="150" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.6"/>
+          <text x="230" y="446" fill="#0f172a" font-weight="700" font-size="13.5">_AgentServiceCoreMixin</text>
+          <text x="230" y="464" fill="#64748b" font-size="11">chains/core.py · 舞台机关</text>
+          <text x="230" y="488" fill="#334155" font-size="11.5">工具注册表 / 流式事件封装</text>
+          <text x="230" y="506" fill="#334155" font-size="11.5">招聘闭环 / 候选人解析（防幻觉）</text>
+          <text x="230" y="524" fill="#334155" font-size="11.5">Skill 邮件 / 试卷双缓冲与补题</text>
+          <text x="230" y="548" fill="#0d9488" font-size="11">_build_tool_registry :44</text>
+          <rect x="420" y="420" width="280" height="150" rx="12" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.6"/>
+          <text x="560" y="446" fill="#0f172a" font-weight="700" font-size="13.5">_AgentServiceEditingMixin</text>
+          <text x="560" y="464" fill="#64748b" font-size="11">chains/editing.py · 修订车间</text>
+          <text x="560" y="488" fill="#334155" font-size="11.5">修改请求解析（keyword+changes）</text>
+          <text x="560" y="506" fill="#334155" font-size="11.5">挂起上下文定位 / 中文序数选择</text>
+          <text x="560" y="524" fill="#334155" font-size="11.5">LLM 全文重写 / edit_history 审计</text>
+          <text x="560" y="548" fill="#7c3aed" font-size="11">_resolve_recent_jd_candidates :194</text>
+          <rect x="720" y="420" width="320" height="150" rx="12" fill="#fffbeb" stroke="#d97706" stroke-width="1.6"/>
+          <text x="880" y="446" fill="#0f172a" font-weight="700" font-size="13.5">_AgentServiceResourcesMixin</text>
+          <text x="880" y="464" fill="#64748b" font-size="11">chains/resources.py · 后台工厂</text>
+          <text x="880" y="488" fill="#334155" font-size="11.5">LLM+正则解析 / Dify 生成与协议适配</text>
+          <text x="880" y="506" fill="#334155" font-size="11.5">落库（JD/标准/文档）/ 资源删除</text>
+          <text x="880" y="524" fill="#334155" font-size="11.5">规范化清洗 / 意图判定规则</text>
+          <text x="880" y="548" fill="#d97706" font-size="11">_recent_generated_resources :171</text>
+        </g>
+        <!-- 交叉调用 -->
+        <g stroke="#94a3b8" stroke-width="1.3" fill="none" stroke-dasharray="3 3">
+          <path d="M 420 590 C 360 616 300 616 240 578" marker-end="url(#arr1g)"/>
+          <path d="M 700 590 C 640 620 560 620 500 578" marker-end="url(#arr1g)"/>
+          <path d="M 720 560 C 560 640 320 640 200 578" marker-end="url(#arr1g)"/>
+        </g>
+        <text x="530" y="626" font-size="11" fill="#94a3b8" text-anchor="middle">灰色虚线：mixin 互相交叉调用（editing→resources 资源定位；resources→core _stream_text；core→resources 解析/生成）</text>
+      </svg>
+      <div class="fig-note">节点侧调用点核实于 nodes/planning.py:32,47 · nodes/jd.py:111 · nodes/editing.py:58,84,154 · nodes/resources.py:37,185 · nodes/skill.py:34。</div>
+    </div>
+
+    <h3 id="sec1-3">1.3 数据契约：五个结构就是全部"普通话"</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>结构</th><th>定义位置</th><th>字段要点</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>AgentToolSpec</code></td><td>chains/types.py:11</td><td>name / intent / route / description / <strong>prerequisites</strong></td><td>工具声明。<span class="hl-blue">prerequisites（前置条件）是全系统"先补齐条件再执行"设计的源头</span></td></tr>
+        <tr><td><code>ReActDecision</code></td><td>chains/types.py:30</td><td>mode(chat|tool) / action(chat|use_tool|ask_user) / intent / thought / confidence / source</td><td><strong>受控 ReAct</strong>：模型只能在固定动作空间里选，不能随意执行代码或调用未知工具；thought 只是给产品侧展示的摘要</td></tr>
+        <tr><td><code>AgentStep</code></td><td>schemas/agent.py</td><td>id / title / status(pending|running|completed|failed) / detail / tool</td><td>前端步骤条；用 <code>model_copy(update=...)</code> 不可变更新</td></tr>
+        <tr><td><code>AgentArtifact</code></td><td>schemas/agent.py</td><td>type / title / content / <strong>metadata</strong></td><td>前端交互卡片 + 阶段产物；metadata 回填 saved_*_id 支撑下一轮指代解析</td></tr>
+        <tr><td><code>AgentChatResponse</code></td><td>schemas/agent.py</td><td>message / intent / route / steps / artifacts / suggestions / requires_confirmation / missing_fields</td><td>统一响应；suggestions 主动把用户推向招聘链路下一环</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= 2. AgentService 本体 ================= -->
+  <section id="sec2">
+    <h2><span class="no">2</span>AgentService 本体：流程剧本</h2>
+
+    <h3 id="sec2-1">2.1 chat()：LangGraph 兼容门面 <span class="chip loc">agent_service.py:101</span></h3>
+    <pre class="code"><span class="k">async def</span> chat(...) -> AgentChatResponse:
+    <span class="k">return await</span> _get_graph_service().run_chat(agent_service=<span class="k">self</span>, ...)</pre>
+    <ul class="list">
+      <li>编排逻辑已迁移到 LangGraph（<code>app/agent/graph.py</code>），chat() 只保留原签名做<strong>兼容门面</strong>，供评测脚本 <code>agent_eval_runner</code> 进程内调用。</li>
+      <li><code>_get_graph_service()</code>（:58）是<strong>懒加载单例</strong>，函数内部才 import <code>AgentGraphService</code>，避免模块循环导入。</li>
+      <li>门面图 <code>checkpointer=None</code>：chat() 不落 checkpoint，评测跑完无线程状态残留。</li>
+      <li>图内流程：<code>route_intent</code> 节点（记忆 + 规则/ReAct 决策）→ 条件边分发意图节点 → 节点回调 <code>_handle_*</code> → 终态组装 <code>AgentChatResponse</code>。</li>
+      <li>构造器（:74）里 <code>dify_service</code> / <code>llm_service</code> 均<strong>懒加载</strong>：不配置 DIFY_API_KEY 也能构造服务，普通聊天不加载模型客户端。</li>
+    </ul>
+    <div class="callout info"><span class="ct">🔑 两段式设计</span>
+      <strong>chat() 负责"规划"</strong>（返回步骤计划 + 引导 artifact，不执行重活）；<strong>stream_* 负责"执行"</strong>（用户在前端确认后真正调工具、落库）。这是理解全文件的第一个钥匙。
+    </div>
+
+    <h3 id="sec2-2">2.2 五个意图 handler（规划阶段）</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>handler</th><th>位置</th><th>分支逻辑</th><th>产出 artifact</th></tr></thead>
+      <tbody>
+        <tr><td><code>_handle_general_chat</code></td><td>agent_service.py:132</td><td>不调业务工具，直接用 ReAct 的 reply（缺省走兜底文案）</td><td>无；suggestions 引导三大能力</td></tr>
+        <tr><td><code>_handle_resume_screening_chat</code></td><td>:150</td><td>按附件有无二分：有简历→提示选 JD；无→引导上传</td><td><code>resume_upload_request</code>（requires_job_description=True）</td></tr>
+        <tr><td><code>_handle_interview_plan_chat</code></td><td>:203</td><td>先接筛选闭环跟进；否则候选人四态分流：matched→直接执行 / no_match→引导上传 / ambiguous→让选 / 未指定→通用选择卡</td><td><code>interview_plan_execute</code> / <code>interview_plan_request</code> / <code>resume_upload_request</code></td></tr>
+        <tr><td><code>_handle_exam_generate_chat</code></td><td>:314</td><td>四情况按优先级：面试方案跟进→缺文档引导 / 有附件→确认配置 / 知识库匹配→直接塞文档 / 全无→引导上传；每条路径都解析试卷配置并给 missing_fields</td><td><code>exam_generate_request</code> / <code>exam_document_upload_request</code></td></tr>
+        <tr><td><code>_handle_intent_fallback</code></td><td>:446</td><td>识别出意图但无可安全自动执行的工具→说明 + 按意图定制建议，不报错</td><td>无</td></tr>
+      </tbody>
+    </table></div>
+    <p>附件白名单 <code>RESUME_ATTACHMENT_EXTENSIONS</code>（:28）= pdf/doc/docx/txt/md/markdown，注释要求与 <code>ResumeParserService</code> 和前端 <code>isResumeFile</code> <span class="hl-red">三处同步</span>，否则 .md 简历会被误判成"考试参考文档"。</p>
+
+    <h3 id="sec2-3">2.3 四个流式执行器与统一事件协议</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>执行器</th><th>位置</th><th>流水线</th><th>关键工程点</th></tr></thead>
+      <tbody>
+        <tr><td><code>stream_recruitment_agent</code></td><td>:463</td><td>确认需求 → 流式 JD → 保存 JD → 流式评分标准（输入=JD 正文）→ 保存标准</td><td>每步生成后立即落库；metadata 回填 saved_jd_id / saved_criteria_id</td></tr>
+        <tr><td><code>stream_resume_screening</code></td><td>:599</td><td>逐份评分 → 每份一段 markdown 增量 → 按分排序 → 60 分阈值闭环建议</td><td><strong>单份失败不中断批次</strong>（:675 catch 后记 failed 继续）；产出 results + followup 双 artifact</td></tr>
+        <tr><td><code>stream_interview_plan</code></td><td>:771</td><td>读评分记录 → 读 JD → Dify type4 流式生成 → 保存方案 → <strong>候选人状态推进 INTERVIEW</strong>（:830）</td><td>跨模块状态联动；结尾引导"基于当前面试方案生成笔试试卷"</td></tr>
+        <tr><td><code>stream_exam_generation</code></td><td>:850</td><td>标准化配置 → 关联面试方案 → 流式生成 → 双缓冲渲染 → 缺题补齐 → 保存 → 分享链接 /exam-share/{id}</td><td>raw（落库格式）与 display（markdown）双内容分离</td></tr>
+        <tr><td><code>stream_exam_generation_with_documents</code></td><td>:956</td><td>前置包装：sha256 去重存文档 → 提取文本 → knowledge_files 委托上面的执行器</td><td>转发事件时把外层"上传/解析"两步拼进内层 steps，前端看到一条完整流水线</td></tr>
+      </tbody>
+    </table></div>
+    <div class="figure">
+      <div class="fig-title">② 规划（chat）与执行（stream_*）两段式流程</div>
+      <svg viewBox="0 0 1060 330" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#2563eb"/></marker>
+        <marker id="arr2a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#d97706"/></marker></defs>
+        <rect x="20" y="20" width="470" height="290" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="255" y="48" font-size="14" fill="#1e3a8a" font-weight="700" text-anchor="middle">规划阶段 · chat() → LangGraph</text>
+        <rect x="490" y="20" width="550" height="290" rx="12" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="765" y="48" font-size="14" fill="#78350f" font-weight="700" text-anchor="middle">执行阶段 · stream_*（用户确认后）</text>
+        <g font-size="12" text-anchor="middle">
+          <rect x="60" y="66" width="390" height="40" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="255" y="91" fill="#1e293b">用户消息（+附件 +记忆）</text>
+          <rect x="60" y="126" width="390" height="40" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="255" y="151" fill="#1e293b">route_intent：规则 / 受控 ReAct 决策</text>
+          <rect x="60" y="186" width="390" height="40" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="255" y="211" fill="#1e293b">意图节点 → _handle_*（补齐前置条件引导）</text>
+          <rect x="60" y="246" width="390" height="46" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="255" y="266" fill="#1e293b">AgentChatResponse</text>
+          <text x="255" y="283" fill="#64748b" font-size="11">steps 步骤条 + artifacts 交互卡片 + suggestions</text>
+          <rect x="530" y="66" width="470" height="40" rx="8" fill="#fff" stroke="#d97706"/>
+          <text x="765" y="91" fill="#1e293b">confirmed_requirements / 选定 JD / 候选人 / 文档</text>
+          <rect x="530" y="126" width="470" height="40" rx="8" fill="#fff" stroke="#d97706"/>
+          <text x="765" y="151" fill="#1e293b">stream 执行器：调 Dify / ExamService / 评分服务</text>
+          <rect x="530" y="186" width="470" height="40" rx="8" fill="#fff" stroke="#d97706"/>
+          <text x="765" y="205" fill="#1e293b">事件流：progress → delta → artifact → final</text>
+          <text x="765" y="220" fill="#64748b" font-size="10.5">步骤状态 / 正文增量 / 阶段产物 / 完整响应</text>
+          <rect x="530" y="246" width="470" height="46" rx="8" fill="#fff" stroke="#d97706"/>
+          <text x="765" y="266" fill="#1e293b">落库 + metadata 回填 saved_*_id</text>
+          <text x="765" y="283" fill="#64748b" font-size="11">供下一轮"这个 / 刚才 / 上一个"指代解析使用</text>
+        </g>
+        <g stroke="#2563eb" stroke-width="1.6" fill="none">
+          <line x1="255" y1="106" x2="255" y2="126" marker-end="url(#arr2)"/>
+          <line x1="255" y1="166" x2="255" y2="186" marker-end="url(#arr2)"/>
+          <line x1="255" y1="226" x2="255" y2="246" marker-end="url(#arr2)"/>
+        </g>
+        <g stroke="#d97706" stroke-width="1.6" fill="none">
+          <line x1="765" y1="106" x2="765" y2="126" marker-end="url(#arr2a)"/>
+          <line x1="765" y1="166" x2="765" y2="186" marker-end="url(#arr2a)"/>
+          <line x1="765" y1="226" x2="765" y2="246" marker-end="url(#arr2a)"/>
+        </g>
+        <line x1="450" y1="269" x2="530" y2="86" stroke="#059669" stroke-width="2.2" marker-end="url(#arr2)" stroke-dasharray="8 4"/>
+        <text x="477" y="180" font-size="12.5" fill="#059669" font-weight="700" transform="rotate(-64 477 180)">用户在前端确认</text>
+      </svg>
+      <div class="fig-note">规划阶段永不执行重活；执行阶段的每个落库动作都在为下一轮对话的指代解析埋点。</div>
+    </div>
+  </section>
+
+  <!-- ================= 3. 功能域 ================= -->
+  <section id="sec3">
+    <h2><span class="no">3</span>功能域分类详解（跨文件横向切）</h2>
+    <p>四个文件合计 300+ 方法。正确的读法是<strong>按功能域横向读</strong>——同一域的方法散落在不同 mixin 里，但共享同一套模式。下文 A–J 十域覆盖全部关键方法。</p>
+
+    <h3 id="sec3-1">3.1 域 A · 工具注册与规划骨架 <span class="chip core">core.py</span></h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>方法</th><th>位置</th><th>功能与业务场景</th></tr></thead>
+      <tbody>
+        <tr><td><code>_build_tool_registry</code></td><td>core.py:44</td><td>声明 7 个内置工具：generate_jd / edit_jd / edit_scoring_criteria / evaluate_resume / generate_interview_plan / generate_exam / delete_resource；再扫描 skills 目录把 Skill（邮件）也注册成工具。<code>__init__</code> 时执行一次</td></tr>
+        <tr><td><code>_build_skill_dispatcher</code></td><td>core.py:119</td><td>构建可插拔 Skill 加载器（build_default_skill_dispatcher）</td></tr>
+        <tr><td><code>_route_for_intent</code></td><td>core.py:123</td><td>intent → 前端路由映射，让前端知道该跳转/高亮哪个页面</td></tr>
+        <tr><td><code>_planning_step</code></td><td>core.py:149</td><td>生成"选择执行工具"步骤，detail 拼上工具描述+前置条件——<strong>把 ReAct 决策过程透明化给用户看</strong>；每个 handler 的第一个 step 都是它</td></tr>
+        <tr><td><code>_normalize_attachments</code> / <code>_filter_attachments</code></td><td>core.py:132 / 146</td><td>附件规范化（提取小写扩展名）与按白名单过滤，支撑"有无简历/文档"分支</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout ok"><span class="ct">✅ 理解要点</span>
+      <code>AgentToolSpec.prerequisites</code> 是理解全系统的钥匙。例如 evaluate_resume 的前置条件是"上传简历 + 选择 JD"，所以 <code>_handle_resume_screening_chat</code> 才按"有无附件"二分引导——<strong>handler 的分支结构就是前置条件的补齐路径</strong>。
+    </div>
+
+    <h3 id="sec3-2">3.2 域 B · 自然语言 → 结构化解析（LLM + 正则双通道）<span class="chip res">resources.py</span> <span class="chip edit">editing.py</span></h3>
+    <p>这是模式最统一的一域，全部遵循同一模板：</p>
+    <div class="figure">
+      <div class="fig-title">③ 双通道解析管线（所有 _parse_* 共享）</div>
+      <svg viewBox="0 0 1060 300" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#2563eb"/></marker>
+        <marker id="arr3r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#dc2626"/></marker></defs>
+        <rect x="20" y="110" width="130" height="66" rx="10" fill="#f5f3ff" stroke="#7c3aed"/>
+        <text x="85" y="138" font-size="12.5" fill="#1e293b" text-anchor="middle" font-weight="700">用户消息</text>
+        <text x="85" y="158" font-size="11" fill="#64748b" text-anchor="middle">+ memory_context</text>
+        <rect x="190" y="40" width="620" height="110" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+        <text x="500" y="64" font-size="12.5" fill="#1e3a8a" text-anchor="middle" font-weight="700">LLM 通道（source="llm"）</text>
+        <g font-size="11.5" text-anchor="middle">
+          <rect x="210" y="80" width="130" height="52" rx="7" fill="#fff" stroke="#bfdbfe"/>
+          <text x="275" y="101" fill="#334155">严格 JSON prompt</text>
+          <text x="275" y="118" fill="#64748b" font-size="10.5">"不要解释"</text>
+          <rect x="360" y="80" width="140" height="52" rx="7" fill="#fff" stroke="#bfdbfe"/>
+          <text x="430" y="101" fill="#334155">LLMService</text>
+          <text x="430" y="118" fill="#64748b" font-size="10.5">generate_response</text>
+          <rect x="520" y="80" width="130" height="52" rx="7" fill="#fff" stroke="#bfdbfe"/>
+          <text x="585" y="101" fill="#334155">_safe_json_loads</text>
+          <text x="585" y="118" fill="#64748b" font-size="10.5">剥 ``` 代码围栏</text>
+          <rect x="670" y="80" width="120" height="52" rx="7" fill="#fff" stroke="#bfdbfe"/>
+          <text x="730" y="101" fill="#334155">normalize 清洗</text>
+          <text x="730" y="118" fill="#64748b" font-size="10.5">"无"/"null"→None</text>
+        </g>
+        <g stroke="#2563eb" stroke-width="1.5" fill="none">
+          <line x1="150" y1="130" x2="210" y2="106" marker-end="url(#arr3)"/>
+          <line x1="340" y1="106" x2="360" y2="106" marker-end="url(#arr3)"/>
+          <line x1="500" y1="106" x2="520" y2="106" marker-end="url(#arr3)"/>
+          <line x1="650" y1="106" x2="670" y2="106" marker-end="url(#arr3)"/>
+        </g>
+        <rect x="190" y="196" width="620" height="70" rx="10" fill="#fef2f2" stroke="#dc2626"/>
+        <text x="500" y="222" font-size="12.5" fill="#7f1d1d" text-anchor="middle" font-weight="700">正则兜底通道（source="fallback"）</text>
+        <text x="500" y="246" font-size="11.5" fill="#7f1d1d" text-anchor="middle">_fallback_parse / _fallback_exam_parse / _fallback_parse_delete_request / _fallback_parse_jd_edit_request…</text>
+        <line x1="500" y1="150" x2="500" y2="196" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr3r)"/>
+        <text x="512" y="178" font-size="11" fill="#dc2626">任何一步异常 / 空结果</text>
+        <rect x="860" y="110" width="180" height="66" rx="10" fill="#ecfdf5" stroke="#059669"/>
+        <text x="950" y="138" font-size="12.5" fill="#064e3b" text-anchor="middle" font-weight="700">结构化 dict</text>
+        <text x="950" y="158" font-size="11" fill="#064e3b" text-anchor="middle">source 标记来源</text>
+        <g stroke="#059669" stroke-width="1.6" fill="none">
+          <line x1="810" y1="106" x2="880" y2="128" marker-end="url(#arr3)"/>
+          <line x1="810" y1="230" x2="880" y2="164" marker-end="url(#arr3)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>解析器</th><th>位置</th><th>输出</th><th>兜底</th></tr></thead>
+      <tbody>
+        <tr><td><code>_parse_requirements</code> 招聘需求</td><td>resources.py:452</td><td>job_title / location / salary / experience / education / skills…（prompt 强调"未提到必须 null，不要自行推断"）</td><td><code>_fallback_parse</code>（:1066）：岗位名正则、城市枚举、薪资模式、技能词表</td></tr>
+        <tr><td><code>_parse_delete_request</code> 删除请求</td><td>resources.py:48</td><td>type / keyword / <strong>context_reference / latest / delete_all / confirm_context_low_scores</strong></td><td><code>_fallback_parse_delete_request</code>（:123）</td></tr>
+        <tr><td><code>_parse_jd_edit_request</code> JD 修改</td><td>editing.py:46</td><td><strong>keyword（定位用）+ changes（改什么）</strong>+ 8 个结构化字段（title/location/salary_range…）</td><td>editing.py:85 + <code>_fallback_parse_jd_edit_fields</code>（:163）：薪资须伴随"薪资/工资"语境词、城市须伴随"改成/换成"才提取——防误判</td></tr>
+        <tr><td><code>_parse_criteria_edit_request</code> 评分标准修改</td><td>editing.py:116</td><td>keyword + changes</td><td>editing.py:146</td></tr>
+        <tr><td><code>_parse_exam_requirements</code> 试卷配置</td><td>resources.py:479</td><td>title / subject / duration / question_counts…</td><td>⚠️ 见下方 callout</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout warn"><span class="ct">⚠️ 不对称点：试卷解析没有 LLM 通道</span>
+      <code>_parse_exam_requirements</code>（resources.py:479）虽然是 async、长得像其他解析器，<strong>实际直接调 <code>_fallback_exam_parse</code> 纯正则</strong>（把 memory_context 和消息拼一起提取），没走 LLM。读代码时容易看错。
+    </div>
+    <h4>配套意图判定规则（决定走哪条解析链，全在 resources.py）</h4>
+    <ul class="list">
+      <li><code>_is_jd_edit_request</code>（:1022）：目标词 + 编辑动作词 + 指代词组合；<span class="hl-red">特意排除删除句</span>——"删除这个JD"不能误判成编辑。</li>
+      <li><code>_is_jd_edit_followup</code>（:1040）：检查 memory 里是否有上一轮的"你想具体改哪些内容"——<strong>多轮补槽</strong>关键：上轮反问后，这轮用户只说"薪资改成20K"，靠它把整句当 changes。</li>
+      <li><code>_is_generic_jd_edit_request</code>（:1056）：识别"帮我改改JD"这种没有实质修改内容的请求 → changes 置 null → 触发反问。</li>
+    </ul>
+
+    <h3 id="sec3-3">3.3 域 C · Dify 生成层（协议适配）<span class="chip res">resources.py</span></h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>生成器（同步 / 流式成对）</th><th>位置</th><th>Dify workflow_type</th><th>输入</th></tr></thead>
+      <tbody>
+        <tr><td><code>_generate_jd</code> / <code>_generate_jd_stream</code></td><td>resources.py:524 / 539</td><td><strong>1</strong></td><td>原始需求 + 结构化字段拼的 query（_build_jd_query）</td></tr>
+        <tr><td><code>_generate_scoring_criteria(_stream)</code></td><td>:717 / 735</td><td><strong>2</strong></td><td><strong>JD 正文</strong>——保证评分标准与 JD 一致，总分 100</td></tr>
+        <tr><td><code>_generate_interview_plan_content(_stream)</code></td><td>:590 / 612</td><td><strong>4</strong></td><td>简历全文(jianli) + JD + evaluation_metrics + total_score + candidate_name</td></tr>
+        <tr><td>试卷生成</td><td>core.py:463 包装</td><td>走 ExamService</td><td>配置 + knowledge_files + special_requirements</td></tr>
+      </tbody>
+    </table></div>
+    <p>流式的三层协议适配（工程细节密集区）：</p>
+    <ol class="list">
+      <li><code>_normalize_sse_chunk</code>（resources.py:875）：剥 <code>data:</code> 前缀和 <code>[DONE]</code>；</li>
+      <li><code>_extract_stream_delta</code>（:839）：按 event 过滤（workflow_finished / node_finished / tts_* 等丢弃），从 answer / delta / text 取增量；</li>
+      <li><code>_dedupe_stream_delta</code>（:890）：<strong>Dify 有时返回累计全文而非增量</strong>——delta 以 full_text 开头就裁掉前缀；大 chunk（≥20 字符）做前后缀重叠裁剪，<span class="hl-blue">小 token 不裁</span>（避免误删正常重复字符）。</li>
+    </ol>
+    <div class="figure">
+      <div class="fig-title">④ 流式失败 → 同步兜底 → 模拟打字机 降级链</div>
+      <svg viewBox="0 0 1060 270" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr4" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#0d9488"/></marker>
+        <marker id="arr4r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#dc2626"/></marker></defs>
+        <g font-size="11.5" text-anchor="middle">
+          <rect x="20" y="40" width="150" height="56" rx="8" fill="#f0fdfa" stroke="#0d9488"/>
+          <text x="95" y="63" fill="#1e293b" font-weight="700">call_workflow_stream</text>
+          <text x="95" y="82" fill="#64748b" font-size="10.5">Dify SSE</text>
+          <rect x="200" y="40" width="150" height="56" rx="8" fill="#fff" stroke="#0d9488"/>
+          <text x="275" y="63" fill="#334155">_normalize_sse_chunk</text>
+          <text x="275" y="82" fill="#64748b" font-size="10.5">剥 data: / [DONE]</text>
+          <rect x="380" y="40" width="160" height="56" rx="8" fill="#fff" stroke="#0d9488"/>
+          <text x="460" y="63" fill="#334155">_extract_stream_delta</text>
+          <text x="460" y="82" fill="#64748b" font-size="10.5">event 过滤 + 取增量</text>
+          <rect x="570" y="40" width="170" height="56" rx="8" fill="#fff" stroke="#0d9488"/>
+          <text x="655" y="63" fill="#334155">_dedupe_stream_delta</text>
+          <text x="655" y="82" fill="#64748b" font-size="10.5">累计全文裁剪 ≥20 字符</text>
+          <rect x="770" y="40" width="120" height="56" rx="8" fill="#ecfdf5" stroke="#059669"/>
+          <text x="830" y="63" fill="#064e3b" font-weight="700">yield delta</text>
+          <text x="830" y="82" fill="#064e3b" font-size="10.5">前端打字机</text>
+          <rect x="200" y="170" width="170" height="56" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+          <text x="285" y="193" fill="#7f1d1d" font-weight="700">call_workflow_sync</text>
+          <text x="285" y="212" fill="#7f1d1d" font-size="10.5">同步一次性生成</text>
+          <rect x="400" y="170" width="140" height="56" rx="8" fill="#fff" stroke="#dc2626"/>
+          <text x="470" y="193" fill="#334155">_extract_answer</text>
+          <text x="470" y="212" fill="#64748b" font-size="10.5">answer/data.answer/text</text>
+          <rect x="570" y="170" width="170" height="56" rx="8" fill="#fff" stroke="#dc2626"/>
+          <text x="655" y="193" fill="#334155">_stream_text</text>
+          <text x="655" y="212" fill="#64748b" font-size="10.5">按 6 字符切片模拟流式</text>
+        </g>
+        <g stroke="#0d9488" stroke-width="1.6" fill="none">
+          <line x1="170" y1="68" x2="200" y2="68" marker-end="url(#arr4)"/>
+          <line x1="350" y1="68" x2="380" y2="68" marker-end="url(#arr4)"/>
+          <line x1="540" y1="68" x2="570" y2="68" marker-end="url(#arr4)"/>
+          <line x1="740" y1="68" x2="770" y2="68" marker-end="url(#arr4)"/>
+        </g>
+        <path d="M 95 96 C 95 198 130 198 200 198" stroke="#dc2626" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#arr4r)"/>
+        <text x="105" y="150" font-size="11" fill="#dc2626">异常 或 full_text 为空</text>
+        <g stroke="#dc2626" stroke-width="1.6" fill="none">
+          <line x1="370" y1="198" x2="400" y2="198" marker-end="url(#arr4r)"/>
+          <line x1="540" y1="198" x2="570" y2="198" marker-end="url(#arr4r)"/>
+        </g>
+        <path d="M 740 198 C 830 198 830 150 830 96" stroke="#dc2626" stroke-width="1.6" fill="none" marker-end="url(#arr4r)"/>
+        <text x="920" y="150" font-size="11" fill="#64748b" text-anchor="middle">用户无感知降级</text>
+      </svg>
+      <div class="fig-note">四个生成器（JD / 评分标准 / 面试计划 / 试卷）尾部逻辑完全一致：if not full_text.strip() → 同步生成 → _stream_text。</div>
+    </div>
+
+    <h3 id="sec3-4">3.4 域 D · 落库与更新 <span class="chip res">resources.py</span> <span class="chip edit">editing.py</span></h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>方法</th><th>位置</th><th>设计点</th></tr></thead>
+      <tbody>
+        <tr><td><code>_save_job_description</code></td><td>resources.py:773</td><td>status=draft；meta_data.source="hr_agent"；conversation_id 关联会话；workflow_type="agent_jd_generation"</td></tr>
+        <tr><td><code>_save_scoring_criteria</code></td><td>resources.py:805</td><td><strong>带 job_description_id 外键</strong>——评分标准挂在 JD 下（删 JD 时级联删标准）</td></tr>
+        <tr><td><code>_save_exam_source_document</code></td><td>resources.py:663</td><td><strong>sha256 内容去重</strong>（同文件不重复入库）+ 文件名冲突自动 _1/_2 后缀 + category="exam_source"</td></tr>
+        <tr><td><code>_get_resume_evaluation</code></td><td>resources.py:651</td><td>按 id + user_id 双条件查询——<strong>越权防护</strong>，找不到即抛错</td></tr>
+        <tr><td><code>_rewrite_jd_content</code> / <code>_rewrite_criteria_content</code></td><td>editing.py:482 / 498</td><td>LLM 全文重写，prompt 强调"保留结构、只改被要求的部分"；评分标准版额外要求"分值口径前后一致"</td></tr>
+        <tr><td><code>_build_jd_update_payload</code> / <code>_build_criteria_update_payload</code></td><td>editing.py:515 / 546</td><td>结构化字段<strong>优先用用户显式指定值</strong>；meta_data 追加 edit_history（只留最近 10 条）——审计追溯</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="sec3-5">3.5 域 E · 上下文与指代解析（全系统最精华）<span class="chip res">resources.py</span> <span class="chip edit">editing.py</span></h3>
+    <p>用户说"<strong>这个 / 刚才 / 上一个 / 第一个</strong>"时，系统怎么知道指谁？答案是三级记忆查找链：</p>
+    <div class="figure">
+      <div class="fig-title">⑤ 三级记忆查找链（_recent_generated_resources · resources.py:171）</div>
+      <svg viewBox="0 0 1060 340" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr5" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#059669"/></marker>
+        <marker id="arr5a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#d97706"/></marker></defs>
+        <g font-size="12" text-anchor="middle">
+          <rect x="20" y="30" width="300" height="96" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.6"/>
+          <text x="170" y="56" fill="#064e3b" font-weight="700">① self._graph_artifacts</text>
+          <text x="170" y="78" fill="#064e3b" font-size="11">LangGraph 图状态内累积产物</text>
+          <text x="170" y="96" fill="#064e3b" font-size="11">同轮最快 · 不查库</text>
+          <text x="170" y="114" fill="#64748b" font-size="10.5">门面 / 评测路径此层为空</text>
+          <rect x="380" y="30" width="320" height="96" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.6"/>
+          <text x="540" y="56" fill="#78350f" font-weight="700">② Message.context.agent_response</text>
+          <text x="540" y="78" fill="#78350f" font-size="11">查最近 N 条 assistant 消息的落库响应</text>
+          <text x="540" y="96" fill="#78350f" font-size="11">join Conversation 校验 user_id</text>
+          <text x="540" y="114" fill="#64748b" font-size="10.5">历史会话 / 无 checkpointer 场景兜底</text>
+          <rect x="760" y="30" width="280" height="96" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.6"/>
+          <text x="900" y="56" fill="#7f1d1d" font-weight="700">③ _list_deletable_resources</text>
+          <text x="900" y="78" fill="#7f1d1d" font-size="11">全量资源列表（各服务分页取 100）</text>
+          <text x="900" y="96" fill="#7f1d1d" font-size="11">关键词匹配 / 多候选让选</text>
+          <text x="900" y="114" fill="#64748b" font-size="10.5">resources.py:325</text>
+        </g>
+        <g stroke="#d97706" stroke-width="1.8" fill="none" stroke-dasharray="6 4">
+          <line x1="320" y1="78" x2="380" y2="78" marker-end="url(#arr5a)"/>
+          <line x1="700" y1="78" x2="760" y2="78" marker-end="url(#arr5a)"/>
+        </g>
+        <text x="350" y="66" font-size="10.5" fill="#d97706" text-anchor="middle">未命中</text>
+        <text x="730" y="66" font-size="10.5" fill="#d97706" text-anchor="middle">未命中</text>
+        <rect x="20" y="180" width="1020" height="70" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+        <text x="530" y="206" font-size="12.5" fill="#1e3a8a" text-anchor="middle" font-weight="700">翻译器：_resources_from_agent_response（resources.py:213）</text>
+        <text x="530" y="230" font-size="11.5" fill="#1e3a8a" text-anchor="middle">artifact.metadata.saved_jd_id / saved_criteria_id / saved_plan_id / saved_exam_id + resume_screening_results.content[].id → 统一 {id, name, search_text, source}</text>
+        <rect x="20" y="272" width="1020" height="52" rx="10" fill="#f5f3ff" stroke="#7c3aed"/>
+        <text x="530" y="294" font-size="12" fill="#4c1d95" text-anchor="middle" font-weight="700">闭环埋点：每个 stream 执行器落库后都把 saved_*_id 回填进 metadata</text>
+        <text x="530" y="313" font-size="11" fill="#4c1d95" text-anchor="middle">不是为了展示——是为了下一轮"删除刚才那个"能找到它</text>
+        <line x1="530" y1="126" x2="530" y2="180" stroke="#059669" stroke-width="1.6" marker-end="url(#arr5)"/>
+      </svg>
+    </div>
+    <h4>editing.py 在此之上的"挂起编辑上下文"机制</h4>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>方法</th><th>位置</th><th>机制</th></tr></thead>
+      <tbody>
+        <tr><td><code>_recent_pending_jd_edit_target</code></td><td>editing.py:369</td><td>扫最近 8 条 assistant 消息找 <code>jd_edit_request</code> artifact（上一轮反问"你想改什么"时留下的），取出 jd_id → 本轮只说"薪资改成20K"（无 keyword）也能直接定位</td></tr>
+        <tr><td><code>_recent_pending_jd_edit_candidates</code></td><td>editing.py:254</td><td>找 <code>jd_edit_candidates</code> artifact（上一轮列出的候选清单）→ 本轮"第一个"通过 <code>_parse_selection_ordinal</code>（:302，支持中文序数一~十）选中</td></tr>
+        <tr><td><code>_resolve_recent_jd_candidates</code></td><td>editing.py:194</td><td><strong>定位优先级链</strong>：挂起目标(无 keyword) → 会话产物匹配 → 挂起候选清单序数/名称选择 → 全量列表关键词匹配 → 最近 1 条</td></tr>
+        <tr><td><code>_recent_pending_criteria_edit_target</code> / <code>_resolve_recent_criteria_candidates</code></td><td>editing.py:325 / 413</td><td>评分标准版同款机制</td></tr>
+        <tr><td><code>_collapse_criteria_candidates</code></td><td>editing.py:459</td><td>同一 JD 下多版评分标准<strong>按 updated_at 折叠只留最新</strong>——避免用户看到 5 个同名候选</td></tr>
+        <tr><td><code>_dedupe_candidates_by_id</code> / <code>_merge_candidate_details</code></td><td>editing.py:227 / 242</td><td>多来源候选去重合并，字段更全的一方优先（_candidate_detail_score 按 location/salary/updated_at 计数）</td></tr>
+        <tr><td><code>_inherit_delete_type_from_candidates</code></td><td>resources.py:94</td><td>删除场景同理：上轮列出删除候选清单，本轮用户直接回名称 → 继承清单里的 resource_type</td></tr>
+      </tbody>
+    </table></div>
+    <p>匹配算法 <code>_match_delete_resources</code>（resources.py:381）：latest 取第一条 → 归一化后<strong>精确等值优先</strong> → 双向包含（keyword⊂search_text 或 name⊂keyword）。归一化 <code>_normalize_candidate_match_text</code>（core.py:917）去掉空白/括号/标点再比。</p>
+
+    <h3 id="sec3-6">3.6 域 F · 资源删除（安全设计最密集）<span class="chip res">resources.py</span></h3>
+    <p>完整链：<code>_parse_delete_request</code> → 定位（域 E）→ <code>_match_delete_resources</code> → 多候选返回 <code>delete_resource_candidates</code> artifact 让用户挑 → <code>_delete_matched_resources</code>（:274）执行。</p>
+    <ul class="list">
+      <li><span class="hl-red">低分候选人永不自动删</span>：<code>_build_resume_screening_followup_response</code>（core.py:1102）明确"请回复'确认删除这些低分候选人'"；<code>confirm_context_low_scores</code> 字段专门识别这句确认。</li>
+      <li>批量删除<strong>部分失败容忍</strong>：逐条 try/except，结果分 deleted / failures。</li>
+      <li>删 JD 时统计<strong>级联删除的评分标准数量</strong>并告知用户（resources.py:302）。</li>
+      <li><code>_clean_delete_keyword</code>（:88）：剔除"一个/那个/全部/最新"等量词指代词，清洗后只剩这类词按未提供关键词处理。</li>
+      <li><code>_delete_resource_by_type</code>（:400）：四类资源分发到各自服务的 delete 方法。</li>
+    </ul>
+
+    <h3 id="sec3-7">3.7 域 G · 招聘闭环推进 <span class="chip core">core.py</span></h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>方法</th><th>位置</th><th>功能</th></tr></thead>
+      <tbody>
+        <tr><td><code>_build_resume_screening_loop_summary</code></td><td>core.py:932</td><td>按 <strong>60 分阈值</strong>分组 → "高分进面试 / 低分先复核"建议 + suggestions</td></tr>
+        <tr><td><code>_resolve_resume_screening_followup_action</code></td><td>core.py:970</td><td>识别"给高分的人生成面试计划"/"删除低分" → 从<strong>最近一批</strong>评分分组（_recent_resume_screening_groups :987，按会话上下文取，不是全库）</td></tr>
+        <tr><td><code>_build_resume_screening_followup_response</code></td><td>core.py:1038</td><td>高分 1 人→直接 interview_plan_execute；多人→让选（"避免一次生成太多方案"）；0 人→建议调整 JD/评分标准</td></tr>
+        <tr><td><code>_resolve_interview_exam_followup</code></td><td>editing.py:568</td><td>识别"基于当前面试方案出题" → 取最近面试方案，<strong>content[:2500] 拼进 message</strong> 传给试卷解析</td></tr>
+        <tr><td><code>_hydrate_exam_interview_context</code></td><td>core.py:688</td><td>执行阶段再兜一次：配置文本里含跟进意图但没带上下文时补关联</td></tr>
+        <tr><td><code>_build_exam_special_requirements</code></td><td>core.py:711</td><td>面试方案转出题约束：<strong>8:2 配比</strong>（80% 文档知识点 + 20% 面试方案能力验证点），且"面试方案只作方向参考，不作事实来源"（截取前 1500 字符）</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="sec3-8">3.8 域 H · 候选人解析（防幻觉设计）<span class="chip core">core.py</span></h3>
+    <p><code>_resolve_interview_candidate</code>（core.py:802）：取最近 50 条已评分简历 → LLM 四态判定（no_specific / matched / no_match / ambiguous），prompt 明确"不能假装已找到不存在的候选人"。</p>
+    <div class="callout danger"><span class="ct">🛡️ 关键防线：_normalize_candidate_resolution（core.py:867）</span>
+      LLM 返回的 candidate_id <strong>必须真实存在于 candidate_lookup</strong>，否则降级本地匹配——LLM 编造 ID 也执行不了。兜底 <code>_fallback_candidate_resolution</code>（:894）用双向包含匹配姓名/文件名。
+    </div>
+
+    <h3 id="sec3-9">3.9 域 I · Skill 邮件（可插拔扩展点）<span class="chip core">core.py</span></h3>
+    <ul class="list">
+      <li><code>_stream_skill_draft_response</code>（core.py:258）：plan 事件 → 读 <strong>SKILL.md</strong> 构造 prompt → LLM 真流式草稿 → 失败走 phase.run 模板兜底 → 最终 final。</li>
+      <li><code>_handle_skill_intent</code>（:341）：按 <code>bundle.resolve_phase(confirmed_requirements)</code> 走 <strong>draft → confirm → send 阶段状态机</strong>。</li>
+      <li>草稿 prompt（:329）要求：缺信息用【待补充】标注，<strong>不要编造具体时间地点</strong>。</li>
+      <li>发邮件必须人工确认——steps 里写明"确认后才会提交给 SMTP 服务器"。</li>
+    </ul>
+
+    <h3 id="sec3-10">3.10 域 J · 流式显示工程 <span class="chip core">core.py</span></h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>方法</th><th>位置</th><th>功能</th></tr></thead>
+      <tbody>
+        <tr><td><code>_stream_event</code> / <code>_tool_stream_event</code> / <code>_resume_stream_event</code></td><td>core.py:407 / 731 / 752</td><td>三个事件封装器：JD 专用（intent 写死）/ 通用 / 简历专用（自动带 results artifact）</td></tr>
+        <tr><td><code>_drain_exam_display_buffer</code></td><td>core.py:617</td><td>试卷<strong>双缓冲渲染</strong>：按 <code>***</code> 分隔攒完整题目块才输出，避免半道题就渲染；force=True 时清尾</td></tr>
+        <tr><td><code>_format_exam_question_block</code></td><td>core.py:648</td><td>内部 <code>题干|题型|选项|答案|分值|解析</code> 六段竖线格式 → markdown（选项自动 A/B/C 编号）</td></tr>
+        <tr><td><code>_generate_missing_exam_questions</code></td><td>core.py:518</td><td><strong>缺题补齐</strong>：解析实际题量 vs 配置 → 缺几道补几道；补题 prompt 附已有题目（前 3000 字符）要求避开重复知识点；分值用 _allocate_question_scores 尾部分片补齐</td></tr>
+        <tr><td><code>_missing_exam_question_counts</code> / <code>_missing_exam_question_scores</code></td><td>core.py:569 / 602</td><td>按题型（单选/多选/简答）统计缺口与对应分值</td></tr>
+        <tr><td><code>_format_resume_result_delta</code> / <code>_summarize_resume_metrics</code></td><td>core.py:426 / 450</td><td>每份简历评分结果的 markdown 增量（取前 3 个指标、reason 截 40 字）</td></tr>
+        <tr><td><code>_stream_text</code></td><td>core.py:251</td><td>完整文本按 6 字符切片，模拟逐字流式（所有同步兜底的出口）</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= 4. 场景走读 ================= -->
+  <section id="sec4">
+    <h2><span class="no">4</span>五个业务场景走读（调用链串讲）</h2>
+
+    <h3 id="sec4-1">4.1 生成 JD："帮我写个长沙 Java 后端 JD，15-25K，3年以上"</h3>
+    <pre class="code">chat() → 图 route_intent 判为 jd → nodes/jd.py 检查 _missing_required_fields
+  ├─ 缺字段 → 反问补齐（requires_confirmation + missing_fields）
+  └─ 齐了/前端确认 → _run_recruitment_agent（同步 core.py:161）
+                    或 stream_recruitment_agent（流式 agent_service.py:463）
+      → _parse_requirements (LLM, resources.py:452)
+      → _generate_jd_stream (Dify type1, resources.py:539)
+      → _save_job_description (resources.py:773)
+      → _generate_scoring_criteria_stream (type2, 输入=JD正文, resources.py:735)
+      → _save_scoring_criteria (挂 jd_id, resources.py:805)
+      → metadata 回填 saved_jd_id / saved_criteria_id
+      → suggestions: "筛选这个 JD 的简历"（推向下一环）</pre>
+
+    <h3 id="sec4-2">4.2 改 JD（两轮对话，挂起上下文机制）</h3>
+    <div class="figure">
+      <div class="fig-title">⑥ 改 JD 两轮时序：artifact 落库成为下一轮的定位锚点</div>
+      <svg viewBox="0 0 1060 430" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr6" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#7c3aed"/></marker>
+        <marker id="arr6b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#2563eb"/></marker></defs>
+        <rect x="20" y="20" width="440" height="390" rx="12" fill="#f5f3ff" stroke="#ddd6fe"/>
+        <text x="240" y="48" font-size="13.5" fill="#4c1d95" font-weight="700" text-anchor="middle">轮 1 ·「帮我改改上次那个 JD」</text>
+        <rect x="600" y="20" width="440" height="390" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="820" y="48" font-size="13.5" fill="#1e3a8a" font-weight="700" text-anchor="middle">轮 2 ·「薪资改成 20K」</text>
+        <g font-size="11.5" text-anchor="middle">
+          <rect x="50" y="66" width="380" height="42" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="240" y="84" fill="#334155">_is_jd_edit_request ✓（resources.py:1022）</text>
+          <text x="240" y="100" fill="#64748b" font-size="10.5">目标词+编辑动作+指代词；排除删除句</text>
+          <rect x="50" y="126" width="380" height="42" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="240" y="144" fill="#334155">_parse_jd_edit_request（editing.py:46）</text>
+          <text x="240" y="160" fill="#64748b" font-size="10.5">keyword="上次"；changes 被 _is_generic 判空</text>
+          <rect x="50" y="186" width="380" height="42" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="240" y="204" fill="#334155">_resolve_recent_jd_candidates（editing.py:194）</text>
+          <text x="240" y="220" fill="#64748b" font-size="10.5">无实质 changes → 定位最近 JD 后反问</text>
+          <rect x="50" y="246" width="380" height="52" rx="8" fill="#fff" stroke="#7c3aed"/>
+          <text x="240" y="266" fill="#334155" font-weight="700">返回 jd_edit_request artifact</text>
+          <text x="240" y="284" fill="#64748b" font-size="10.5">"你想具体改哪些内容？"（含 job_description_id）</text>
+          <rect x="630" y="66" width="380" height="42" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="820" y="84" fill="#334155">_recent_pending_jd_edit_target（editing.py:369）</text>
+          <text x="820" y="100" fill="#64748b" font-size="10.5">扫最近 8 条消息 → 命中挂起 jd_id</text>
+          <rect x="630" y="126" width="380" height="42" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="820" y="144" fill="#334155">_is_jd_edit_followup ✓（resources.py:1040）</text>
+          <text x="820" y="160" fill="#64748b" font-size="10.5">memory 含反问话术 → changes = 整句</text>
+          <rect x="630" y="186" width="380" height="42" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="820" y="204" fill="#334155">_rewrite_jd_content（editing.py:482）</text>
+          <text x="820" y="220" fill="#64748b" font-size="10.5">LLM 全文重写：保留结构，只改薪资</text>
+          <rect x="630" y="246" width="380" height="52" rx="8" fill="#fff" stroke="#2563eb"/>
+          <text x="820" y="266" fill="#334155" font-weight="700">_build_jd_update_payload（editing.py:515）</text>
+          <text x="820" y="284" fill="#64748b" font-size="10.5">salary_range=20K + edit_history 追加 → 落库</text>
+        </g>
+        <g stroke="#7c3aed" stroke-width="1.5" fill="none">
+          <line x1="240" y1="108" x2="240" y2="126" marker-end="url(#arr6)"/>
+          <line x1="240" y1="168" x2="240" y2="186" marker-end="url(#arr6)"/>
+          <line x1="240" y1="228" x2="240" y2="246" marker-end="url(#arr6)"/>
+        </g>
+        <g stroke="#2563eb" stroke-width="1.5" fill="none">
+          <line x1="820" y1="108" x2="820" y2="126" marker-end="url(#arr6b)"/>
+          <line x1="820" y1="168" x2="820" y2="186" marker-end="url(#arr6b)"/>
+          <line x1="820" y1="228" x2="820" y2="246" marker-end="url(#arr6b)"/>
+        </g>
+        <!-- DB -->
+        <g>
+          <ellipse cx="530" cy="330" rx="72" ry="14" fill="#fffbeb" stroke="#d97706"/>
+          <rect x="458" y="330" width="144" height="46" fill="#fffbeb" stroke="#d97706"/>
+          <ellipse cx="530" cy="376" rx="72" ry="14" fill="#fffbeb" stroke="#d97706"/>
+          <line x1="458" y1="330" x2="458" y2="376" stroke="#d97706"/>
+          <line x1="602" y1="330" x2="602" y2="376" stroke="#d97706"/>
+          <text x="530" y="352" font-size="11" fill="#78350f" text-anchor="middle" font-weight="700">Message.context</text>
+          <text x="530" y="368" font-size="10" fill="#78350f" text-anchor="middle">agent_response</text>
+        </g>
+        <path d="M 430 280 C 480 300 490 310 500 322" stroke="#d97706" stroke-width="1.8" fill="none" marker-end="url(#arr6)"/>
+        <text x="448" y="312" font-size="10.5" fill="#d97706">artifact 落库</text>
+        <path d="M 560 322 C 600 280 620 180 630 96" stroke="#d97706" stroke-width="1.8" fill="none" stroke-dasharray="6 4" marker-end="url(#arr6b)"/>
+        <text x="610" y="316" font-size="10.5" fill="#d97706">下一轮反查命中</text>
+      </svg>
+      <div class="fig-note">同一个机制的删除版：_inherit_delete_type_from_candidates（resources.py:94）；序数选择版：_parse_selection_ordinal（editing.py:302，"第一个"→索引 0）。</div>
+    </div>
+
+    <h3 id="sec4-3">4.3 筛选 → 面试 → 试卷闭环</h3>
+    <div class="figure">
+      <div class="fig-title">⑦ 招聘闭环全景：每一步的 suggestions 都在推向下一环</div>
+      <svg viewBox="0 0 1060 330" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#2563eb"/></marker>
+        <marker id="arr7r" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#dc2626"/></marker>
+        <marker id="arr7g" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L8,4.5 L0,9 z" fill="#059669"/></marker></defs>
+        <g font-size="11.5" text-anchor="middle">
+          <rect x="20" y="40" width="140" height="64" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+          <text x="90" y="64" fill="#1e293b" font-weight="700">生成 JD</text>
+          <text x="90" y="82" fill="#64748b" font-size="10.5">Dify type1 · 落库</text>
+          <rect x="190" y="40" width="140" height="64" rx="9" fill="#eff6ff" stroke="#2563eb"/>
+          <text x="260" y="64" fill="#1e293b" font-weight="700">评分标准</text>
+          <text x="260" y="82" fill="#64748b" font-size="10.5">type2 · 挂 jd_id</text>
+          <rect x="360" y="40" width="160" height="64" rx="9" fill="#f0fdfa" stroke="#0d9488"/>
+          <text x="440" y="64" fill="#1e293b" font-weight="700">批量简历评分</text>
+          <text x="440" y="82" fill="#64748b" font-size="10.5">逐份容错 · 60 分阈值</text>
+          <rect x="580" y="20" width="170" height="60" rx="9" fill="#ecfdf5" stroke="#059669"/>
+          <text x="665" y="44" fill="#064e3b" font-weight="700">高分 → 面试计划</text>
+          <text x="665" y="62" fill="#064e3b" font-size="10.5">type4 · 状态→INTERVIEW</text>
+          <rect x="580" y="110" width="170" height="60" rx="9" fill="#fef2f2" stroke="#dc2626"/>
+          <text x="665" y="134" fill="#7f1d1d" font-weight="700">低分 → 人工复核</text>
+          <text x="665" y="152" fill="#7f1d1d" font-size="10.5">确认后才删 · 永不自动删</text>
+          <rect x="800" y="20" width="240" height="60" rx="9" fill="#fffbeb" stroke="#d97706"/>
+          <text x="920" y="44" fill="#78350f" font-weight="700">笔试试卷（可关联面试方案）</text>
+          <text x="920" y="62" fill="#78350f" font-size="10.5">8:2 配比 · 补题 · 分享链接</text>
+          <rect x="800" y="110" width="240" height="60" rx="9" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="920" y="134" fill="#4c1d95" font-weight="700">邮件 Skill</text>
+          <text x="920" y="152" fill="#4c1d95" font-size="10.5">draft → confirm → send（SMTP）</text>
+        </g>
+        <g stroke="#2563eb" stroke-width="1.7" fill="none">
+          <line x1="160" y1="72" x2="190" y2="72" marker-end="url(#arr7)"/>
+          <line x1="330" y1="72" x2="360" y2="72" marker-end="url(#arr7)"/>
+        </g>
+        <g stroke="#059669" stroke-width="1.7" fill="none">
+          <line x1="520" y1="60" x2="580" y2="50" marker-end="url(#arr7g)"/>
+          <line x1="750" y1="50" x2="800" y2="50" marker-end="url(#arr7g)"/>
+          <path d="M 920 80 C 920 96 920 100 920 110" marker-end="url(#arr7g)"/>
+        </g>
+        <line x1="520" y1="86" x2="580" y2="130" stroke="#dc2626" stroke-width="1.7" fill="none" marker-end="url(#arr7r)"/>
+        <text x="548" y="46" font-size="10.5" fill="#059669">≥60</text>
+        <text x="545" y="116" font-size="10.5" fill="#dc2626">&lt;60</text>
+        <rect x="20" y="210" width="1020" height="100" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="530" y="236" font-size="12.5" fill="#334155" text-anchor="middle" font-weight="700">跟进意图识别（把用户的话接回主流程）</text>
+        <g font-size="11" fill="#475569" text-anchor="middle">
+          <text x="270" y="262">"给高分候选人生成面试计划" → _resolve_resume_screening_followup_action（core.py:970）</text>
+          <text x="270" y="282">"删除低分候选人" → confirm_delete_low_scores → 等"确认删除"口令</text>
+          <text x="800" y="262">"基于当前面试方案出题" → _resolve_interview_exam_followup（editing.py:568）</text>
+          <text x="800" y="282">"给张三写面试邀约邮件" → skill_dispatcher 命中 email bundle</text>
+        </g>
+      </svg>
+    </div>
+    <pre class="code"><span class="c"># 完整调用链</span>
+"筛选简历"(带附件) → _handle_resume_screening_chat → 选 JD 卡片
+→ stream_resume_screening（逐份评分 + loop_summary）
+→ "给高分候选人生成面试计划" → followup_action=generate_interview
+   ├─ 1 人 → interview_plan_execute 直接执行
+   └─ 多人 → interview_plan_request 让选
+→ stream_interview_plan（读评分→读JD→type4→保存→状态 INTERVIEW）
+→ "基于当前面试方案生成笔试试卷"(带文档)
+→ _resolve_interview_exam_followup 关联方案
+→ stream_exam_generation_with_documents（sha256 去重存文档→提取文本）
+→ stream_exam_generation（8:2 出题约束→双缓冲渲染→补题→保存→/exam-share/{id}）</pre>
+
+    <h3 id="sec4-4">4.4 删除："删除刚才生成的试卷"</h3>
+    <pre class="code">_parse_delete_request（resources.py:48）→ type=exam, latest=true
+→ _recent_generated_resources("exam")（三级查找链取 saved_exam_id）
+→ _match_delete_resources(latest=True) 取第一条
+→ _delete_matched_resources（resources.py:274）→ ExamService.delete_exam
+→ delete_resource_result artifact + suggestions["查看试卷列表", "重新生成试卷"]</pre>
+
+    <h3 id="sec4-5">4.5 邮件 Skill："给张三写面试邀约邮件"</h3>
+    <pre class="code">skill_dispatcher 命中 email bundle（工具注册表里 intent=email_notification）
+→ nodes/skill.py → _stream_skill_draft_response（core.py:258）
+   plan 事件 → 读 SKILL.md → LLM 流式草稿（缺信息标【待补充】）
+→ 用户确认收件人/主题/正文
+→ _handle_skill_intent → bundle.resolve_phase → send 阶段 → SMTP</pre>
+  </section>
+
+  <!-- ================= 5. 兜底总表 ================= -->
+  <section id="sec5">
+    <h2><span class="no">5</span>兜底机制总表</h2>
+    <p>核心目标：<strong>LLM / Dify 任何一环挂掉，系统退化为规则驱动但仍可用</strong>，而不是整个对话报错。</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>失败点</th><th>兜底</th><th>位置</th></tr></thead>
+      <tbody>
+        <tr><td>ReAct 决策失败</td><td>本地关键词规则路由</td><td>nodes/routing.py + core.py:123</td></tr>
+        <tr><td>招聘需求 LLM 解析失败</td><td><code>_fallback_parse</code> 正则提取</td><td>resources.py:1066</td></tr>
+        <tr><td>删除请求 LLM 解析失败</td><td><code>_fallback_parse_delete_request</code></td><td>resources.py:123</td></tr>
+        <tr><td>JD / 评分标准修改解析失败</td><td><code>_fallback_parse_jd_edit_request</code> / <code>_fallback_parse_criteria_edit_request</code></td><td>editing.py:85 / 146</td></tr>
+        <tr><td>Dify 流式生成失败 / 空文本</td><td>同步生成 + <code>_stream_text</code> 模拟打字机</td><td>resources.py:568 / 643 / 762 · core.py:498</td></tr>
+        <tr><td>Dify 返回累计全文而非增量</td><td><code>_dedupe_stream_delta</code> 前缀/重叠裁剪</td><td>resources.py:890</td></tr>
+        <tr><td>候选人 LLM 匹配失败 / 编造 ID</td><td>lookup 校验 + <code>_fallback_candidate_resolution</code> 本地文本匹配</td><td>core.py:867 / 894</td></tr>
+        <tr><td>试卷题量不足</td><td><code>_generate_missing_exam_questions</code> 补题</td><td>core.py:518</td></tr>
+        <tr><td>单份简历评分失败</td><td>记 failed 继续批次，不中断</td><td>agent_service.py:675</td></tr>
+        <tr><td>批量删除部分失败</td><td>逐条 try/except，deleted / failures 分开汇报</td><td>resources.py:285</td></tr>
+        <tr><td>邮件草稿流式失败</td><td>phase.run 模板兜底</td><td>core.py:296</td></tr>
+        <tr><td>知识库文档匹配失败 / 低置信</td><td>返回空列表；confidence &lt; 0.35 不采用</td><td>resources.py:511 / 517</td></tr>
+        <tr><td>普通聊天无可执行工具</td><td><code>_fallback_message</code> 能力说明 + 建议</td><td>resources.py:1188</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= 6. 阅读顺序 ================= -->
+  <section id="sec6">
+    <h2><span class="no">6</span>建议阅读顺序</h2>
+    <ol class="list">
+      <li><strong>chains/types.py</strong>（5 分钟）：数据契约，AgentToolSpec 的 prerequisites 先看懂。</li>
+      <li><strong>agent_service.py 的 5 个 handler</strong>：看"规划长什么样"——步骤条 + 引导卡片，不执行重活。</li>
+      <li><strong>core.py:44 工具注册表</strong>：看前置条件如何决定 handler 的分支结构。</li>
+      <li><strong>挑 JD 一条链纵向打穿</strong>：_parse_requirements → _generate_jd_stream → _dedupe_stream_delta → _save_job_description。一条链通了，其余三条生成链同构。</li>
+      <li><strong>域 E 指代解析</strong>（最精华）：三级查找链 + saved_*_id 回填闭环。</li>
+      <li><strong>editing.py 挂起上下文</strong>：两轮改 JD 时序（图⑥）对照源码读。</li>
+      <li><strong>删除与闭环</strong>：安全设计（确认口令、防幻觉、部分失败容忍）收尾。</li>
+    </ol>
+    <div class="callout info"><span class="ct">🧭 一句话总结</span>
+      <strong>agent_service.py 是"流程剧本"，core 是"舞台机关"（工具/事件/闭环/防幻觉），resources 是"后台工厂"（解析/生成/落库/删除），editing 是"修订车间"（定位旧产物+重写+审计）。</strong>按功能域读，不按文件读。
+    </div>
+    <p style="text-align:center;color:#94a3b8;font-size:12.5px;margin-top:8px">
+      本页面基于 2026-11 源码深读整理 · 全部样式、脚本与 7 张 SVG 图均内联，无外部依赖，可离线打开
+    </p>
+  </section>
+</div>
+
+<button class="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  // 目录滚动高亮（scroll-spy）
+  var links = Array.prototype.slice.call(document.querySelectorAll('#sidebar a[href^="#"]'));
+  var targets = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+  function setActive(id){
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var current = targets[0] ? targets[0].id : null;
+      for(var i = 0; i < targets.length; i++){
+        if(targets[i].getBoundingClientRect().top <= 120) current = targets[i].id;
+        else break;
+      }
+      // 滚到页底时强制高亮最后一节（末节标题可能到不了判定线）
+      if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4){
+        current = targets[targets.length - 1].id;
+      }
+      if(current) setActive(current);
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  // 移动端点击目录后收起
+  links.forEach(function(a){
+    a.addEventListener('click', function(){
+      if(window.innerWidth <= 960) document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+})();
+</script>
+</body>
+</html>

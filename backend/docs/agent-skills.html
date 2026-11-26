@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Agent Skill 机制详解</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #1e2433;
+    --ink-2: #5a6478;
+    --ink-3: #8b93a7;
+    --accent: #5b5bd6;
+    --accent-soft: #eeeefc;
+    --green: #0e9f6e;
+    --green-soft: #e6f7f1;
+    --purple: #8b5cf6;
+    --purple-soft: #f3eefe;
+    --amber: #d97706;
+    --amber-soft: #fdf3e3;
+    --red: #dc2626;
+    --red-soft: #fdecec;
+    --blue: #2563eb;
+    --blue-soft: #e8f0fe;
+    --border: #e5e8f0;
+    --code-bg: #1e2433;
+    --radius: 12px;
+    --sidebar-w: 272px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ---------- 侧边目录 ---------- */
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 40px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  nav.toc .toc-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink-3); text-transform: uppercase;
+    margin: 0 10px 14px;
+  }
+  nav.toc a {
+    display: block; padding: 6px 10px; margin: 1px 0;
+    color: var(--ink-2); text-decoration: none;
+    font-size: 13.5px; border-radius: 8px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  nav.toc a.lv2 { padding-left: 26px; font-size: 13px; color: var(--ink-3); }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc a.active {
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; border-left-color: var(--accent);
+  }
+
+  /* ---------- 主内容 ---------- */
+  main {
+    margin-left: var(--sidebar-w);
+    max-width: 980px;
+    padding: 40px 48px 100px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+    border-radius: 18px;
+    color: #fff;
+    padding: 44px 44px 38px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; right: -60px; top: -60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; right: 60px; bottom: -90px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  header.hero h1 { font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  header.hero p.sub { margin-top: 10px; font-size: 15px; opacity: .92; max-width: 680px; }
+  header.hero .meta { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  header.hero .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 3px 12px; border-radius: 999px; font-size: 12.5px;
+  }
+
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 23px; font-weight: 800; margin-bottom: 18px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  h3 { font-size: 17.5px; font-weight: 700; margin: 30px 0 12px; color: var(--ink); }
+  h3 .h3-tag {
+    font-size: 11.5px; font-weight: 600; vertical-align: 2px;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+  }
+  p { margin: 10px 0; color: var(--ink); }
+  p.dim, li.dim { color: var(--ink-2); }
+  ul, ol { margin: 10px 0 10px 22px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 700; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: .88em;
+    background: var(--accent-soft); color: #4338ca;
+    padding: 1.5px 6px; border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg); color: #dbe2f0;
+    border-radius: var(--radius);
+    padding: 18px 20px; overflow-x: auto;
+    margin: 14px 0; font-size: 13px; line-height: 1.7;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7d8aa5; }
+  pre .k { color: #c4b5fd; }
+  pre .s { color: #86efac; }
+  pre .f { color: #93c5fd; }
+
+  /* ---------- 卡片 / 提示框 ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .callout {
+    border-radius: var(--radius);
+    padding: 14px 18px 14px 16px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 14px;
+  }
+  .callout.tip   { background: var(--green-soft);  border-color: var(--green); }
+  .callout.warn  { background: var(--amber-soft);  border-color: var(--amber); }
+  .callout.info  { background: var(--blue-soft);   border-color: var(--blue); }
+  .callout.danger{ background: var(--red-soft);    border-color: var(--red); }
+  .callout .co-title { font-weight: 700; margin-bottom: 4px; display: block; }
+
+  /* ---------- 表格 ---------- */
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius); overflow: hidden;
+    margin: 16px 0; font-size: 13.8px;
+    box-shadow: 0 1px 3px rgba(30,36,51,.05);
+  }
+  th {
+    background: #f0f1f8; text-align: left;
+    padding: 11px 14px; font-weight: 700; color: var(--ink);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaff; }
+  td.k { font-weight: 700; white-space: nowrap; }
+
+  /* ---------- 徽章 ---------- */
+  .badge {
+    display: inline-block; font-size: 11.5px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.green  { background: var(--green-soft);  color: var(--green); }
+  .badge.purple { background: var(--purple-soft); color: var(--purple); }
+  .badge.amber  { background: var(--amber-soft);  color: var(--amber); }
+  .badge.blue   { background: var(--blue-soft);   color: var(--blue); }
+  .badge.red    { background: var(--red-soft);    color: var(--red); }
+  .badge.gray   { background: #eef0f5;            color: var(--ink-2); }
+
+  /* ---------- 流程图（CSS 绘制） ---------- */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 26px;
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .diagram .dg-caption {
+    text-align: center; font-size: 12.5px; color: var(--ink-3);
+    margin-top: 18px; letter-spacing: .04em;
+  }
+  .flow { display: flex; flex-direction: column; align-items: center; min-width: 520px; }
+  .fnode {
+    border-radius: 10px; padding: 10px 22px;
+    text-align: center; font-size: 13.5px; font-weight: 600;
+    border: 1.5px solid; max-width: 560px; line-height: 1.5;
+  }
+  .fnode small { display: block; font-weight: 400; font-size: 12px; opacity: .8; margin-top: 2px; }
+  .fnode.start   { background: #eef0f5; border-color: #c3c9d9; color: var(--ink); border-radius: 999px; }
+  .fnode.rule    { background: var(--green-soft);  border-color: var(--green);  color: #065f46; }
+  .fnode.llm     { background: var(--purple-soft); border-color: var(--purple); color: #5b21b6; }
+  .fnode.route   { background: var(--blue-soft);   border-color: var(--blue);   color: #1e40af; }
+  .fnode.fall    { background: var(--amber-soft);  border-color: var(--amber);  color: #92400e; }
+  .fnode.end     { background: var(--accent-soft); border-color: var(--accent); color: #3730a3; border-radius: 999px; }
+  .fnode.decision{ background: #fff; border-color: var(--ink-3); color: var(--ink); border-style: dashed; }
+  .fnode.dead    { background: var(--red-soft); border-color: var(--red); color: #991b1b; }
+  .farrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--ink-3); font-size: 11.5px; padding: 2px 0;
+  }
+  .farrow .line { width: 2px; height: 16px; background: #c3c9d9; }
+  .farrow .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #c3c9d9; }
+  .farrow .lbl { margin: 2px 0; font-weight: 600; }
+  .farrow .lbl.hit { color: var(--green); }
+  .farrow .lbl.miss { color: var(--amber); }
+  .fbranch { display: flex; gap: 18px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
+  .fbranch .fcol { display: flex; flex-direction: column; align-items: center; }
+
+  /* 横向步骤条 */
+  .steps { display: flex; gap: 0; align-items: stretch; justify-content: center; flex-wrap: wrap; min-width: 640px; }
+  .step {
+    flex: 1; min-width: 150px; max-width: 210px;
+    border-radius: 12px; border: 1.5px solid; padding: 14px 14px;
+    text-align: center; position: relative;
+  }
+  .step .st-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .step .st-title { font-weight: 700; font-size: 13.5px; }
+  .step .st-desc { font-size: 12px; margin-top: 5px; opacity: .85; line-height: 1.55; }
+  .step.s1 { background: #eef0f5; border-color: #c3c9d9; } .step.s1 .st-num { background: #64748b; }
+  .step.s2 { background: var(--blue-soft); border-color: var(--blue); } .step.s2 .st-num { background: var(--blue); }
+  .step.s3 { background: var(--green-soft); border-color: var(--green); } .step.s3 .st-num { background: var(--green); }
+  .step.s4 { background: var(--purple-soft); border-color: var(--purple); } .step.s4 .st-num { background: var(--purple); }
+  .step.s5 { background: var(--amber-soft); border-color: var(--amber); } .step.s5 .st-num { background: var(--amber); }
+  .step-arrow { display: flex; align-items: center; padding: 0 6px; color: #c3c9d9; font-size: 20px; font-weight: 700; }
+
+  /* 双栏对比 */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* 文件路径引用 */
+  .fileref {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 12px; color: var(--ink-3);
+    background: #f0f1f8; padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 24px 48px 48px;
+    color: var(--ink-3); font-size: 12.5px;
+    border-top: 1px solid var(--border);
+    max-width: 980px;
+  }
+
+  @media (max-width: 1080px) {
+    nav.toc { display: none; }
+    main, footer { margin-left: 0; padding-left: 24px; padding-right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc" id="toc">
+  <div class="toc-title">目录</div>
+  <a href="#overview">1. 全景概览</a>
+  <a href="#package">2. 技能包结构</a>
+  <a href="#package-json" class="lv2">2.1 skill.json</a>
+  <a href="#package-md" class="lv2">2.2 SKILL.md</a>
+  <a href="#loading">3. 加载链路</a>
+  <a href="#loading-flow" class="lv2">3.1 目录 → Dispatcher</a>
+  <a href="#loading-edge" class="lv2">3.2 跳过与边界情况</a>
+  <a href="#models">4. 核心数据结构</a>
+  <a href="#models-resolve" class="lv2">4.1 resolve_phase：选阶段</a>
+  <a href="#models-run" class="lv2">4.2 run：执行脚本</a>
+  <a href="#register">5. 注册为 Agent 工具</a>
+  <a href="#graph">6. 图内两阶段执行</a>
+  <a href="#graph-draft" class="lv2">6.1 skill_draft：生成草稿</a>
+  <a href="#graph-confirm" class="lv2">6.2 确认回传：不用 interrupt</a>
+  <a href="#graph-send" class="lv2">6.3 skill_send：执行发送</a>
+  <a href="#trace">7. 完整调用链（邮件示例）</a>
+  <a href="#design">8. 设计要点与注意事项</a>
+  <a href="#files">9. 关键文件索引</a>
+</nav>
+
+<main>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>HR Agent Skill 机制详解</h1>
+  <p class="sub">一个技能如何从 <code style="background:rgba(255,255,255,.18);color:#fff">backend/skills</code> 下的目录，变成 Agent 可调用的工具、再拆成"草稿 → 确认 → 发送"两阶段执行？本文沿着 <code style="background:rgba(255,255,255,.18);color:#fff">agent_skills.py</code> 的加载链路，结合邮件技能完整走一遍。</p>
+  <div class="meta">
+    <span>📦 backend / app / services</span>
+    <span>🧩 可插拔技能</span>
+    <span>🕸 LangGraph draft → send</span>
+    <span>📅 2026-11</span>
+  </div>
+</header>
+
+<!-- ==================== 1. 概览 ==================== -->
+<section id="overview">
+  <h2><span class="num">1</span>全景概览</h2>
+  <p>
+    <code>app/services/agent_skills.py</code> <strong>不实现任何业务</strong>。它的职责只有两件事：
+    <strong>加载</strong>（扫描技能目录、解析清单、建模成 bundle）和<strong>分发</strong>（按 intent 找技能、按 phase 找脚本函数）。
+    真正的邮件逻辑在技能包自己的 <code>scripts/email_workflow.py</code> 里。
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">backend/skills/* 技能目录</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">AgentSkillDispatcher<small>build_default_skill_dispatcher() · 扫描 + 解析</small></div>
+      <div class="farrow"><span class="lbl">每个技能 = 一个 intent</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">tool_registry 注册为工具<small>email_notification + 描述 + 前置条件</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode decision">route_intent 选中该 intent</div>
+      <div class="farrow"><span class="lbl hit">intent ∈ bundles</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">skill_draft：注入 SKILL.md，流式生成草稿<small>产出 email_draft + email_send_request，requires_confirmation</small></div>
+      <div class="farrow"><span class="lbl">用户确认后回传</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">skill_send：执行 send phase 脚本<small>EmailSendService 读 config.txt → SMTP</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">email_send_result</div>
+    </div>
+    <div class="dg-caption">图 1 · Skill 的完整生命周期：目录 → 工具 → 两阶段执行</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">💡 一句话理解</span>
+    <strong>skill.json 描述"这是什么意图、有哪些阶段、每阶段跑哪个函数"</strong>；
+    <strong>SKILL.md 描述"这件事应该怎么做"</strong>，草稿阶段会把它整段注入 Prompt；
+    <strong>scripts/*.py 提供确定性兜底与真正的副作用</strong>（比如发信）。
+  </div>
+</section>
+
+<!-- ==================== 2. 技能包结构 ==================== -->
+<section id="package">
+  <h2><span class="num">2</span>技能包结构</h2>
+  <p>项目目前只有一个技能：<code>backend/skills/hr-agent-email/</code>。一个技能包的标准形态如下：</p>
+
+<pre><code>skills/hr-agent-email/
+├── skill.json                  <span class="c"># 机器可读清单：intent、phases、脚本映射</span>
+├── SKILL.md                    <span class="c"># 给人和 LLM 看的工作流说明</span>
+├── example.config.txt          <span class="c"># 配置模板（复制为 config.txt）</span>
+├── references/
+│   └── runtime-surfaces.md
+└── scripts/
+    └── email_workflow.py       <span class="c"># 每个 phase 对应一个函数</span></code></pre>
+
+  <h3 id="package-json">2.1 skill.json <span class="h3-tag badge blue">机器可读</span></h3>
+  <p>清单文件 <span class="fileref">skills/hr-agent-email/skill.json</span> 定义了技能的全部可执行信息：</p>
+<pre><code>{
+  <span class="s">"intent"</span>: <span class="s">"email_notification"</span>,
+  <span class="s">"route"</span>: <span class="s">"/system/email-configs"</span>,
+  <span class="s">"phases"</span>: [<span class="s">"draft"</span>, <span class="s">"send"</span>],
+  <span class="s">"prerequisites"</span>: [<span class="s">"人工确认后再发送"</span>],
+  <span class="s">"default_phase"</span>: <span class="s">"draft"</span>,
+  <span class="s">"confirmation_action"</span>: <span class="s">"send_email"</span>,
+  <span class="s">"phase_scripts"</span>: {
+    <span class="s">"draft"</span>: <span class="s">"scripts/email_workflow.py:run_draft_phase"</span>,
+    <span class="s">"send"</span>:  <span class="s">"scripts/email_workflow.py:run_send_phase"</span>
+  }
+}</code></pre>
+
+  <table>
+    <thead><tr><th>字段</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>intent</code></td><td>技能的意图标识，也是 <code>bundles</code> 的 key；必须与路由识别出的 intent 一致</td></tr>
+      <tr><td><code>route</code></td><td>前端页面路由，写进工具描述，供 Agent 回复时引用</td></tr>
+      <tr><td><code>phases</code></td><td>阶段列表；每个阶段必须在 <code>phase_scripts</code> 里有对应脚本</td></tr>
+      <tr><td><code>default_phase</code></td><td>未确认时的默认阶段；缺省回退到 <code>phases[0]</code></td></tr>
+      <tr><td><code>confirmation_action</code></td><td>确认动作名（<code>send_email</code>），是草稿与发送之间的约定值</td></tr>
+      <tr><td><code>prerequisites</code></td><td>前置条件，注册为工具时展示在描述里</td></tr>
+      <tr><td><code>phase_scripts</code></td><td>阶段 → <code>相对路径:函数名</code> 的映射</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="package-md">2.2 SKILL.md <span class="h3-tag badge purple">给 LLM 看</span></h3>
+  <p>
+    <span class="fileref">skills/hr-agent-email/SKILL.md</span> 以 YAML frontmatter 开头，只解析 <code>name</code> 和 <code>description</code>
+    <span class="fileref">agent_skills.py:143-147</span>：
+  </p>
+<pre><code>---
+name: hr-agent-email
+description: 为本项目中的HR Agent生成、确认和发送HR候选人邮件。适用于撰写面试邀请、笔试通知、候选人跟进邮件，或将草稿转为已确认的发送操作。
+---</code></pre>
+
+  <p>
+    frontmatter 之下是完整的工作流说明。它会以两种方式被使用：
+  </p>
+  <ul>
+    <li><strong>工具描述</strong>：<code>description</code> 进入 <code>tool_registry</code>，供 ReAct 路由器判断"该不该选这个工具"。</li>
+    <li><strong>Prompt 上下文</strong>：整份 Markdown 由 <code>phase.load_skill_instructions()</code> 读出，草稿阶段原样拼进 Prompt（core.py:329-339；脚本内 email_workflow.py:52-64）。</li>
+  </ul>
+
+  <div class="callout warn">
+    <span class="co-title">⚠️ 不是标准 YAML 解析</span>
+    <code>parse_skill_metadata()</code> 只按行做 <code>key: value</code> 切分，不认识嵌套结构、引号和转义；且要求文件严格以 <code>---\n</code> 开头。Windows 换行或格式偏差会导致描述解析为空。
+  </div>
+
+  <h3>两个文件的分工</h3>
+  <table>
+    <thead><tr><th>文件</th><th>给谁看</th><th>用来做什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>skill.json</code></td><td>代码</td><td>注册 intent、定义 phase、定位脚本函数、绑定确认动作</td></tr>
+      <tr><td><code>SKILL.md</code></td><td>人和 LLM</td><td>工具描述来源 + 草稿 Prompt 的工作流约束</td></tr>
+      <tr><td><code>scripts/*.py</code></td><td>运行时</td><td>确定性逻辑：解析字段、构造确认载荷、调用 SMTP 等副作用</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 3. 加载链路 ==================== -->
+<section id="loading">
+  <h2><span class="num">3</span>加载链路</h2>
+
+  <h3 id="loading-flow">3.1 目录 → Dispatcher</h3>
+  <p>入口是 <code>build_default_skill_dispatcher()</code> <span class="fileref">agent_skills.py:233</span>：</p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">backend/skills/ 下的一级子目录</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">build_skill_bundle_from_directory()<small>agent_skills.py:188</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">parse_skill_manifest()<small>读 skill.json → SkillMetadata（:150）</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode fall">parse_skill_metadata(SKILL.md)<small>补 name / description（:122）</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">遍历 metadata.phases<small>parse_phase_script_spec → SkillPhaseDefinition（:212）</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">AgentSkillBundle{ intent, phases } → bundles[intent]</div>
+    </div>
+    <div class="dg-caption">图 2 · 加载链路：两层解析（json 清单 + md 元信息）后组装 bundle</div>
+  </div>
+
+  <p>几个实现细节：</p>
+  <ul>
+    <li><strong>根目录</strong>是 <code>Path(__file__).resolve().parents[2] / "skills"</code>（agent_skills.py:235），即 <code>backend/skills</code>；目录不存在时返回<strong>空 Dispatcher</strong>，不抛错。</li>
+    <li>只扫描<strong>一级子目录</strong>，并按名称排序；<code>bundles</code> 以 <code>intent</code> 为 key（agent_skills.py:244）。<strong>同名 intent 后加载的覆盖先加载的</strong>。</li>
+    <li>Dispatcher 在 <code>AgentService.__init__</code> 中构建（<code>agent_service.py:89</code>），而 <code>AgentService</code> 每个请求 new 一次。因此技能目录是<strong>每次请求重新扫描</strong>的：新增技能无需重启，但也没有跨请求缓存。</li>
+  </ul>
+
+  <h3 id="loading-edge">3.2 跳过与边界情况</h3>
+  <table>
+    <thead><tr><th>情况</th><th>结果</th><th>表现</th></tr></thead>
+    <tbody>
+      <tr><td>skills 根目录不存在</td><td>空 Dispatcher</td><td>Agent 正常工作，只是没有可插拔技能</td></tr>
+      <tr><td><code>skill.json</code> 缺失 / JSON 非法</td><td>该技能跳过</td><td>仅 manifest 解析失败时有一条 warning</td></tr>
+      <tr><td>缺 <code>intent</code> / <code>phases</code> / <code>phase_scripts</code></td><td>该技能跳过</td><td><strong>静默</strong>，无报错</td></tr>
+      <tr><td>某个 phase 没有脚本定义</td><td>该 phase 跳过</td><td>warning，其余 phase 可用</td></tr>
+      <tr><td>所有 phase 都不可用</td><td>该技能跳过</td><td>无报错</td></tr>
+      <tr><td>两个技能声明同一 intent</td><td>后者覆盖前者</td><td>取决于目录名排序</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="co-title">⚠️ 排查"技能没生效"</span>
+    先确认 <code>skill.json</code> 的 <code>intent</code>、<code>phases</code>、<code>phase_scripts</code> 三个字段齐全，且脚本路径相对技能目录真实存在。加载失败大多不会抛异常，只会让技能悄悄消失。
+  </div>
+</section>
+
+<!-- ==================== 4. 数据结构 ==================== -->
+<section id="models">
+  <h2><span class="num">4</span>核心数据结构</h2>
+
+  <table>
+    <thead><tr><th>类型</th><th>位置</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><code>SkillMetadata</code></td><td>agent_skills.py:20</td><td>技能元信息：intent、route、phases、默认阶段、确认动作</td></tr>
+      <tr><td><code>SkillPhaseDefinition</code></td><td>agent_skills.py:32</td><td>某个 phase 的脚本路径 + 函数名</td></tr>
+      <tr><td><code>ScriptedSkillPhase</code></td><td>agent_skills.py:38</td><td><strong>执行单元</strong>：读 SKILL.md、import 脚本、调用函数</td></tr>
+      <tr><td><code>AgentSkillBundle</code></td><td>agent_skills.py:82</td><td>一个技能 = 元信息 + <code>{phase: ScriptedSkillPhase}</code></td></tr>
+      <tr><td><code>AgentSkillDispatcher</code></td><td>agent_skills.py:101</td><td>按 intent / phase / confirmation_action 查找</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="models-resolve">4.1 resolve_phase：这一轮跑哪个阶段</h3>
+  <p>决定"草稿"还是"发送"的规则全部集中在 <code>AgentSkillBundle.resolve_phase()</code> <span class="fileref">agent_skills.py:94-98</span>：</p>
+<pre><code><span class="k">def</span> <span class="f">resolve_phase</span>(self, confirmed_requirements=None) -> str:
+    action = str((confirmed_requirements <span class="k">or</span> {}).get(<span class="s">"action"</span>) <span class="k">or</span> <span class="s">""</span>).strip()
+    <span class="k">if</span> self.metadata.confirmation_action <span class="k">and</span> action == self.metadata.confirmation_action <span class="k">and</span> <span class="s">"send"</span> <span class="k">in</span> self.phases:
+        <span class="k">return</span> <span class="s">"send"</span>
+    <span class="k">return</span> self.metadata.default_phase   <span class="c"># 通常是 draft</span></code></pre>
+  <p>
+    也就是说：<strong>确认动作名匹配 <code>confirmation_action</code>，且存在名为 <code>send</code> 的 phase</strong>，才会进入发送阶段。
+    注意 <code>"send"</code> 这个 phase 名是写死的——新技能如果想复用这套确认机制，phase 必须命名为 <code>send</code>。
+  </p>
+
+  <h3 id="models-run">4.2 run：执行阶段脚本</h3>
+  <p><code>ScriptedSkillPhase.run()</code> <span class="fileref">agent_skills.py:56-78</span> 是技能与 Python 代码之间的桥：</p>
+<pre><code>module_name = <span class="s">f"skill_{skill_dir.name}_{phase_name}"</span>.replace(<span class="s">"-"</span>, <span class="s">"_"</span>)
+spec = importlib.util.spec_from_file_location(module_name, script_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)          <span class="c"># 每次调用都重新执行模块</span>
+
+fn = getattr(module, function_name, None)
+result = fn(enriched_context)
+<span class="k">if</span> inspect.isawaitable(result):
+    result = <span class="k">await</span> result
+<span class="k">if</span> <span class="k">not</span> isinstance(result, dict):
+    <span class="k">raise</span> RuntimeError(...)</code></pre>
+
+  <ul>
+    <li>每次运行都<strong>重新 import</strong>，不写入 <code>sys.modules</code>，脚本里的模块级状态不会跨调用保留。</li>
+    <li>函数可以是同步或异步，但<strong>必须返回 dict</strong>。</li>
+    <li>注入的 context 除调用方字段外，还会补 <code>skill_dir</code>、<code>skill_markdown</code>（整份 SKILL.md 文本）、<code>phase_name</code>（agent_skills.py:67-72）。</li>
+  </ul>
+
+  <div class="callout danger">
+    <span class="co-title">🚫 信任边界</span>
+    <code>exec_module</code> 会执行 <code>skills/</code> 下的任意 Python。技能目录必须视为<strong>受信代码</strong>，不能开放给用户上传或远程拉取。
+  </div>
+</section>
+
+<!-- ==================== 5. 注册为工具 ==================== -->
+<section id="register">
+  <h2><span class="num">5</span>注册为 Agent 工具</h2>
+
+  <p>
+    <code>_build_tool_registry()</code> <span class="fileref">app/agent/chains/core.py:44</span> 先声明内置工具（jd / resume_screening / interview_plan / exam_generate / delete…），然后把每个 skill bundle 追加进去：
+  </p>
+<pre><code><span class="k">for</span> bundle <span class="k">in</span> self.skill_dispatcher.bundles.values():
+    registry[bundle.intent] = AgentToolSpec(
+        name=bundle.metadata.name,
+        intent=bundle.intent,
+        route=bundle.metadata.route,
+        description=bundle.metadata.description <span class="k">or</span> <span class="s">f"执行 {bundle.bundle_name} skill"</span>,
+        prerequisites=list(bundle.metadata.prerequisites),
+    )</code></pre>
+
+  <p>于是 <code>email_notification</code> 和内置工具完全同权：</p>
+  <ul>
+    <li><strong>ReAct 路由候选</strong> = <code>tool_registry.keys() + general</code> <span class="fileref">reasoning.py:180</span>；工具名、描述、前置条件会自动拼进系统提示 <span class="fileref">routing_agent.py:50-56</span>。新技能无需改路由代码，LLM 就能看见它。</li>
+    <li><strong>规则快通道</strong>另有一层：<code>IntentService</code> 的关键词表里有 <code>email_notification</code> 的触发词 <span class="fileref">intent_service.py:39</span>，<code>reasoning.py:120-121</code> 还有一条兜底正则。</li>
+    <li><strong>确认回传</strong>走 <code>match_confirmation_action()</code>（agent_skills.py:115），按 <code>confirmation_action</code> 反查 bundle，不依赖意图分类。</li>
+  </ul>
+
+  <div class="callout info">
+    <span class="co-title">ℹ️ 新增技能的完整清单</span>
+    建目录 + 写 <code>skill.json</code> / <code>SKILL.md</code> / 脚本，核心代码不用改；
+    但 <strong>rule 模式下要在 <code>IntentService</code> 补关键词</strong>，否则只能靠 LLM 路由或确认回传进入该技能。
+  </div>
+</section>
+
+<!-- ==================== 6. 图内执行 ==================== -->
+<section id="graph">
+  <h2><span class="num">6</span>图内两阶段执行</h2>
+
+  <p>
+    技能不是普通工具节点，而是固定两节点链 <code>skill_draft → skill_send</code>
+    <span class="fileref">app/agent/graph.py:129-130,170-174</span>：
+  </p>
+
+  <div class="diagram">
+    <div class="fbranch">
+      <div class="fcol">
+        <div class="fnode route">route_intent</div>
+        <div class="farrow"><span class="lbl hit">intent ∈ skill bundles</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode llm">skill_draft</div>
+        <div class="farrow"><span class="lbl">confirmed_requirements 为空</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">END：返回草稿 + 确认请求</div>
+      </div>
+      <div class="fcol">
+        <div class="fnode route">route_intent<small>确认回传轮</small></div>
+        <div class="farrow"><span class="lbl">action 命中 confirmation_action</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode fall">skill_draft 空过<small>return {}</small></div>
+        <div class="farrow"><span class="lbl hit">条件边放行</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode rule">skill_send</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">END：email_send_result</div>
+      </div>
+    </div>
+    <div class="dg-caption">图 3 · 两条路径：第一次进来走草稿，确认后同一 thread 再进来走发送</div>
+  </div>
+
+  <h3 id="graph-draft">6.1 skill_draft：生成草稿 <span class="h3-tag badge purple">LLM 流式 + 脚本兜底</span></h3>
+  <p>
+    <code>skill_draft_node</code> <span class="fileref">app/agent/nodes/skill.py:26</span> 在流式模式下调用
+    <code>_stream_skill_draft_response()</code> <span class="fileref">core.py:258</span>：
+  </p>
+  <ol>
+    <li>先推 <code>plan</code> 事件，展示 draft / confirm / send 三步。</li>
+    <li>取 <code>bundle.get_phase("draft")</code>，用 <code>load_skill_instructions()</code> 读出整份 SKILL.md，拼成 Prompt 交给 LLM 逐字流式生成（core.py:288-295）。</li>
+    <li>如果 LLM 流式失败，<strong>降级执行 draft 脚本</strong>（core.py:296-312）；脚本内部还有 <code>_fallback_draft()</code> 模板兜底（email_workflow.py:7-15）。</li>
+    <li>生成完再调 <code>_handle_skill_intent()</code>，把已生成的文本作为 <code>__draft_text</code> 传进去（core.py:321-324），<strong>避免脚本再调一次 LLM</strong>。</li>
+    <li>脚本返回 <code>email_draft</code> + <code>email_send_request</code> 两个 artifact，并设 <code>requires_confirmation: true</code>（email_workflow.py:78-92）。</li>
+  </ol>
+
+  <p class="dim">
+    非流式路径则直接执行 draft 脚本，由脚本自己调 <code>llm_service.generate_response()</code>（email_workflow.py:69-75）。两条路径最终都产出同样的 artifact 结构。
+  </p>
+
+  <h3 id="graph-confirm">6.2 确认回传：和 JD 的 interrupt 不一样</h3>
+  <p>
+    邮件技能<strong>不使用 interrupt / resume</strong>。前端把确认内容作为<strong>新消息</strong>再发一次 <code>/agent/graph/chat</code>，携带 <code>confirmed_requirements</code>
+    <span class="fileref">frontend/src/views/agent/HRAgent.vue:1402-1412</span>：
+  </p>
+<pre><code>{
+  <span class="s">"action"</span>: <span class="s">"send_email"</span>,
+  <span class="s">"recipient_email"</span>: <span class="s">"..."</span>,
+  <span class="s">"subject"</span>: <span class="s">"..."</span>,
+  <span class="s">"body"</span>: <span class="s">"..."</span>
+}</code></pre>
+
+  <p>
+    路由节点 <code>resolve_intent_and_plan()</code> 看到 <code>confirmed_requirements</code> 后，用
+    <code>match_confirmation_action("send_email")</code> 反查 bundle
+    <span class="fileref">reasoning.py:58-69</span>，命中则直接把 intent 定为 <code>email_notification</code>，source 标为 <code>confirmed_skill_action</code>。
+    随后 <code>skill_draft_node</code> 发现 <code>confirmed_requirements</code> 非空，直接 <code>return {}</code> 空过（skill.py:29-31）；
+    条件边 <code>_after_skill_draft</code> 随即放行到 <code>skill_send</code>（graph.py:197-202）。
+  </p>
+
+  <table>
+    <thead><tr><th>对比项</th><th>JD 链</th><th>Skill 链（邮件）</th></tr></thead>
+    <tbody>
+      <tr><td>确认机制</td><td>LangGraph <code>interrupt</code> + checkpointer</td><td>普通消息回传 <code>confirmed_requirements</code></td></tr>
+      <tr><td>前端调用</td><td><code>/agent/graph/resume</code></td><td><code>/agent/graph/chat</code> 再发一次</td></tr>
+      <tr><td>状态依赖</td><td>依赖 thread 状态与 checkpointer</td><td>不依赖，确认数据自带在消息里</td></tr>
+      <tr><td>设计取舍</td><td>语义标准，可暂停任意节点</td><td>前端零改动，实现更简单</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="graph-send">6.3 skill_send：执行发送 <span class="h3-tag badge green">副作用</span></h3>
+  <p>
+    <code>skill_send_node</code> <span class="fileref">app/agent/nodes/skill.py:58</span> 再调 <code>_handle_skill_intent()</code>：
+    <code>resolve_phase()</code> 返回 <code>send</code>，执行 <code>run_send_phase</code>（email_workflow.py:95）→
+    <code>EmailSendService.send_agent_email()</code> →
+    读取 <code>backend/skills/hr-agent-email/config.txt</code> 的 SMTP 配置发信
+    <span class="fileref">app/services/email_service.py:324-361</span> →
+    返回 <code>email_send_result</code>，<code>requires_confirmation</code> 变为 false。
+  </p>
+
+  <div class="callout tip">
+    <span class="co-title">✅ 为什么发送阶段放在脚本里</span>
+    发信是确定性副作用，不需要模型"发挥"。脚本负责字段校验、SMTP 调用和错误归类（缺配置 / 地址被拒 / 成功提交），并通过 <code>missing_fields</code> 把可修复的问题交还前端。
+  </div>
+</section>
+
+<!-- ==================== 7. 完整调用链 ==================== -->
+<section id="trace">
+  <h2><span class="num">7</span>完整调用链（邮件示例）</h2>
+
+  <p>用户一句"给候选人 xxx@a.com 发一封面试邀请"，完整经过如下：</p>
+
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1">
+        <div class="st-num">1</div>
+        <div class="st-title">用户输入</div>
+        <div class="st-desc">POST /agent/graph/chat<br>"发面试邀请邮件…"</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s2">
+        <div class="st-num">2</div>
+        <div class="st-title">意图路由</div>
+        <div class="st-desc">关键词 / ReAct 命中<br>email_notification</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s4">
+        <div class="st-num">3</div>
+        <div class="st-title">生成草稿</div>
+        <div class="st-desc">SKILL.md 注入 Prompt<br>流式生成 → 两个 artifact</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s5">
+        <div class="st-num">4</div>
+        <div class="st-title">等待确认</div>
+        <div class="st-desc">requires_confirmation<br>前端渲染邮件表单</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s3">
+        <div class="st-num">5</div>
+        <div class="st-title">确认发送</div>
+        <div class="st-desc">graphChat 带<br>action=send_email</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s2">
+        <div class="st-num">6</div>
+        <div class="st-title">执行 send</div>
+        <div class="st-desc">skill_send → SMTP<br>→ email_send_result</div>
+      </div>
+    </div>
+    <div class="dg-caption">图 4 · 邮件技能的端到端流程</div>
+  </div>
+
+  <table>
+    <thead><tr><th>阶段</th><th>关键调用</th><th>产出 / 结果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>草稿</td>
+        <td><code>route_intent</code> → <code>skill_draft</code> → <code>_stream_skill_draft_response</code></td>
+        <td><code>email_draft</code>、<code>email_send_request</code>，<code>requires_confirmation: true</code></td>
+      </tr>
+      <tr>
+        <td>确认</td>
+        <td>前端表单 → <code>confirmAndSendEmail</code> → <code>/agent/graph/chat</code></td>
+        <td><code>confirmed_requirements</code>（<code>action=send_email</code>）</td>
+      </tr>
+      <tr>
+        <td>路由</td>
+        <td><code>resolve_intent_and_plan</code> → <code>match_confirmation_action</code></td>
+        <td>intent 固定为 <code>email_notification</code>，source=<code>confirmed_skill_action</code></td>
+      </tr>
+      <tr>
+        <td>发送</td>
+        <td><code>skill_send</code> → <code>resolve_phase</code>=send → <code>run_send_phase</code></td>
+        <td><code>email_send_result</code>，<code>requires_confirmation: false</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="dim">
+    前端识别逻辑：<code>response.intent === 'email_notification' &amp;&amp; requires_confirmation &amp;&amp; artifacts 含 email_send_request</code>
+    → 标记为 <code>email_confirm</code> 消息并渲染表单
+    <span class="fileref">HRAgent.vue:1166,1299</span>。
+  </p>
+</section>
+
+<!-- ==================== 8. 设计要点 ==================== -->
+<section id="design">
+  <h2><span class="num">8</span>设计要点与注意事项</h2>
+
+  <div class="cols2">
+    <div class="card">
+      <h3 style="margin-top:0">✅ 做得好的地方</h3>
+      <ul>
+        <li><strong>加技能约等于加目录</strong>：manifest 描述意图和阶段，SKILL.md 描述工作流，脚本实现阶段；核心代码不用改。</li>
+        <li><strong>SKILL.md 是单一事实来源</strong>：既是工具描述，也是 Prompt 约束；<code>run()</code> 自动把全文塞进 context，脚本无需自己找路径。</li>
+        <li><strong>两阶段隔离副作用</strong>：生成与发送分开，确认动作名由 manifest 声明，不散落魔法字符串。</li>
+        <li><strong>多级兜底</strong>：LLM 流式失败 → 脚本生成；脚本失败 → 模板草稿。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">⚠️ 需要留意</h3>
+      <ul>
+        <li><strong>任意代码执行</strong>：<code>exec_module</code> 执行技能目录中的 Python，目录必须受信。</li>
+        <li><strong>phase 名写死</strong>：确认阶段必须叫 <code>send</code>。</li>
+        <li><strong>rule 模式需补关键词</strong>：LLM 路由能自动发现新技能，规则快通道不会。</li>
+        <li><strong>每次请求全量扫描</strong>：无缓存，技能多时有磁盘开销。</li>
+        <li><strong>SKILL.md 全文进 Prompt</strong>：长文档会增加草稿轮 token。</li>
+      </ul>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>级别</th><th>问题</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge red">安全</span></td>
+        <td>技能脚本以进程权限执行任意代码</td>
+        <td>严格限制 skills 目录写权限；不要把用户上传内容放进技能目录</td>
+      </tr>
+      <tr>
+        <td><span class="badge amber">扩展性</span></td>
+        <td><code>resolve_phase</code> 只认 <code>"send"</code> 阶段名</td>
+        <td>如需多类确认阶段，可在 manifest 增加 <code>confirmation_phase</code> 字段</td>
+      </tr>
+      <tr>
+        <td><span class="badge amber">可发现性</span></td>
+        <td>manifest 字段缺失时技能静默消失</td>
+        <td>加载失败改为 warning 汇总或启动期校验</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">性能</span></td>
+        <td>每个请求重新扫描目录、每个 phase 重新 import</td>
+        <td>技能增多后可加进程级缓存 + 文件 mtime 失效</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">一致性</span></td>
+        <td>同名 intent 后者覆盖前者</td>
+        <td>启动时检测重复 intent 并报错</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">无用代码</span></td>
+        <td><code>AgentSkillDispatcher.dispatch()</code> 无调用方</td>
+        <td>可删除，或统一改为经它分发</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 9. 文件索引 ==================== -->
+<section id="files">
+  <h2><span class="num">9</span>关键文件索引</h2>
+
+  <table>
+    <thead><tr><th>文件</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/services/agent_skills.py</code></td><td>本机制核心：扫描、解析、bundle 建模、phase 执行、dispatcher</td></tr>
+      <tr><td><code>skills/hr-agent-email/skill.json</code></td><td>邮件技能清单与 phase 脚本映射</td></tr>
+      <tr><td><code>skills/hr-agent-email/SKILL.md</code></td><td>工作流说明（Prompt 注入 + 工具描述来源）</td></tr>
+      <tr><td><code>skills/hr-agent-email/scripts/email_workflow.py</code></td><td><code>run_draft_phase</code> / <code>run_send_phase</code> 实现</td></tr>
+      <tr><td><code>app/agent/chains/core.py:44,109</code></td><td>把 skill 注册进 <code>tool_registry</code></td></tr>
+      <tr><td><code>app/agent/chains/core.py:258,341</code></td><td>草稿流式生成、skill 阶段执行与响应组装</td></tr>
+      <tr><td><code>app/agent/reasoning.py:58,180</code></td><td>确认动作反查技能、ReAct 候选意图集合</td></tr>
+      <tr><td><code>app/agent/nodes/routing.py:59</code></td><td>技能意图 → <code>skill_draft</code> 节点</td></tr>
+      <tr><td><code>app/agent/nodes/skill.py</code></td><td>draft / send 两个图节点</td></tr>
+      <tr><td><code>app/agent/graph.py:197</code></td><td>draft 后按是否确认决定放行 send 还是结束</td></tr>
+      <tr><td><code>app/services/email_service.py:324</code></td><td>读取技能目录下 <code>config.txt</code> 并通过 SMTP 发信</td></tr>
+      <tr><td><code>frontend/src/views/agent/HRAgent.vue:1166,1402</code></td><td>渲染确认表单、回传 <code>confirmed_requirements</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  HR Agent Skill 机制详解 · 基于 backend 源码整理 · 2026-11
+</footer>
+
+<script>
+  // 目录滚动高亮（scrollspy）
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var targets = links
+      .map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); })
+      .filter(Boolean);
+    function onScroll() {
+      var pos = window.scrollY + 90;
+      var current = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= pos) current = targets[i];
+      }
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>

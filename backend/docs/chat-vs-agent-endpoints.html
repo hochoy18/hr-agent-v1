@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>chat / agent / agent-graph 三组 API 详解</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #1e2433;
+    --ink-2: #5a6478;
+    --ink-3: #8b93a7;
+    --accent: #5b5bd6;
+    --accent-soft: #eeeefc;
+    --green: #0e9f6e;
+    --green-soft: #e6f7f1;
+    --purple: #8b5cf6;
+    --purple-soft: #f3eefe;
+    --amber: #d97706;
+    --amber-soft: #fdf3e3;
+    --red: #dc2626;
+    --red-soft: #fdecec;
+    --blue: #2563eb;
+    --blue-soft: #e8f0fe;
+    --border: #e5e8f0;
+    --code-bg: #1e2433;
+    --radius: 12px;
+    --sidebar-w: 272px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ---------- 侧边目录 ---------- */
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 40px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  nav.toc .toc-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink-3); text-transform: uppercase;
+    margin: 0 10px 14px;
+  }
+  nav.toc a {
+    display: block; padding: 6px 10px; margin: 1px 0;
+    color: var(--ink-2); text-decoration: none;
+    font-size: 13.5px; border-radius: 8px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  nav.toc a.lv2 { padding-left: 26px; font-size: 13px; color: var(--ink-3); }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc a.active {
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; border-left-color: var(--accent);
+  }
+
+  /* ---------- 主内容 ---------- */
+  main {
+    margin-left: var(--sidebar-w);
+    max-width: 980px;
+    padding: 40px 48px 100px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+    border-radius: 18px;
+    color: #fff;
+    padding: 44px 44px 38px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; right: -60px; top: -60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; right: 60px; bottom: -90px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  header.hero h1 { font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  header.hero p.sub { margin-top: 10px; font-size: 15px; opacity: .92; max-width: 680px; }
+  header.hero .meta { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  header.hero .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 3px 12px; border-radius: 999px; font-size: 12.5px;
+  }
+
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 23px; font-weight: 800; margin-bottom: 18px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  h3 { font-size: 17.5px; font-weight: 700; margin: 30px 0 12px; color: var(--ink); }
+  h3 .h3-tag {
+    font-size: 11.5px; font-weight: 600; vertical-align: 2px;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+  }
+  p { margin: 10px 0; color: var(--ink); }
+  p.dim, li.dim { color: var(--ink-2); }
+  ul, ol { margin: 10px 0 10px 22px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 700; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: .88em;
+    background: var(--accent-soft); color: #4338ca;
+    padding: 1.5px 6px; border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg); color: #dbe2f0;
+    border-radius: var(--radius);
+    padding: 18px 20px; overflow-x: auto;
+    margin: 14px 0; font-size: 13px; line-height: 1.7;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7d8aa5; }
+  pre .k { color: #c4b5fd; }
+  pre .s { color: #86efac; }
+  pre .f { color: #93c5fd; }
+
+  /* ---------- 卡片 / 提示框 ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .callout {
+    border-radius: var(--radius);
+    padding: 14px 18px 14px 16px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 14px;
+  }
+  .callout.tip   { background: var(--green-soft);  border-color: var(--green); }
+  .callout.warn  { background: var(--amber-soft);  border-color: var(--amber); }
+  .callout.info  { background: var(--blue-soft);   border-color: var(--blue); }
+  .callout.danger{ background: var(--red-soft);    border-color: var(--red); }
+  .callout .co-title { font-weight: 700; margin-bottom: 4px; display: block; }
+
+  /* ---------- 表格 ---------- */
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius); overflow: hidden;
+    margin: 16px 0; font-size: 13.8px;
+    box-shadow: 0 1px 3px rgba(30,36,51,.05);
+  }
+  th {
+    background: #f0f1f8; text-align: left;
+    padding: 11px 14px; font-weight: 700; color: var(--ink);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaff; }
+  td.k { font-weight: 700; white-space: nowrap; }
+
+  /* ---------- 徽章 ---------- */
+  .badge {
+    display: inline-block; font-size: 11.5px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.green  { background: var(--green-soft);  color: var(--green); }
+  .badge.purple { background: var(--purple-soft); color: var(--purple); }
+  .badge.amber  { background: var(--amber-soft);  color: var(--amber); }
+  .badge.blue   { background: var(--blue-soft);   color: var(--blue); }
+  .badge.red    { background: var(--red-soft);    color: var(--red); }
+  .badge.gray   { background: #eef0f5;            color: var(--ink-2); }
+
+  /* ---------- 流程图（CSS 绘制） ---------- */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 26px;
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .diagram .dg-caption {
+    text-align: center; font-size: 12.5px; color: var(--ink-3);
+    margin-top: 18px; letter-spacing: .04em;
+  }
+  .flow { display: flex; flex-direction: column; align-items: center; min-width: 520px; }
+  .fnode {
+    border-radius: 10px; padding: 10px 22px;
+    text-align: center; font-size: 13.5px; font-weight: 600;
+    border: 1.5px solid; max-width: 560px; line-height: 1.5;
+  }
+  .fnode small { display: block; font-weight: 400; font-size: 12px; opacity: .8; margin-top: 2px; }
+  .fnode.start   { background: #eef0f5; border-color: #c3c9d9; color: var(--ink); border-radius: 999px; }
+  .fnode.rule    { background: var(--green-soft);  border-color: var(--green);  color: #065f46; }
+  .fnode.llm     { background: var(--purple-soft); border-color: var(--purple); color: #5b21b6; }
+  .fnode.route   { background: var(--blue-soft);   border-color: var(--blue);   color: #1e40af; }
+  .fnode.fall    { background: var(--amber-soft);  border-color: var(--amber);  color: #92400e; }
+  .fnode.end     { background: var(--accent-soft); border-color: var(--accent); color: #3730a3; border-radius: 999px; }
+  .fnode.decision{ background: #fff; border-color: var(--ink-3); color: var(--ink); border-style: dashed; }
+  .fnode.dead    { background: var(--red-soft); border-color: var(--red); color: #991b1b; }
+  .farrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--ink-3); font-size: 11.5px; padding: 2px 0;
+  }
+  .farrow .line { width: 2px; height: 16px; background: #c3c9d9; }
+  .farrow .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #c3c9d9; }
+  .farrow .lbl { margin: 2px 0; font-weight: 600; }
+  .farrow .lbl.hit { color: var(--green); }
+  .farrow .lbl.miss { color: var(--amber); }
+  .fbranch { display: flex; gap: 18px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
+  .fbranch .fcol { display: flex; flex-direction: column; align-items: center; }
+
+  /* 横向步骤条 */
+  .steps { display: flex; gap: 0; align-items: stretch; justify-content: center; flex-wrap: wrap; min-width: 640px; }
+  .step {
+    flex: 1; min-width: 150px; max-width: 210px;
+    border-radius: 12px; border: 1.5px solid; padding: 14px 14px;
+    text-align: center; position: relative;
+  }
+  .step .st-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .step .st-title { font-weight: 700; font-size: 13.5px; }
+  .step .st-desc { font-size: 12px; margin-top: 5px; opacity: .85; line-height: 1.55; }
+  .step.s1 { background: #eef0f5; border-color: #c3c9d9; } .step.s1 .st-num { background: #64748b; }
+  .step.s2 { background: var(--blue-soft); border-color: var(--blue); } .step.s2 .st-num { background: var(--blue); }
+  .step.s3 { background: var(--green-soft); border-color: var(--green); } .step.s3 .st-num { background: var(--green); }
+  .step.s4 { background: var(--purple-soft); border-color: var(--purple); } .step.s4 .st-num { background: var(--purple); }
+  .step.s5 { background: var(--amber-soft); border-color: var(--amber); } .step.s5 .st-num { background: var(--amber); }
+  .step-arrow { display: flex; align-items: center; padding: 0 6px; color: #c3c9d9; font-size: 20px; font-weight: 700; }
+
+  /* 双栏对比 */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* 文件路径引用 */
+  .fileref {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 12px; color: var(--ink-3);
+    background: #f0f1f8; padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 24px 48px 48px;
+    color: var(--ink-3); font-size: 12.5px;
+    border-top: 1px solid var(--border);
+    max-width: 980px;
+  }
+
+  @media (max-width: 1080px) {
+    nav.toc { display: none; }
+    main, footer { margin-left: 0; padding-left: 24px; padding-right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc" id="toc">
+  <div class="toc-title">目录</div>
+  <a href="#overview">1. 全景概览</a>
+  <a href="#groups">2. 三组端点定义</a>
+  <a href="#groups-route" class="lv2">2.1 路由注册</a>
+  <a href="#groups-table" class="lv2">2.2 一表看懂差异</a>
+  <a href="#chat">3. /chat：通用对话</a>
+  <a href="#chat-pipe" class="lv2">3.1 后端链路</a>
+  <a href="#chat-format" class="lv2">3.2 响应格式</a>
+  <a href="#chat-status" class="lv2">3.3 前端现状</a>
+  <a href="#agent">4. /agent：场景直通</a>
+  <a href="#agent-preset" class="lv2">4.1 preset_intent 机制</a>
+  <a href="#agent-list" class="lv2">4.2 端点清单</a>
+  <a href="#graph">5. /agent/graph：主对话</a>
+  <a href="#graph-chat" class="lv2">5.1 chat：意图路由</a>
+  <a href="#graph-resume" class="lv2">5.2 resume：中断恢复</a>
+  <a href="#graph-sse" class="lv2">5.3 SSE 事件契约</a>
+  <a href="#frontend">6. 前端入口对照</a>
+  <a href="#frontend-pages" class="lv2">6.1 页面入口</a>
+  <a href="#frontend-calls" class="lv2">6.2 HRAgent 页内调用映射</a>
+  <a href="#frontend-other" class="lv2">6.3 两条容易混淆的旁路</a>
+  <a href="#choose">7. 选型指南</a>
+  <a href="#files">8. 文件索引与维护提示</a>
+</nav>
+
+<main>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>chat / agent / agent-graph 三组 API 详解</h1>
+  <p class="sub">同样挂着"对话"的名字，三组端点背后是完全不同的执行模型。本文对照后端实现与前端调用点，说清它们各自解决什么问题、从哪个页面进入、什么时候该用哪一个。</p>
+  <div class="meta">
+    <span>📦 backend / app / api</span>
+    <span>🧭 端点定位 · 前端落点</span>
+    <span>🕸 LangGraph + SSE</span>
+    <span>📅 2026-11</span>
+  </div>
+</header>
+
+<!-- ==================== 1. 概览 ==================== -->
+<section id="overview">
+  <h2><span class="num">1</span>全景概览</h2>
+  <p>
+    三组路由都注册在 <code>api_router</code> 上
+    <span class="fileref">app/api/v1/api.py:16,27,28</span>，
+    最终统一挂在 <code>/api/v1</code> 前缀下。它们不是同一能力的三个版本，而是<strong>三种不同的交互模型</strong>：
+  </p>
+
+  <div class="diagram">
+    <div class="fbranch">
+      <div class="fcol">
+        <div class="fnode dead">/api/v1/chat/*<small>ChatService · 单层 LLM 调用</small></div>
+        <div class="farrow"><span class="lbl miss">前端调用 0 处</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode fall">无页面入口<small>后端保留的通用聊天能力</small></div>
+      </div>
+      <div class="fcol">
+        <div class="fnode route">/api/v1/agent/graph/*<small>LangGraph · 意图路由 + interrupt</small></div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">HRAgent 输入框 / 确认按钮<small>侧边栏「HR Agent」→ /agent</small></div>
+      </div>
+      <div class="fcol">
+        <div class="fnode route">/api/v1/agent/*<small>LangGraph · preset_intent 直通</small></div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode rule">HRAgent 消息内工具面板<small>上传简历 / 面试计划 / 试卷生成</small></div>
+      </div>
+    </div>
+    <div class="dg-caption">图 1 · 三组端点与前端落点：只有后两组被前端实际使用</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">💡 一句话区分</span>
+    <strong>/chat</strong> 是"问什么答什么"的通用聊天，不进图、没有工具；
+    <strong>/agent/graph</strong> 是 Agent 的主对话入口，负责判断意图、执行任务、暂停等用户确认；
+    <strong>/agent</strong> 是"用户已经点明要做什么"时的直通执行通道，跳过意图识别，直接跑对应业务节点。
+  </div>
+
+  <div class="callout warn">
+    <span class="co-title">⚠️ 先澄清一个书写问题</span>
+    提问中出现的 <code>prefix="@command:chat"</code> 是 IDE 斜杠命令补全菜单留下的残留文字，源码里实际是 <code>prefix="/chat"</code>。三组前缀分别是 <code>/chat</code>、<code>/agent</code>、<code>/agent/graph</code>。
+  </div>
+</section>
+
+<!-- ==================== 2. 三组端点定义 ==================== -->
+<section id="groups">
+  <h2><span class="num">2</span>三组端点定义</h2>
+
+  <h3 id="groups-route">2.1 路由注册</h3>
+<pre><code><span class="c"># app/api/v1/api.py:16,27,28</span>
+api_router.include_router(chat.router,        prefix=<span class="s">"/chat"</span>,       tags=[<span class="s">"chat"</span>])
+api_router.include_router(agent.router,       prefix=<span class="s">"/agent"</span>,      tags=[<span class="s">"agent"</span>])
+api_router.include_router(agent_graph.router, prefix=<span class="s">"/agent/graph"</span>, tags=[<span class="s">"agent-graph"</span>])</code></pre>
+
+  <p>
+    三个文件头部的注释其实已经写明了定位：
+    <code>chat.py</code> 自述"通用聊天，不负责复杂 HR Agent 工具编排"
+    <span class="fileref">endpoints/chat.py:1-9</span>；
+    <code>agent.py</code> 自述"文件驱动的流式接口，全部经 LangGraph 图执行（preset_intent 直通对应 exec 节点）"
+    <span class="fileref">endpoints/agent.py:1-14</span>；
+    <code>agent_graph.py</code> 自述"Agent 模块迁移 LangGraph 后的新入口"
+    <span class="fileref">endpoints/agent_graph.py:1-19</span>。
+  </p>
+
+  <h3 id="groups-table">2.2 一表看懂差异</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>/chat/*</th>
+        <th>/agent/*</th>
+        <th>/agent/graph/*</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="k">定位</td>
+        <td>通用大模型聊天</td>
+        <td>场景直通执行：调用方已知要做什么</td>
+        <td>Agent 主对话：自然语言 → 意图路由</td>
+      </tr>
+      <tr>
+        <td class="k">底层实现</td>
+        <td><code>ChatService</code> → <code>LLMService</code> 直接调模型</td>
+        <td>仍走 LangGraph，但 <code>preset_intent</code> 跳过 <code>route_intent</code></td>
+        <td>完整 LangGraph：路由 → 子图/exec → interrupt</td>
+      </tr>
+      <tr>
+        <td class="k">是否做意图识别</td>
+        <td><span class="badge red">否</span></td>
+        <td><span class="badge amber">跳过</span>（由端点固定）</td>
+        <td><span class="badge green">是</span>（ReAct / 规则 / 确认直通）</td>
+      </tr>
+      <tr>
+        <td class="k">入参形态</td>
+        <td>JSON：<code>message</code> + <code>conversation_id</code> + <code>context</code></td>
+        <td>multipart 文件 / 固定资源 ID / <code>confirmed_requirements</code></td>
+        <td>JSON：<code>message</code> + <code>thread_id</code> + <code>attachments</code> + <code>confirmed_requirements</code></td>
+      </tr>
+      <tr>
+        <td class="k">响应协议</td>
+        <td><code>/send</code> 返回 JSON；<code>/stream</code> 为 <code>text/plain</code> 的 <code>{"token":...}</code> 帧</td>
+        <td>标准 SSE：progress / delta / artifact / interrupt / final + <code>[DONE]</code></td>
+        <td>同左（两者共用同一套事件契约）</td>
+      </tr>
+      <tr>
+        <td class="k">中断确认</td>
+        <td><span class="badge red">无</span></td>
+        <td><span class="badge red">无</span>（确认数据已在入参里）</td>
+        <td><span class="badge green">有</span>：interrupt → <code>/resume</code></td>
+      </tr>
+      <tr>
+        <td class="k">会话持久化</td>
+        <td>后端自己写 messages 表</td>
+        <td>前端调用 <code>/conversations</code> 落库</td>
+        <td>前端落库；图状态由 checkpointer 保存</td>
+      </tr>
+      <tr>
+        <td class="k">前端调用方</td>
+        <td><span class="badge red">0 处</span></td>
+        <td>HRAgent 页内工具面板</td>
+        <td>HRAgent 页内聊天框 + 确认按钮</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="co-title">✅ 关键认知</span>
+    <code>/agent</code> 和 <code>/agent/graph</code> <strong>不是两套 Agent 实现</strong>，它们最终进入同一张 LangGraph 图、共用同一套 SSE 事件格式。唯一区别是：<code>/agent</code> 通过 <code>preset_intent</code> 跳过"猜意图"这一步。
+  </div>
+</section>
+
+<!-- ==================== 3. /chat ==================== -->
+<section id="chat">
+  <h2><span class="num">3</span>/chat：通用对话</h2>
+
+  <p>提供四个端点，覆盖最基础的聊天闭环：</p>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge blue">POST</span></td><td><code>/chat/send</code></td><td>一次性返回完整 AI 回复（<code>ChatResponse</code>）</td></tr>
+      <tr><td><span class="badge blue">POST</span></td><td><code>/chat/stream</code></td><td>逐 token 流式返回</td></tr>
+      <tr><td><span class="badge green">GET</span></td><td><code>/chat/suggestions</code></td><td>根据输入生成建议问题</td></tr>
+      <tr><td><span class="badge blue">POST</span></td><td><code>/chat/feedback</code></td><td>给消息提交评分与反馈</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="chat-pipe">3.1 后端链路 <span class="h3-tag badge gray">单层 LLM · 无编排</span></h3>
+  <p>
+    核心逻辑在 <code>ChatService.process_message()</code>
+    <span class="fileref">app/services/chat_service.py:95</span>
+    与 <code>stream_message()</code>
+    <span class="fileref">app/services/chat_service.py:173</span>，流程非常直白：
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">POST /chat/send 或 /chat/stream</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">get_or_create_conversation()<small>校验会话归属，无则新建</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">保存用户消息 + 取最近 20 条历史<small>conversation_service.add_message / get_conversation_messages</small></div>
+      <div class="farrow"><span class="lbl">仅当传入 context 时</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode fall">DocumentService.search_documents()<small>当前是 ilike 子串匹配，pgvector 占位实现</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">LLMService.generate_response / stream_response<small>拼历史 + 检索片段，直接生成</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">保存助手消息 → 返回 / 流式输出</div>
+    </div>
+    <div class="dg-caption">图 2 · /chat 的执行链路：没有工具、没有意图、没有确认</div>
+  </div>
+
+  <div class="callout warn">
+    <span class="co-title">⚠️ 文档检索比看起来弱</span>
+    代码条件是 <code>if context and context.get("search_documents", True)</code>——<strong>不传 context 时根本不会检索</strong>。即使触发，检索实现也只是 <code>Document.extracted_content.ilike("%query%")</code>
+    <span class="fileref">app/services/document_service.py:242-246</span>，
+    用整句用户问题做子串匹配，命中率通常很低。
+  </div>
+
+  <h3 id="chat-format">3.2 响应格式</h3>
+  <p>两个写接口的返回结构并不统一，接入时要注意：</p>
+  <table>
+    <thead><tr><th>端点</th><th>Content-Type</th><th>数据形态</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>/chat/send</code></td>
+        <td><code>application/json</code></td>
+        <td><code>ChatResponse</code>：<code>message_id</code> / <code>conversation_id</code> / <code>content</code> / <code>role</code> / <code>timestamp</code></td>
+      </tr>
+      <tr>
+        <td><code>/chat/stream</code></td>
+        <td><code>text/plain</code>（不是 <code>text/event-stream</code>）</td>
+        <td>逐行 <code>data: {"token": "...", "type": "token"}</code>，最后 <code>data: {"type": "complete", ...}</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="dim">
+    虽然 <code>/chat/stream</code> 也加了 <code>data:</code> 前缀，但它<strong>没有</strong> <code>event:</code> 字段、没有 <code>[DONE]</code>、也没有 progress / artifact / interrupt 等事件类型，不能和 Agent 的 SSE 解析器复用。
+  </p>
+
+  <h3 id="chat-status">3.3 前端现状 <span class="h3-tag badge red">零调用</span></h3>
+  <p>
+    在 <code>frontend/src</code> 与 <code>frontend/dist</code> 中检索 <code>/api/v1/chat</code>、<code>chat/send</code>、<code>chat/stream</code>，<strong>均无任何命中</strong>。
+    也就是说这组端点在当前前端没有任何页面入口、没有任何使用场景，是一组"后端注册了、前端没接"的通用能力。
+  </p>
+  <p>
+    它仍出现在 API 文档的"通用对话"章节
+    <span class="fileref">docs/origin/md/2-MD-企业级项目文档/06-API接口清单.md:1589</span>，
+    属于面向第三方接入或后续功能的预留接口。
+  </p>
+
+  <div class="callout danger">
+    <span class="co-title">🚫 不要把它和「知识问答」页面搞混</span>
+    侧边栏「知识助理 → 知识问答」（<code>/assistant/qa</code>）调用的<strong>不是</strong> <code>/chat/*</code>，而是 RAG 工作流 <code>POST /knowledge-assistant/ask</code>
+    <span class="fileref">frontend/src/views/assistant/KnowledgeAssistant.vue:532</span>。
+    前者是"选知识库 + 带引用来源"的检索增强问答，后者是裸 LLM 聊天。
+  </div>
+</section>
+
+<!-- ==================== 4. /agent ==================== -->
+<section id="agent">
+  <h2><span class="num">4</span>/agent：场景直通</h2>
+
+  <p>
+    这组端点的共同点：<strong>调用方已经知道要执行哪条业务链</strong>（因为用户点了按钮、选了文件、填了表单），所以不需要再让模型判断意图。
+    它们仍然进入 LangGraph，只是用一个固定值把路由节点"短路"掉。
+  </p>
+
+  <h3 id="agent-preset">4.1 preset_intent 机制</h3>
+  <p>
+    <code>AgentGraphService.run_stream()</code> 接收 <code>preset_intent</code>
+    <span class="fileref">app/agent/bridge.py:109-160</span>，
+    把它写入图状态；<code>route_intent_node</code> 开头直接检查该字段
+    <span class="fileref">app/agent/nodes/routing.py:16-25</span>，
+    命中则跳过后续的规则快筛 / ReAct 决策，直接返回对应目标节点。
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">POST /agent/resume-screen/stream 等</div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">run_stream(preset_intent="resume_exec")<small>files / preset_params 走 extra_config，不进 checkpoint</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode decision">route_intent_node：preset 是否为空？</div>
+      <div class="farrow"><span class="lbl hit">非空 → 直通</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">resume_exec 执行节点<small>跳过 ReAct 观察与意图分类</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">SSE 输出（与 /agent/graph 同契约）</div>
+    </div>
+    <div class="dg-caption">图 3 · preset_intent 不是绕过图，而是跳过"猜意图"这一步</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">ℹ️ 为什么文件不放图状态里</span>
+    上传文件等大 payload 通过 <code>extra_config</code> 合并进 <code>configurable</code>
+    <span class="fileref">app/agent/bridge.py:152-160</span>，
+    不写入 checkpoint，避免 LangGraph 持久化巨大的二进制内容。
+  </div>
+
+  <h3 id="agent-list">4.2 端点清单</h3>
+  <table>
+    <thead>
+      <tr><th>端点</th><th>preset_intent</th><th>入参</th><th>场景 / 前端触发</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>/agent/stream</code></td>
+        <td><span class="badge purple">jd</span></td>
+        <td>JSON，必须带 <code>confirmed_requirements</code></td>
+        <td>JD 确认后执行生成链；<strong>仅在前端 thread 丢失时作为降级通道</strong></td>
+      </tr>
+      <tr>
+        <td><code>/agent/resume-screen/stream</code></td>
+        <td><span class="badge purple">resume_exec</span></td>
+        <td>multipart：<code>job_description_id</code> + 最多 20 份简历</td>
+        <td>HRAgent 消息内"简历评分"面板，上传简历后点击开始评分</td>
+      </tr>
+      <tr>
+        <td><code>/agent/interview-plan/stream</code></td>
+        <td><span class="badge purple">interview_exec</span></td>
+        <td>multipart：<code>resume_evaluation_id</code></td>
+        <td>HRAgent 消息内"面试计划"面板，选择已评分候选人</td>
+      </tr>
+      <tr>
+        <td><code>/agent/exam/stream</code></td>
+        <td><span class="badge purple">exam_exec</span></td>
+        <td>JSON，必须带 <code>confirmed_requirements</code></td>
+        <td>HRAgent 试卷面板，无参考文档时生成试卷</td>
+      </tr>
+      <tr>
+        <td><code>/agent/exam/document-stream</code></td>
+        <td><span class="badge purple">exam_exec</span></td>
+        <td>multipart：考试配置 JSON + 最多 5 个参考文档</td>
+        <td>HRAgent 试卷面板，基于上传文档生成试卷</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="dim">
+    所有端点都经过 <code>_sse_stream()</code> 统一包装
+    <span class="fileref">endpoints/agent.py:40-59</span>：
+    自动补 <code>thread_id</code>、捕获异常为 <code>{"type":"error"}</code>、最后输出 <code>data: [DONE]</code>。
+  </p>
+</section>
+
+<!-- ==================== 5. /agent/graph ==================== -->
+<section id="graph">
+  <h2><span class="num">5</span>/agent/graph：主对话入口</h2>
+
+  <p>只有两个端点，却是整个 Agent 能力的正门：</p>
+  <table>
+    <thead><tr><th>方法</th><th>路径</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge blue">POST</span></td><td><code>/agent/graph/chat</code></td><td>自然语言对话，SSE 流式；thread_id 缺省时后端生成并回传</td></tr>
+      <tr><td><span class="badge blue">POST</span></td><td><code>/agent/graph/resume</code></td><td>恢复被 interrupt 暂停的 thread，继续执行</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="graph-chat">5.1 chat：意图路由 <span class="h3-tag badge green">完整 Agent</span></h3>
+  <p>
+    请求进入 <code>route_intent</code> 后，图会根据决策结果分发到聊天、JD 准备、简历筛选、面试计划、试卷生成、技能草稿、资源编辑/删除等分支
+    <span class="fileref">app/agent/graph.py:125-163</span>：
+  </p>
+<pre><code><span class="c"># app/agent/graph.py:146-162（节选）</span>
+builder.add_edge(START, <span class="s">"route_intent"</span>)
+builder.add_conditional_edges(
+    <span class="s">"route_intent"</span>,
+    _route_destination,
+    {
+        <span class="s">"chat"</span>: <span class="s">"chat"</span>,                      <span class="c"># 闲聊 / 普通问答</span>
+        <span class="s">"jd_prepare"</span>: <span class="s">"jd_prepare"</span>,          <span class="c"># JD 生成（含确认）</span>
+        <span class="s">"jd_edit"</span>: <span class="s">"jd_edit"</span>,
+        <span class="s">"criteria_edit"</span>: <span class="s">"criteria_edit"</span>,
+        <span class="s">"resource_delete"</span>: <span class="s">"resource_delete"</span>,
+        <span class="s">"resume_screening"</span>: <span class="s">"resume_screening"</span>,
+        <span class="s">"interview_plan"</span>: <span class="s">"interview_plan"</span>,
+        <span class="s">"exam_generate"</span>: <span class="s">"exam_generate"</span>,
+        <span class="s">"skill_draft"</span>: <span class="s">"skill_draft"</span>,
+        <span class="s">"resume_exec"</span>: <span class="s">"resume_exec"</span>,      <span class="c"># 文件流直通</span>
+        <span class="s">"interview_exec"</span>: <span class="s">"interview_exec"</span>,
+        <span class="s">"exam_exec"</span>: <span class="s">"exam_exec"</span>,
+    },
+)</code></pre>
+
+  <p class="dim">
+    注意 <code>"chat"</code> 分支是图内部的节点，和 HTTP 层的 <code>/chat/*</code> 端点毫无关系——即使闲聊，也是由 Agent 图来回答，可以带上 Agent 的上下文与产物。
+  </p>
+
+  <h3 id="graph-resume">5.2 resume：中断恢复 <span class="h3-tag badge amber">checkpointer 驱动</span></h3>
+  <p>
+    当 JD 信息不全或邮件待确认时，图会在 <code>jd_confirm</code> 等节点触发 interrupt，SSE 先推 <code>interrupt</code> 再推一个 <code>requires_confirmation: true</code> 的 <code>final</code>
+    <span class="fileref">app/agent/bridge.py:193-210</span>。
+    前端拿到 <code>thread_id</code> 后，把确认表单 POST 到 <code>/resume</code>，后端用 <code>Command(resume=value)</code> 从断点继续
+    <span class="fileref">endpoints/agent_graph.py:131-142</span>。
+  </p>
+
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1">
+        <div class="st-num">1</div>
+        <div class="st-title">用户提问</div>
+        <div class="st-desc">POST /agent/graph/chat<br>message + thread_id</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s2">
+        <div class="st-num">2</div>
+        <div class="st-title">图执行到确认点</div>
+        <div class="st-desc">route_intent → jd_prepare<br>信息不足，触发 interrupt</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s5">
+        <div class="st-num">3</div>
+        <div class="st-title">SSE 推给前端</div>
+        <div class="st-desc">interrupt + final<br>前端渲染确认表单</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s3">
+        <div class="st-num">4</div>
+        <div class="st-title">用户提交确认</div>
+        <div class="st-desc">POST /agent/graph/resume<br>thread_id + value</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step s4">
+        <div class="st-num">5</div>
+        <div class="st-title">断点续跑</div>
+        <div class="st-desc">Command(resume=value)<br>继续 exec → final</div>
+      </div>
+    </div>
+    <div class="dg-caption">图 4 · interrupt / resume 的完整往返：状态由 checkpointer 持久化</div>
+  </div>
+
+  <div class="callout warn">
+    <span class="co-title">⚠️ 没有 checkpointer 时会降级</span>
+    <code>/agent/graph/resume</code> 开头会检查 <code>get_checkpointer()</code>
+    <span class="fileref">endpoints/agent_graph.py:116</span>，
+    为空时退化成"一次带 <code>confirmed_requirements</code> 的普通 chat"，并直接返回单个 <code>final</code> 事件，不再有图状态恢复能力。
+  </div>
+
+  <h3 id="graph-sse">5.3 SSE 事件契约</h3>
+  <p>
+    两组 Agent 端点共用同一个包装器（<code>_sse_stream</code> / <code>_sse_wrapper</code>），事件类型如下
+    <span class="fileref">endpoints/agent_graph.py:1-19</span>：
+  </p>
+  <table>
+    <thead><tr><th>事件 type</th><th>载荷</th><th>前端用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>progress</code></td><td><code>node</code> + <code>steps</code></td><td>渲染"正在理解需求 / 正在执行某节点"</td></tr>
+      <tr><td><code>delta</code></td><td><code>delta</code> 文本增量</td><td>逐字追加到气泡</td></tr>
+      <tr><td><code>artifact</code></td><td>结构化产物</td><td>渲染 JD、评分、试卷等卡片</td></tr>
+      <tr><td><code>interrupt</code></td><td><code>thread_id</code> + <code>payload</code></td><td>渲染确认表单</td></tr>
+      <tr><td><code>final</code></td><td><code>AgentChatResponse</code> + <code>thread_id</code></td><td>终态，替换流式内容，记录 thread_id</td></tr>
+      <tr><td><code>error</code></td><td><code>error</code> 字符串</td><td>错误提示</td></tr>
+      <tr><td><code>[DONE]</code></td><td>—</td><td>结束标记</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 6. 前端入口对照 ==================== -->
+<section id="frontend">
+  <h2><span class="num">6</span>前端入口对照</h2>
+
+  <h3 id="frontend-pages">6.1 页面入口</h3>
+  <table>
+    <thead><tr><th>页面</th><th>路由</th><th>组件</th><th>使用的后端能力</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>HR Agent（侧边栏「HR Agent」）</td>
+        <td><code>/agent</code></td>
+        <td><code>views/agent/HRAgent.vue</code></td>
+        <td><span class="badge purple">/agent/graph/*</span> <span class="badge blue">/agent/*</span></td>
+      </tr>
+      <tr>
+        <td>知识问答（知识助理 → 知识问答）</td>
+        <td><code>/assistant/qa</code></td>
+        <td><code>views/assistant/KnowledgeAssistant.vue</code></td>
+        <td><span class="badge green">/knowledge-assistant/ask</span></td>
+      </tr>
+      <tr>
+        <td>JD 生成 / 简历筛选 / 智能面试 / 试卷生成</td>
+        <td><code>/recruitment/*</code>、<code>/training/*</code></td>
+        <td>各独立表单页</td>
+        <td><span class="badge gray">/hr-workflows/*</span></td>
+      </tr>
+      <tr>
+        <td><em>无</em></td>
+        <td><em>无</em></td>
+        <td><em>无</em></td>
+        <td><span class="badge red">/chat/*</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="dim">
+    路由定义见 <span class="fileref">frontend/src/router/index.js:62-68,147-168</span>。
+  </p>
+
+  <h3 id="frontend-calls">6.2 HRAgent 页内调用映射</h3>
+  <p>同一个页面里，不同交互走不同端点，这是三者关系最直观的体现：</p>
+  <table>
+    <thead>
+      <tr><th>用户操作</th><th>前端函数</th><th>调用的端点</th><th>代码位置</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>在底部输入框发送任意消息</td>
+        <td><code>runAgent</code> → <code>agentApi.graphChat</code></td>
+        <td><code>/agent/graph/chat</code></td>
+        <td><span class="fileref">HRAgent.vue:1053</span></td>
+      </tr>
+      <tr>
+        <td>JD 确认表单点「确认并生成」</td>
+        <td><code>confirmAndGenerate</code> → <code>graphResume</code></td>
+        <td><code>/agent/graph/resume</code></td>
+        <td><span class="fileref">HRAgent.vue:1450-1451</span></td>
+      </tr>
+      <tr>
+        <td>邮件确认表单点「确认并发送」</td>
+        <td><code>confirmAndSendEmail</code> → <code>runAgent</code>（带 <code>confirmed_requirements</code>）</td>
+        <td><code>/agent/graph/chat</code></td>
+        <td><span class="fileref">HRAgent.vue:1402-1412</span></td>
+      </tr>
+      <tr>
+        <td>JD 确认但页面没有 thread_id（刷新/历史会话）</td>
+        <td><code>agentApi.stream</code>（降级）</td>
+        <td><code>/agent/stream</code></td>
+        <td><span class="fileref">HRAgent.vue:1449-1452</span></td>
+      </tr>
+      <tr>
+        <td>简历评分面板：上传简历 + 选 JD → 开始评分</td>
+        <td><code>startResumeScreening</code> → <code>streamResumeScreening</code></td>
+        <td><code>/agent/resume-screen/stream</code></td>
+        <td><span class="fileref">HRAgent.vue:1588</span></td>
+      </tr>
+      <tr>
+        <td>面试计划面板：选已评分候选人 → 生成计划</td>
+        <td><code>startInterviewPlan</code> → <code>streamInterviewPlan</code></td>
+        <td><code>/agent/interview-plan/stream</code></td>
+        <td><span class="fileref">HRAgent.vue:1664</span></td>
+      </tr>
+      <tr>
+        <td>试卷面板：填参数 → 基于文档生成试卷</td>
+        <td><code>startExamGeneration</code> → <code>streamExamWithDocuments</code> / <code>streamExam</code></td>
+        <td><code>/agent/exam/document-stream</code> / <code>/agent/exam/stream</code></td>
+        <td><span class="fileref">HRAgent.vue:1765,1771</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+    <div class="fbranch">
+      <div class="fcol">
+        <div class="fnode start">HRAgent 输入框</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode route">graphChat</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">/agent/graph/chat</div>
+      </div>
+      <div class="fcol">
+        <div class="fnode start">JD 确认按钮</div>
+        <div class="farrow"><span class="lbl">有 thread_id</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode rule">graphResume</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">/agent/graph/resume</div>
+        <div class="farrow"><span class="lbl miss">无 thread_id</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode fall">agentApi.stream</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode fall">/agent/stream</div>
+      </div>
+      <div class="fcol">
+        <div class="fnode start">消息内工具面板</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode rule">上传文件 / 选资源</div>
+        <div class="farrow"><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">/agent/* 各直通端点</div>
+      </div>
+    </div>
+    <div class="dg-caption">图 5 · HRAgent 页面内的三条调用路径</div>
+  </div>
+
+  <p>
+    另外注意持久化职责不同：<code>/chat</code> 由后端 <code>ChatService</code> 自动写消息；而 Agent 两条路径由前端显式调用 <code>/conversations</code> 落库
+    <span class="fileref">frontend/src/views/agent/HRAgent.vue:766</span>，
+    <code>AgentService</code> 本身不写 messages 表。
+  </p>
+
+  <h3 id="frontend-other">6.3 两条容易混淆的旁路</h3>
+  <div class="cols2">
+    <div class="card">
+      <h3 style="margin-top:0">知识问答 → /knowledge-assistant/ask</h3>
+      <p class="dim">
+        选知识库、RAG 检索、返回引用来源。它是一条<strong>独立的问答链</strong>，既不经过 <code>/chat</code>，也不经过 LangGraph。
+      </p>
+      <p class="dim"><span class="fileref">KnowledgeAssistant.vue:532</span></p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">独立表单页 → /hr-workflows/*</h3>
+      <p class="dim">
+        JD 生成、简历筛选、智能面试、试卷生成的独立页面走的是确定性的工作流接口，不属于这三组 Agent 端点。
+      </p>
+      <p class="dim"><span class="fileref">frontend/src/api/hrWorkflows.js:14,36,94,164</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. 选型指南 ==================== -->
+<section id="choose">
+  <h2><span class="num">7</span>选型指南</h2>
+
+  <table>
+    <thead><tr><th>需求</th><th>推荐入口</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>用户在聊天框自由表达，需要多轮、确认、产物</td>
+        <td><span class="badge purple">/agent/graph/chat</span> + <span class="badge amber">/resume</span></td>
+        <td>唯一具备意图路由、interrupt 确认、checkpoint 续跑的入口</td>
+      </tr>
+      <tr>
+        <td>用户已点按钮，且手里有文件或资源 ID</td>
+        <td><span class="badge blue">/agent/*</span></td>
+        <td>跳过意图识别，结果最确定，避免"赌"模型分类正确</td>
+      </tr>
+      <tr>
+        <td>基于知识库的文档问答，需要引用来源</td>
+        <td><span class="badge green">/knowledge-assistant/ask</span></td>
+        <td>RAG 专用链路，带知识库选择与来源返回</td>
+      </tr>
+      <tr>
+        <td>最朴素的通用聊天 / 第三方接入</td>
+        <td><span class="badge red">/chat/*</span></td>
+        <td>够轻量，但无工具、无前端页面，检索能力很弱</td>
+      </tr>
+      <tr>
+        <td>固定表单驱动的确定性流程</td>
+        <td><span class="badge gray">/hr-workflows/*</span></td>
+        <td>不依赖模型决策，适合结构化输入与批处理</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="co-title">✅ 判断口诀</span>
+    <strong>"要不要让模型决定做什么？"</strong>
+    —— 要，走 <code>/agent/graph/chat</code>；不要，走 <code>/agent/*</code>；连业务工具都不需要，才轮到 <code>/chat</code>。
+  </div>
+</section>
+
+<!-- ==================== 8. 文件索引 ==================== -->
+<section id="files">
+  <h2><span class="num">8</span>文件索引与维护提示</h2>
+
+  <table>
+    <thead><tr><th>文件</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/api/v1/api.py</code></td><td>三组路由的注册入口（第 16 / 27 / 28 行）</td></tr>
+      <tr><td><code>app/api/v1/endpoints/chat.py</code></td><td>通用聊天 API：send / stream / suggestions / feedback</td></tr>
+      <tr><td><code>app/services/chat_service.py</code></td><td>通用聊天实现：会话、历史、文档检索、LLM 调用、落库</td></tr>
+      <tr><td><code>app/api/v1/endpoints/agent.py</code></td><td>场景直通 API：JD / 简历评分 / 面试计划 / 试卷</td></tr>
+      <tr><td><code>app/api/v1/endpoints/agent_graph.py</code></td><td>Agent 主对话 API：chat / resume，SSE 契约定义</td></tr>
+      <tr><td><code>app/agent/bridge.py</code></td><td>图调用门面：run_stream、preset_intent、interrupt 事件组装</td></tr>
+      <tr><td><code>app/agent/graph.py</code></td><td>LangGraph 主图：节点注册与条件边分发</td></tr>
+      <tr><td><code>app/agent/nodes/routing.py</code></td><td>意图路由节点：preset 直通、规则快筛、ReAct 决策</td></tr>
+      <tr><td><code>frontend/src/api/agent.js</code></td><td>前端 Agent API 封装：graphChat / graphResume / 各直通流</td></tr>
+      <tr><td><code>frontend/src/views/agent/HRAgent.vue</code></td><td>唯一实际使用 Agent 端点的页面</td></tr>
+    </tbody>
+  </table>
+
+  <h3>维护提示</h3>
+  <table>
+    <thead><tr><th>级别</th><th>问题</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge amber">待确认</span></td>
+        <td><code>/chat/*</code> 前端零调用，但仍在路由和 API 文档中</td>
+        <td>若确认无第三方依赖，可标注 legacy 或下线；否则补一个明确的调用方说明</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">文档</span></td>
+        <td><code>/chat/stream</code> 是 <code>text/plain</code> 的伪 SSE，与 Agent 事件协议不兼容</td>
+        <td>接入时不要复用 Agent 的 SSE 解析器；如需统一，可改用 <code>text/event-stream</code></td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">文档</span></td>
+        <td>提问/IDE 中出现的 <code>@command:chat</code> 是补全残留</td>
+        <td>实际前缀为 <code>/chat</code>，排查问题时按真实路径检索</td>
+      </tr>
+      <tr>
+        <td><span class="badge blue">架构</span></td>
+        <td><code>/agent/stream</code> 是 thread 丢失时的降级通道，不是主路径</td>
+        <td>新增功能优先接 <code>/agent/graph/*</code>；保留 <code>/agent/stream</code> 仅为兼容</td>
+      </tr>
+      <tr>
+        <td><span class="badge blue">架构</span></td>
+        <td>图内也有 <code>chat</code> 分支，和 HTTP 的 <code>/chat</code> 同名但无关</td>
+        <td>讨论"闲聊"时要明确指 Agent 图的 chat 节点，避免与 <code>/chat/*</code> 端点混淆</td>
+      </tr>
+      <tr>
+        <td><span class="badge gray">性能</span></td>
+        <td><code>/chat</code> 的文档检索是 <code>ilike</code> 全文匹配，非向量检索</td>
+        <td>若要承担知识问答，应切到 <code>/knowledge-assistant</code> 或实现 pgvector</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  chat / agent / agent-graph 三组 API 详解 · 基于 backend 源码与 frontend 调用点整理 · 2026-11
+</footer>
+
+<script>
+  // 目录滚动高亮（scrollspy）
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var targets = links
+      .map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); })
+      .filter(Boolean);
+    function onScroll() {
+      var pos = window.scrollY + 90;
+      var current = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= pos) current = targets[i];
+      }
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>

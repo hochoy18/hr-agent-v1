@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>files.py 三大 exec 节点详解 · 简历评分 / 面试计划 / 试卷生成</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #1e2433;
+    --ink-2: #5a6478;
+    --ink-3: #8b93a7;
+    --accent: #5b5bd6;
+    --accent-soft: #eeeefc;
+    --green: #0e9f6e;
+    --green-soft: #e6f7f1;
+    --purple: #8b5cf6;
+    --purple-soft: #f3eefe;
+    --amber: #d97706;
+    --amber-soft: #fdf3e3;
+    --red: #dc2626;
+    --red-soft: #fdecec;
+    --blue: #2563eb;
+    --blue-soft: #e8f0fe;
+    --border: #e5e8f0;
+    --code-bg: #1e2433;
+    --radius: 12px;
+    --sidebar-w: 272px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ---------- 侧边目录 ---------- */
+  nav.toc {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px 40px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  nav.toc .toc-title {
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink-3); text-transform: uppercase;
+    margin: 0 10px 14px;
+  }
+  nav.toc a {
+    display: block; padding: 6px 10px; margin: 1px 0;
+    color: var(--ink-2); text-decoration: none;
+    font-size: 13.5px; border-radius: 8px;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+  }
+  nav.toc a.lv2 { padding-left: 26px; font-size: 13px; color: var(--ink-3); }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc a.active {
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; border-left-color: var(--accent);
+  }
+
+  /* ---------- 主内容 ---------- */
+  main {
+    margin-left: var(--sidebar-w);
+    max-width: 980px;
+    padding: 40px 48px 100px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+    border-radius: 18px;
+    color: #fff;
+    padding: 44px 44px 38px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; right: -60px; top: -60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; right: 60px; bottom: -90px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  header.hero h1 { font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  header.hero p.sub { margin-top: 10px; font-size: 15px; opacity: .92; max-width: 680px; }
+  header.hero .meta { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  header.hero .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 3px 12px; border-radius: 999px; font-size: 12.5px;
+  }
+
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 23px; font-weight: 800; margin-bottom: 18px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  h3 { font-size: 17.5px; font-weight: 700; margin: 30px 0 12px; color: var(--ink); }
+  h3 .h3-tag {
+    font-size: 11.5px; font-weight: 600; vertical-align: 2px;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+  }
+  p { margin: 10px 0; color: var(--ink); }
+  p.dim, li.dim { color: var(--ink-2); }
+  ul, ol { margin: 10px 0 10px 22px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 700; }
+  a { color: var(--accent); }
+
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: .88em;
+    background: var(--accent-soft); color: #4338ca;
+    padding: 1.5px 6px; border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg); color: #dbe2f0;
+    border-radius: var(--radius);
+    padding: 18px 20px; overflow-x: auto;
+    margin: 14px 0; font-size: 13px; line-height: 1.7;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7d8aa5; }
+  pre .k { color: #c4b5fd; }
+  pre .s { color: #86efac; }
+  pre .f { color: #93c5fd; }
+
+  /* ---------- 卡片 / 提示框 ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .callout {
+    border-radius: var(--radius);
+    padding: 14px 18px 14px 16px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 14px;
+  }
+  .callout.tip   { background: var(--green-soft);  border-color: var(--green); }
+  .callout.warn  { background: var(--amber-soft);  border-color: var(--amber); }
+  .callout.info  { background: var(--blue-soft);   border-color: var(--blue); }
+  .callout.danger{ background: var(--red-soft);    border-color: var(--red); }
+  .callout .co-title { font-weight: 700; margin-bottom: 4px; display: block; }
+
+  /* ---------- 表格 ---------- */
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius); overflow: hidden;
+    margin: 16px 0; font-size: 13.8px;
+    box-shadow: 0 1px 3px rgba(30,36,51,.05);
+  }
+  th {
+    background: #f0f1f8; text-align: left;
+    padding: 11px 14px; font-weight: 700; color: var(--ink);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaff; }
+  td.k { font-weight: 700; white-space: nowrap; }
+
+  /* ---------- 徽章 ---------- */
+  .badge {
+    display: inline-block; font-size: 11.5px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.green  { background: var(--green-soft);  color: var(--green); }
+  .badge.purple { background: var(--purple-soft); color: var(--purple); }
+  .badge.amber  { background: var(--amber-soft);  color: var(--amber); }
+  .badge.blue   { background: var(--blue-soft);   color: var(--blue); }
+  .badge.red    { background: var(--red-soft);    color: var(--red); }
+  .badge.gray   { background: #eef0f5;            color: var(--ink-2); }
+
+  /* ---------- 流程图（CSS 绘制） ---------- */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 26px;
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+  }
+  .diagram .dg-caption {
+    text-align: center; font-size: 12.5px; color: var(--ink-3);
+    margin-top: 18px; letter-spacing: .04em;
+  }
+  .flow { display: flex; flex-direction: column; align-items: center; min-width: 520px; }
+  .fnode {
+    border-radius: 10px; padding: 10px 22px;
+    text-align: center; font-size: 13.5px; font-weight: 600;
+    border: 1.5px solid; max-width: 560px; line-height: 1.5;
+  }
+  .fnode small { display: block; font-weight: 400; font-size: 12px; opacity: .8; margin-top: 2px; }
+  .fnode.start   { background: #eef0f5; border-color: #c3c9d9; color: var(--ink); border-radius: 999px; }
+  .fnode.rule    { background: var(--green-soft);  border-color: var(--green);  color: #065f46; }
+  .fnode.llm     { background: var(--purple-soft); border-color: var(--purple); color: #5b21b6; }
+  .fnode.route   { background: var(--blue-soft);   border-color: var(--blue);   color: #1e40af; }
+  .fnode.fall    { background: var(--amber-soft);  border-color: var(--amber);  color: #92400e; }
+  .fnode.end     { background: var(--accent-soft); border-color: var(--accent); color: #3730a3; border-radius: 999px; }
+  .fnode.decision{ background: #fff; border-color: var(--ink-3); color: var(--ink); border-style: dashed; }
+  .fnode.dead    { background: var(--red-soft); border-color: var(--red); color: #991b1b; }
+  .farrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--ink-3); font-size: 11.5px; padding: 2px 0;
+  }
+  .farrow .line { width: 2px; height: 16px; background: #c3c9d9; }
+  .farrow .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #c3c9d9; }
+  .farrow .lbl { margin: 2px 0; font-weight: 600; }
+  .farrow .lbl.hit { color: var(--green); }
+  .farrow .lbl.miss { color: var(--amber); }
+  .fbranch { display: flex; gap: 18px; align-items: stretch; justify-content: center; flex-wrap: wrap; }
+  .fbranch .fcol { display: flex; flex-direction: column; align-items: center; }
+
+  /* 横向步骤条 */
+  .steps { display: flex; gap: 0; align-items: stretch; justify-content: center; flex-wrap: wrap; min-width: 640px; }
+  .step {
+    flex: 1; min-width: 150px; max-width: 210px;
+    border-radius: 12px; border: 1.5px solid; padding: 14px 14px;
+    text-align: center; position: relative;
+  }
+  .step .st-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .step .st-title { font-weight: 700; font-size: 13.5px; }
+  .step .st-desc { font-size: 12px; margin-top: 5px; opacity: .85; line-height: 1.55; }
+  .step.s1 { background: #eef0f5; border-color: #c3c9d9; } .step.s1 .st-num { background: #64748b; }
+  .step.s2 { background: var(--blue-soft); border-color: var(--blue); } .step.s2 .st-num { background: var(--blue); }
+  .step.s3 { background: var(--green-soft); border-color: var(--green); } .step.s3 .st-num { background: var(--green); }
+  .step.s4 { background: var(--purple-soft); border-color: var(--purple); } .step.s4 .st-num { background: var(--purple); }
+  .step.s5 { background: var(--amber-soft); border-color: var(--amber); } .step.s5 .st-num { background: var(--amber); }
+  .step-arrow { display: flex; align-items: center; padding: 0 6px; color: #c3c9d9; font-size: 20px; font-weight: 700; }
+
+  /* 双栏对比 */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* 文件路径引用 */
+  .fileref {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 12px; color: var(--ink-3);
+    background: #f0f1f8; padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  footer {
+    margin-left: var(--sidebar-w);
+    padding: 24px 48px 48px;
+    color: var(--ink-3); font-size: 12.5px;
+    border-top: 1px solid var(--border);
+    max-width: 980px;
+  }
+
+  @media (max-width: 1080px) {
+    nav.toc { display: none; }
+    main, footer { margin-left: 0; padding-left: 24px; padding-right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== 目录 ==================== -->
+<nav class="toc" id="toc">
+  <div class="toc-title">目录</div>
+  <a href="#overview">1. 全景概览</a>
+  <a href="#mechanism">2. 共同机制</a>
+  <a href="#mech-preset" class="lv2">2.1 preset_intent 直通</a>
+  <a href="#mech-config" class="lv2">2.2 大 payload 走 configurable</a>
+  <a href="#mech-emit" class="lv2">2.3 流式事件透传</a>
+  <a href="#resume">3. resume_exec_node</a>
+  <a href="#resume-entry" class="lv2">3.1 前端入口与端点</a>
+  <a href="#resume-flow" class="lv2">3.2 执行流程</a>
+  <a href="#resume-output" class="lv2">3.3 产物与招聘闭环</a>
+  <a href="#interview">4. interview_exec_node</a>
+  <a href="#interview-entry" class="lv2">4.1 前端入口与端点</a>
+  <a href="#interview-flow" class="lv2">4.2 执行流程</a>
+  <a href="#interview-output" class="lv2">4.3 产物与状态推进</a>
+  <a href="#exam">5. exam_exec_node</a>
+  <a href="#exam-branch" class="lv2">5.1 双端点与节点分支</a>
+  <a href="#exam-entry" class="lv2">5.2 前端入口</a>
+  <a href="#exam-flow" class="lv2">5.3 执行流程</a>
+  <a href="#exam-output" class="lv2">5.4 产物与分享链接</a>
+  <a href="#compare">6. 对照总表与招聘链路</a>
+  <a href="#files">7. 文件索引</a>
+</nav>
+
+<main>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>files.py 三大 exec 节点详解</h1>
+  <p class="sub">resume_exec / interview_exec / exam_exec 是文件驱动流式接口在 LangGraph 图中的"直通执行节点"。本文沿 前端面板 → HTTP 端点 → 图路由 → 节点 → 服务层 的完整链路，讲清每个节点使用的功能、前端页面入口、目的与实现。</p>
+  <div class="meta">
+    <span>📦 app/agent/nodes/files.py</span>
+    <span>🧭 前端入口 · 调用链路</span>
+    <span>🕸 LangGraph + SSE</span>
+    <span>📅 2026-11</span>
+  </div>
+</header>
+
+<!-- ==================== 1. 概览 ==================== -->
+<section id="overview">
+  <h2><span class="num">1</span>全景概览</h2>
+  <p>
+    普通聊天走 <code>/agent/graph/chat</code>，由路由节点做意图识别；但<strong>上传文件类的重操作</strong>（批量评分、生成面试计划、生成试卷）有专用 HTTP 端点
+    <span class="fileref">app/api/v1/endpoints/agent.py</span>，
+    前端已经明确知道要干什么，不需要再让 LLM 决策一次。于是图里为它们准备了三个"直通执行节点"：
+  </p>
+
+<pre><code><span class="c"># app/agent/graph.py 中的节点注册（节选）</span>
+<span class="s">"resume_exec"</span>:    resume_exec_node,     <span class="c"># 批量简历评分</span>
+<span class="s">"interview_exec"</span>: interview_exec_node,  <span class="c"># 面试计划生成</span>
+<span class="s">"exam_exec"</span>:      exam_exec_node,       <span class="c"># 试卷生成（带/不带文档）</span></code></pre>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fnode start">HRAgent.vue 消息内工具面板<small>上传简历面板 / 面试计划面板 / 试卷配置表单</small></div>
+      <div class="farrow"><span class="lbl">点击执行按钮 · agentApi.streamXxx()</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode route">POST /api/v1/agent/{resume-screen|interview-plan|exam}/stream<small>FormData / JSON · 端点校验参数与文件数量</small></div>
+      <div class="farrow"><span class="lbl">graph_service.run_stream(preset_intent, extra_config)</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode rule">route_intent_node 直通<small>preset_intent 非空 → 跳过意图决策与对话记忆，dest_node = preset</small></div>
+      <div class="farrow"><div class="line"></div><div class="head"></div></div>
+      <div class="fnode llm">exec 节点（files.py）<small>从 configurable 取 files / preset_params，调 AgentService.stream_xxx()</small></div>
+      <div class="farrow"><span class="lbl">_emit_generator：非 final 事件经 stream writer 透传</span><div class="line"></div><div class="head"></div></div>
+      <div class="fnode end">bridge.run_stream → SSE<small>progress / delta / artifact / final 推回前端聊天页</small></div>
+    </div>
+    <div class="dg-caption">图 1 · 三个 exec 节点共用的执行链路：端点直通，节点只做"取参 + 跑生成器 + 返回终态"</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">💡 一句话区分</span>
+    <strong>resume_exec</strong> 按 JD 批量评分简历（招聘链路起点）；
+    <strong>interview_exec</strong> 为某位已评分候选人生成面试方案（中间环节）；
+    <strong>exam_exec</strong> 按确认的配置 + 参考文档/面试方案出笔试试卷（链路末端）。
+    三者串起来就是产品主线：<strong>JD → 筛简历 → 面试计划 → 笔试试卷</strong>。
+  </div>
+</section>
+
+<!-- ==================== 2. 共同机制 ==================== -->
+<section id="mechanism">
+  <h2><span class="num">2</span>共同机制：为什么会有这三个节点</h2>
+  <p class="dim">files.py 文件头注释写明了设计意图：专用端点解析 FormData 后，以 preset_intent 直接把图路由到对应 exec 节点；节点内部复用既有流式生成器，事件经 stream writer 透传给 bridge.run_stream()。</p>
+
+  <h3 id="mech-preset">2.1 preset_intent 直通路由 <span class="h3-tag badge blue">跳过 LLM 决策</span></h3>
+  <p>
+    端点调用 <code>run_stream(preset_intent="resume_exec"/"interview_exec"/"exam_exec")</code>
+    <span class="fileref">endpoints/agent.py:122-127,147-152,176-181,213-217</span>。
+    路由节点检测到 preset 非空时，<strong>不做意图识别、不构建对话记忆</strong>，直接把目标节点写进 state：
+  </p>
+<pre><code><span class="c"># app/agent/nodes/routing.py:24-34</span>
+preset = state.get(<span class="s">"preset_intent"</span>)
+<span class="k">if</span> preset:
+    logger.info(<span class="s">"LangGraph 路由直通 preset=%s"</span>, preset)
+    <span class="k">return</span> {
+        <span class="s">"intent"</span>: preset,
+        <span class="s">"agent_plan"</span>: {<span class="s">"mode"</span>: <span class="s">"tool"</span>, <span class="s">"intent"</span>: preset,
+                      <span class="s">"reason"</span>: <span class="s">"端点直通执行。"</span>, <span class="s">"source"</span>: <span class="s">"preset"</span>},
+        <span class="s">"route"</span>: <span class="k">None</span>,
+        <span class="s">"memory_context"</span>: <span class="s">""</span>,
+        <span class="s">"dest_node"</span>: preset,   <span class="c"># 条件边据此直达 exec 节点</span>
+    }</code></pre>
+
+  <h3 id="mech-config">2.2 文件与定位参数走 configurable，不进 checkpoint <span class="h3-tag badge amber">避免大 payload 落库</span></h3>
+  <p>
+    几十份简历的二进制内容如果进图状态，会被 checkpointer 序列化落库。所以端点把文件和参数放进
+    <code>extra_config</code>，最终挂在 <code>RunnableConfig["configurable"]</code> 上，节点内用两个小工具取出：
+  </p>
+<pre><code><span class="c"># app/agent/nodes/files.py:22-27</span>
+<span class="k">def</span> <span class="f">_exec_params</span>(config: RunnableConfig) -> Dict[str, Any]:
+    <span class="k">return</span> (config.get(<span class="s">"configurable"</span>) <span class="k">or</span> {}).get(<span class="s">"preset_params"</span>) <span class="k">or</span> {}
+
+<span class="k">def</span> <span class="f">_exec_files</span>(config: RunnableConfig):
+    <span class="k">return</span> (config.get(<span class="s">"configurable"</span>) <span class="k">or</span> {}).get(<span class="s">"files"</span>) <span class="k">or</span> []</code></pre>
+  <table>
+    <thead><tr><th>configurable 键</th><th>内容</th><th>谁在用</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>files</code></td><td><code>[{filename, content(bytes)}]</code>，端点 <code>_read_files()</code> 读出的上传文件</td><td>resume_exec、exam_exec（带文档时）</td></tr>
+      <tr><td class="k"><code>preset_params</code></td><td>定位/配置参数：<code>job_description_id</code> / <code>resume_evaluation_id</code> / <code>exam_requirements</code></td><td>三个节点各取所需</td></tr>
+      <tr><td class="k"><code>user_id</code> / <code>agent_service</code></td><td>当前用户 id 与注入了 DB session 的服务实例</td><td>所有节点（<code>_service(config)</code>）</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="mech-emit">2.3 复用旧流式生成器：透传 + 终态回写 <span class="h3-tag badge green">节点不做业务</span></h3>
+  <p>
+    三个节点结构完全一致：<strong>取 service → 取参数 → 跑生成器 → 返回终态</strong>。业务全部在
+    <code>AgentService.stream_xxx()</code> 里，节点只是包一层：
+  </p>
+<pre><code><span class="c"># app/agent/nodes/legacy.py:66-76 —— 迭代生成器，事件分流</span>
+<span class="k">async def</span> <span class="f">_emit_generator</span>(agen) -> Optional[Dict[str, Any]]:
+    writer = get_stream_writer()
+    final_event = <span class="k">None</span>
+    <span class="k">async for</span> event <span class="k">in</span> agen:
+        <span class="k">if</span> event.get(<span class="s">"type"</span>) == <span class="s">"final"</span>:
+            final_event = event        <span class="c"># final 不透传，留作 state 更新</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> writer:
+            writer({<span class="s">"agent_event"</span>: event})  <span class="c"># progress/delta/artifact → SSE</span>
+    <span class="k">return</span> final_event
+
+<span class="c"># legacy.py:54-63 —— final 事件转 state 更新（写入 checkpoint）</span>
+<span class="k">def</span> <span class="f">_respond_from_event</span>(final_event):
+    dumped = (final_event <span class="k">or</span> {}).get(<span class="s">"response"</span>) <span class="k">or</span> {}
+    <span class="k">return</span> {<span class="s">"final_response"</span>: dumped, <span class="s">"intent"</span>: dumped.get(<span class="s">"intent"</span>),
+            <span class="s">"route"</span>: dumped.get(<span class="s">"route"</span>), <span class="s">"steps"</span>: ..., <span class="s">"artifacts"</span>: ...}</code></pre>
+
+  <div class="callout tip">
+    <span class="co-title">✅ SSE 事件契约（三节点通用）</span>
+    <code>progress</code> 步骤条进度 → <code>delta</code> markdown 增量文本 → <code>artifact</code> 阶段性产物 → <code>final</code> 终态响应（message / intent / route / steps / artifacts / suggestions）。
+    端点 <code>_sse_stream()</code> 统一包装为 <code>data: {...}</code> 帧，异常转 <code>error</code> 事件，结尾固定 <code>[DONE]</code>
+    <span class="fileref">endpoints/agent.py:40-59</span>。
+  </div>
+</section>
+
+<!-- ==================== 3. resume_exec_node ==================== -->
+<section id="resume">
+  <h2><span class="num">3</span>resume_exec_node — 批量简历评分</h2>
+  <p>
+    <strong>目的</strong>：用户上传一批简历，按指定 JD 逐份 AI 评分，流式推送进度和结果，形成"筛选 → 面试"招聘闭环的起点。
+    <span class="fileref">app/agent/nodes/files.py:30-40</span>
+  </p>
+
+  <h3 id="resume-entry">3.1 前端入口与端点</h3>
+  <table>
+    <thead><tr><th>环节</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="k">前端页面</td>
+        <td><code>frontend/src/views/agent/HRAgent.vue</code>（HR Agent 对话页，侧边栏「HR Agent」→ <code>/agent</code>）</td>
+      </tr>
+      <tr>
+        <td class="k">触发面板</td>
+        <td>聊天框上传简历附件后，后端返回 <code>resume_upload_request</code> artifact，页面渲染 <code>kind === 'resume_upload'</code> 上传面板：<strong>JD 下拉选择器 + 简历文件列表 + 「开始评分（N）」按钮</strong> <span class="fileref">HRAgent.vue:272-315</span></td>
+      </tr>
+      <tr>
+        <td class="k">前端处理函数</td>
+        <td><code>startResumeScreening()</code>：校验"必须选 JD、1~20 份文件"，落用户消息、建运行中响应，调 <code>agentApi.streamResumeScreening()</code> <span class="fileref">HRAgent.vue:1540 · api/agent.js:45-64</span></td>
+      </tr>
+      <tr>
+        <td class="k">HTTP 端点</td>
+        <td><span class="badge blue">POST</span> <code>/api/v1/agent/resume-screen/stream</code> · FormData：<code>job_description_id</code> + <code>conversation_id</code> + <code>files</code>（端点侧同样限 20 份、拒绝空文件） <span class="fileref">endpoints/agent.py:102-131</span></td>
+      </tr>
+      <tr>
+        <td class="k">节点执行</td>
+        <td><code>job_description_id</code> 转 UUID，连同文件 payloads 调 <code>service.stream_resume_screening()</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+<pre><code><span class="c"># app/agent/nodes/files.py:30-40</span>
+<span class="k">async def</span> <span class="f">resume_exec_node</span>(state, config):
+    service = _service(config)
+    params  = _exec_params(config)
+    files   = _exec_files(config)
+    final_event = <span class="k">await</span> _emit_generator(service.stream_resume_screening(
+        user_id=config[<span class="s">"configurable"</span>][<span class="s">"user_id"</span>],
+        job_description_id=UUID(str(params[<span class="s">"job_description_id"</span>])),
+        files=files,
+        conversation_id=state.get(<span class="s">"conversation_id"</span>),
+    ))
+    <span class="k">return</span> _respond_from_event(final_event)</code></pre>
+
+  <h3 id="resume-flow">3.2 执行流程</h3>
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1"><span class="st-num">1</span><div class="st-title">接收简历文件</div><div class="st-desc">推 progress「已收到 N 份简历」，初始化三步步骤条</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s2"><span class="st-num">2</span><div class="st-title">批量 AI 评分</div><div class="st-desc">逐份调 ResumeEvaluationService.evaluate_resume()，每份推 progress + delta + artifact</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s3"><span class="st-num">3</span><div class="st-title">生成筛选摘要</div><div class="st-desc">按分数降序排序，60 分及格线生成招聘闭环建议，推 final</div></div>
+    </div>
+    <div class="dg-caption">图 2 · stream_resume_screening 的三步步骤条（与前端步骤条一一对应）</div>
+  </div>
+  <ul>
+    <li>每份开始评分推 <code>progress</code>（"正在评分第 i/N 份：文件名"）；评完推 <code>delta</code>（markdown 增量：姓名/分数/学历/年限/评估维度）+ <code>artifact</code>（单份结果卡片）。</li>
+    <li>单份失败标记 <code>status: failed</code> 并记录 error，<strong>不中断整批</strong>；结束时统计成功/失败份数。</li>
+    <li>评分记录由 <code>evaluate_resume()</code> 落库到简历筛选列表，后续面试计划靠这些记录的 id 衔接。</li>
+  </ul>
+  <p class="dim">服务实现：<span class="fileref">app/services/agent_service.py:599-734</span></p>
+
+  <h3 id="resume-output">3.3 产物与招聘闭环</h3>
+  <table>
+    <thead><tr><th>final 字段</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>artifacts[0]</code></td><td><span class="badge green">resume_screening_results</span> 排序后的结果表（id / filename / name / score / position / education / work_years / metrics / status），metadata 带 JD id、总数、及格线 60</td></tr>
+      <tr><td class="k"><code>artifacts[1]</code></td><td><span class="badge purple">resume_screening_followup</span> 招聘闭环建议：高分候选人进面试、低分候选人复核或删除</td></tr>
+      <tr><td class="k"><code>route</code></td><td><code>/recruitment/resume-screening</code>（引导跳转简历筛选列表页）</td></tr>
+      <tr><td class="k"><code>suggestions</code></td><td>生成面试计划 / 删除低分候选人 / 查看简历筛选列表</td></tr>
+    </tbody>
+  </table>
+  <div class="callout info">
+    <span class="co-title">💡 闭环衔接</span>
+    用户点"为高分候选人生成面试计划"等建议时，前端会带着具体 <code>resumeEvaluationId</code> 直接调下一环节的
+    <code>startInterviewPlan()</code> <span class="fileref">HRAgent.vue:1068,1084</span> —— 进入第 4 节的 interview_exec。
+  </div>
+</section>
+
+<!-- ==================== 4. interview_exec_node ==================== -->
+<section id="interview">
+  <h2><span class="num">4</span>interview_exec_node — 生成面试计划</h2>
+  <p>
+    <strong>目的</strong>：针对<strong>某一位已评分候选人</strong>，结合其简历评分结果 + JD，流式生成个性化面试方案并保存，把候选人状态推进到"面试"环节。
+    <span class="fileref">app/agent/nodes/files.py:43-51</span>
+  </p>
+
+  <h3 id="interview-entry">4.1 前端入口与端点</h3>
+  <table>
+    <thead><tr><th>环节</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="k">前端页面</td>
+        <td>同样是 <code>HRAgent.vue</code>，两个触发口：<br>① <code>kind === 'interview_plan'</code> 工具面板：<strong>已评分候选人选择器 + 「生成面试计划」按钮</strong> <span class="fileref">HRAgent.vue:319-342</span><br>② 简历筛选完成后点建议按钮 / 闭环 artifact（如"为高分候选人生成面试计划"），带具体 <code>resumeEvaluationId</code> 自动调用 <span class="fileref">HRAgent.vue:1068,1084</span></td>
+      </tr>
+      <tr>
+        <td class="k">前端处理函数</td>
+        <td><code>startInterviewPlan()</code>：校验"必须选一位已评分候选人"，调 <code>agentApi.streamInterviewPlan()</code> <span class="fileref">HRAgent.vue:1616 · api/agent.js:66-82</span></td>
+      </tr>
+      <tr>
+        <td class="k">HTTP 端点</td>
+        <td><span class="badge blue">POST</span> <code>/api/v1/agent/interview-plan/stream</code> · FormData 只有 <code>resume_evaluation_id</code> + <code>conversation_id</code> —— <strong>没有文件</strong>，节点里也不调 <code>_exec_files()</code> <span class="fileref">endpoints/agent.py:134-156</span></td>
+      </tr>
+      <tr>
+        <td class="k">节点执行</td>
+        <td><code>resume_evaluation_id</code> 转 UUID 调 <code>service.stream_interview_plan()</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 id="interview-flow">4.2 执行流程</h3>
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1"><span class="st-num">1</span><div class="st-title">读取候选人资料</div><div class="st-desc">按 id 读简历评分记录 → 顺记录里的 job_description_id 读 JD 全文</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s4"><span class="st-num">2</span><div class="st-title">生成面试计划</div><div class="st-desc">调 Dify workflow（type 4）流式生成，delta 逐段推送 markdown</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s3"><span class="st-num">3</span><div class="st-title">保存面试计划</div><div class="st-desc">InterviewPlanService.create_interview_plan() 落库；候选人状态 → INTERVIEW</div></div>
+    </div>
+    <div class="dg-caption">图 3 · stream_interview_plan 的三步步骤条</div>
+  </div>
+  <ul>
+    <li>生成内容围绕<strong>高匹配项做深挖、弱项设计追问</strong>，避免只凭简历亮点做判断。</li>
+    <li>保存后把 <code>resume.status</code> 改为 <code>ResumeStatus.INTERVIEW</code> 并 commit —— 面试计划页刷新即可见该候选人。</li>
+    <li>artifact metadata 回填 <code>saved_plan_id</code>、候选人姓名、岗位（岗位优先取 JD title）。</li>
+  </ul>
+  <p class="dim">服务实现：<span class="fileref">app/services/agent_service.py:771-848</span></p>
+
+  <h3 id="interview-output">4.3 产物与状态推进</h3>
+  <table>
+    <thead><tr><th>final 字段</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>artifacts[0]</code></td><td><span class="badge purple">interview_plan</span> 面试计划全文 + metadata（resume_evaluation_id / saved_plan_id / candidate_name / candidate_position）</td></tr>
+      <tr><td class="k"><code>route</code></td><td><code>/recruitment/smart-interview</code>（智能面试页）</td></tr>
+      <tr><td class="k"><code>suggestions</code></td><td>基于当前面试方案生成笔试试卷 / 写面试邀约邮件 / 查看面试计划列表</td></tr>
+      <tr><td class="k">副作用</td><td>面试计划落库 + 候选人状态推进为「面试」</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip">
+    <span class="co-title">✅ 链路位置</span>
+    上承简历评分（消费 resume_evaluation_id），下接试卷生成（suggestion 引导"基于当前面试方案生成笔试试卷"，考试服务会关联最近面试方案上下文）。
+  </div>
+</section>
+
+<!-- ==================== 5. exam_exec_node ==================== -->
+<section id="exam">
+  <h2><span class="num">5</span>exam_exec_node — 生成笔试试卷</h2>
+  <p>
+    <strong>目的</strong>：按用户确认的考试配置（标题、考察方向、总分、时长、题型数量、特殊要求），可选地基于上传的参考文档和/或当前面试方案，流式出题、保存并给出分享链接。
+    <span class="fileref">app/agent/nodes/files.py:54-73</span>
+  </p>
+
+  <h3 id="exam-branch">5.1 双端点与节点分支 <span class="h3-tag badge amber">唯一带分支的节点</span></h3>
+  <p>三个节点里只有 exam_exec 内部有 <code>if files</code> 分支，对应两个端点、两种前端提交形态：</p>
+
+<pre><code><span class="c"># app/agent/nodes/files.py:58-71</span>
+generator = (
+    service.<span class="f">stream_exam_generation_with_documents</span>(   <span class="c"># 本次有新上传文档</span>
+        user_id=..., exam_requirements=params[<span class="s">"exam_requirements"</span>],
+        files=files, conversation_id=...,
+    )
+    <span class="k">if</span> files
+    <span class="k">else</span> service.<span class="f">stream_exam_generation</span>(              <span class="c"># 复用已解析的 knowledge_files</span>
+        user_id=..., exam_requirements=params[<span class="s">"exam_requirements"</span>],
+        conversation_id=...,
+    )
+)</code></pre>
+
+  <div class="diagram">
+    <div class="fbranch">
+      <div class="fcol">
+        <div class="fnode route">POST /agent/exam/document-stream<small>FormData：exam_requirements(JSON 字符串) + files（≤5 个）</small></div>
+        <div class="farrow"><span class="lbl hit">files 非空</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode llm">stream_exam_generation_with_documents<small>存 Document 表 → 提取文本 → knowledge_files 注入配置</small></div>
+        <div class="farrow"><span class="lbl">委托（合并步骤条与 artifacts）</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">stream_exam_generation<small>核心出题流程</small></div>
+      </div>
+      <div class="fcol">
+        <div class="fnode route">POST /agent/exam/stream<small>JSON AgentChatRequest：confirmed_requirements 带配置 + 文档 id 列表</small></div>
+        <div class="farrow"><span class="lbl miss">files 为空</span><div class="line"></div><div class="head"></div></div>
+        <div class="fnode end">stream_exam_generation<small>直接进核心出题流程</small></div>
+      </div>
+    </div>
+    <div class="dg-caption">图 4 · exam_exec 的两条入口：带文档路径最终委托给无文档路径</div>
+  </div>
+
+  <h3 id="exam-entry">5.2 前端入口</h3>
+  <table>
+    <thead><tr><th>环节</th><th>落点</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="k">前端页面</td>
+        <td><code>HRAgent.vue</code>：用户先在聊天框上传参考文档（触发 <code>exam_document_upload</code> 面板），随后进入 <code>kind === 'exam_generate'</code> <strong>试卷配置表单</strong>：标题、考察方向、总分、时长、单选/多选/简答数量、特殊要求 <span class="fileref">HRAgent.vue:346-412</span></td>
+      </tr>
+      <tr>
+        <td class="k">面试方案衔接</td>
+        <td>从面试计划延续过来时自动关联 <code>interview_plan_context</code> 并预填标题/考察方向（如「候选人笔试试卷」） <span class="fileref">HRAgent.vue:985-993</span></td>
+      </tr>
+      <tr>
+        <td class="k">触发按钮</td>
+        <td><strong>「基于文档生成试卷」</strong> → <code>startExamGeneration()</code>：校验标题/方向必填、新文件或复用文档至少其一、≤5 个 <span class="fileref">HRAgent.vue:410-412,1691</span></td>
+      </tr>
+      <tr>
+        <td class="k">前端分支</td>
+        <td>本次有新文件 → <code>agentApi.streamExamWithDocuments()</code>；无新文件、复用之前已解析的 <code>knowledge_files</code>（如重试）→ <code>agentApi.streamExam()</code> <span class="fileref">HRAgent.vue:1764-1779 · api/agent.js:84-116</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 id="exam-flow">5.3 执行流程</h3>
+  <p><strong>带文档路径</strong>（四步步骤条）<span class="fileref">agent_service.py:956-1041</span>：</p>
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1"><span class="st-num">1</span><div class="st-title">接收参考文档</div><div class="st-desc">已接收 N 个文档；若关联面试方案，推 exam_interview_plan_context artifact</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s2"><span class="st-num">2</span><div class="st-title">解析文档内容</div><div class="st-desc">逐个存 Document 表并提取文本（PDF/DOCX/TXT/MD），失败直接报错</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s4"><span class="st-num">3</span><div class="st-title">基于文档生成试卷</div><div class="st-desc">文档 id 作为 knowledge_files 注入配置，委托核心出题流程</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s3"><span class="st-num">4</span><div class="st-title">保存试卷</div><div class="st-desc">save_exam() 落库，返回分享链接</div></div>
+    </div>
+    <div class="dg-caption">图 5 · stream_exam_generation_with_documents 的四步步骤条</div>
+  </div>
+  <p><strong>核心生成路径</strong>（两条入口最终都走这里）<span class="fileref">agent_service.py:850-954</span>：</p>
+  <ol>
+    <li>标准化考试配置（<code>_normalize_exam_requirements</code>）→ 尝试关联最近面试方案上下文（<code>_hydrate_exam_interview_context</code>，"基于当前面试方案出题"场景）。</li>
+    <li><code>ExamService.generate_exam()</code> 流式出题；内部题目格式经 <code>_drain_exam_display_buffer</code> 转成前端可读 markdown，逐段推 <code>delta</code>。</li>
+    <li><strong>题量不足自动补题</strong>：<code>_generate_missing_exam_questions()</code> 检查单选/多选/简答数量，缺多少补多少，补题内容同样流式推送。</li>
+    <li><code>save_exam()</code> 落库 → 生成分享链接 <code>/exam-share/{id}</code> → 推 <code>final</code>。</li>
+  </ol>
+  <div class="callout warn">
+    <span class="co-title">⚠️ 带文档路径的响应合并</span>
+    委托核心路径后，with_documents 会把前两步步骤条（接收/解析文档）与文档类 artifacts <strong>拼回</strong>最终响应，并把 message 改写为「已基于 N 个上传文档生成并保存试卷…」
+    <span class="fileref">agent_service.py:1035-1041</span>。前端看到的始终是完整四步。
+  </div>
+
+  <h3 id="exam-output">5.4 产物与分享链接</h3>
+  <table>
+    <thead><tr><th>final 字段 / artifact</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>exam_paper</code></td><td><span class="badge green">核心产物</span> 试卷 markdown 全文，metadata：subject / saved_exam_id / <code>share_url = /exam-share/{id}</code></td></tr>
+      <tr><td class="k"><code>exam_source_documents</code></td><td><span class="badge gray">带文档时</span> 参考文档列表（Document id + fileName）</td></tr>
+      <tr><td class="k"><code>exam_interview_plan_context</code></td><td><span class="badge gray">关联面试方案时</span> 出题参考的面试方案 title / plan_id</td></tr>
+      <tr><td class="k"><code>route</code></td><td><code>/training/exam-generator</code>（试卷生成页）</td></tr>
+      <tr><td class="k"><code>suggestions</code></td><td>写考试邀请邮件 / 去考试管理查看</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 6. 对照总表 ==================== -->
+<section id="compare">
+  <h2><span class="num">6</span>对照总表与招聘链路</h2>
+
+  <table>
+    <thead>
+      <tr><th>节点</th><th>端点</th><th>前端触发</th><th>输入</th><th>核心服务</th><th>产出与跳转</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="k"><code>resume_exec_node</code></td>
+        <td><code>/agent/resume-screen/stream</code></td>
+        <td>上传面板「开始评分」</td>
+        <td>JD id + ≤20 份简历</td>
+        <td><code>stream_resume_screening</code></td>
+        <td>排序评分表 + 闭环建议 → <code>/recruitment/resume-screening</code></td>
+      </tr>
+      <tr>
+        <td class="k"><code>interview_exec_node</code></td>
+        <td><code>/agent/interview-plan/stream</code></td>
+        <td>候选人面板「生成面试计划」/ 筛选后建议按钮</td>
+        <td>简历评分 id（无文件）</td>
+        <td><code>stream_interview_plan</code></td>
+        <td>面试计划落库 + 状态推进 INTERVIEW → <code>/recruitment/smart-interview</code></td>
+      </tr>
+      <tr>
+        <td class="k"><code>exam_exec_node</code></td>
+        <td><code>/agent/exam/stream</code> 或 <code>/agent/exam/document-stream</code></td>
+        <td>试卷配置表单「基于文档生成试卷」</td>
+        <td>考试配置（+ ≤5 份参考文档）</td>
+        <td><code>stream_exam_generation(_with_documents)</code></td>
+        <td>试卷落库 + 分享链接 → <code>/training/exam-generator</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+    <div class="steps">
+      <div class="step s1"><span class="st-num">0</span><div class="st-title">JD 生成</div><div class="st-desc">/agent/graph 对话链产出 JD 与评分标准（前置环节）</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s2"><span class="st-num">1</span><div class="st-title">批量筛简历</div><div class="st-desc">resume_exec · 按 JD 评分排序，60 分及格线</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s4"><span class="st-num">2</span><div class="st-title">面试计划</div><div class="st-desc">interview_exec · 高分候选人个性化方案，状态 → 面试</div></div>
+      <div class="step-arrow">→</div>
+      <div class="step s3"><span class="st-num">3</span><div class="st-title">笔试试卷</div><div class="st-desc">exam_exec · 结合文档/面试方案出题，分享链接给候选人</div></div>
+    </div>
+    <div class="dg-caption">图 6 · 招聘主链路：每个 exec 节点负责一环的"确认后真正执行"，SSE 实时推回聊天页</div>
+  </div>
+
+  <div class="callout info">
+    <span class="co-title">💡 设计要点回顾</span>
+    ① 端点已明确意图 → <code>preset_intent</code> 直通，省一次 LLM 决策；
+    ② 文件/参数走 <code>configurable</code> → 大 payload 不进 checkpoint；
+    ③ 节点复用旧流式生成器 → 业务零重写，SSE 事件格式与旧版兼容；
+    ④ <code>final</code> 事件回写 state → 产物进图状态，供后续轮次（编辑/删除/关联）反查。
+  </div>
+</section>
+
+<!-- ==================== 7. 文件索引 ==================== -->
+<section id="files">
+  <h2><span class="num">7</span>文件索引</h2>
+  <table>
+    <thead><tr><th>层</th><th>文件 / 位置</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><span class="badge purple">图节点</span></td><td><code>backend/app/agent/nodes/files.py:22-73</code></td><td>三个 exec 节点 + <code>_exec_params/_exec_files</code> 取参工具</td></tr>
+      <tr><td class="k"><span class="badge purple">图路由</span></td><td><code>backend/app/agent/nodes/routing.py:24-34</code></td><td>preset_intent 直通分支</td></tr>
+      <tr><td class="k"><span class="badge purple">公共工具</span></td><td><code>backend/app/agent/nodes/legacy.py:26-76</code></td><td><code>_service / _emit_generator / _respond_from_event</code></td></tr>
+      <tr><td class="k"><span class="badge blue">HTTP 端点</span></td><td><code>backend/app/api/v1/endpoints/agent.py:102-225</code></td><td>四个流式端点 + <code>_sse_stream / _read_files</code></td></tr>
+      <tr><td class="k"><span class="badge green">服务层</span></td><td><code>backend/app/services/agent_service.py:599-1041</code></td><td><code>stream_resume_screening / stream_interview_plan / stream_exam_generation(_with_documents)</code></td></tr>
+      <tr><td class="k"><span class="badge amber">前端 API</span></td><td><code>frontend/src/api/agent.js:45-116</code></td><td><code>streamResumeScreening / streamInterviewPlan / streamExam / streamExamWithDocuments</code></td></tr>
+      <tr><td class="k"><span class="badge amber">前端页面</span></td><td><code>frontend/src/views/agent/HRAgent.vue</code></td><td>工具面板（272-412）· 处理函数 <code>startResumeScreening</code>(1540) / <code>startInterviewPlan</code>(1616) / <code>startExamGeneration</code>(1691) · 分支提交(1764-1779)</td></tr>
+    </tbody>
+  </table>
+  <p class="dim">关联文档：<a href="chat-vs-agent-endpoints.html">chat / agent / agent-graph 三组 API 详解</a>（本文三个节点所属的 <code>/agent/*</code> 端点组在其中的第 4 节）。</p>
+</section>
+
+</main>
+
+<footer>
+  files.py 三大 exec 节点详解 · 基于 backend 源码与 frontend 调用点整理 · 2026-11
+</footer>
+
+<script>
+  // 目录滚动高亮（scrollspy）
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var targets = links
+      .map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); })
+      .filter(Boolean);
+    function onScroll() {
+      var pos = window.scrollY + 90;
+      var current = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= pos) current = targets[i];
+      }
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>
