@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  # 处理跨域请求
 from contextlib import asynccontextmanager
 import logging
+import sys
 
 from app.core.config import settings  # 项目配置
 from app.core.database import init_db, close_db  # 启动时初始化数据库，关闭时释放连接
@@ -159,11 +160,15 @@ app = create_application()
 
 if __name__ == "__main__":
     # 直接运行入口，如果直接运行这个文件，就调用uvicorn.run
+    # 挂着调试器时关闭 reload：否则 WatchFiles 子进程会与 pydevd 冲突，断点也无法命中。
+    # 注意 Python 3.12+ 的 pydevd 改用 sys.monitoring，gettrace() 检测不到，
+    # 所以同时检查 pydevd 模块是否已加载
+    under_debugger = sys.gettrace() is not None or "pydevd" in sys.modules
     uvicorn.run(
         "main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG,  # 如果调试模式下代码变更会自动重启服务
+        reload=settings.DEBUG and not under_debugger,
         log_level="info"
     )
 
