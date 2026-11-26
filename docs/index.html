@@ -6,12 +6,13 @@
 <title>HR Agent 智能人事助手 · 文档中心</title>
 <style>
   :root {
-    --bg: #f6f8fa;
+    --bg: #f6f7fb;
     --card: #ffffff;
-    --text: #1f2328;
-    --muted: #656d76;
-    --border: #d0d7de;
-    --accent: #0969da;
+    --text: #1e2433;
+    --muted: #5a6478;
+    --faint: #8b93a7;
+    --border: #e5e8f0;
+    --accent: #5b5bd6;
     --pdf: #d1242f;
     --ppt: #d4a72c;
     --html: #1a7f37;
@@ -19,219 +20,386 @@
     --img: #bf8700;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
       "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
-    padding: 40px 20px 80px;
+    line-height: 1.65;
+    padding: 32px 24px 80px;
   }
-  .container { max-width: 960px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 48px; }
-  header h1 { font-size: 2rem; margin-bottom: 8px; }
-  header p { color: var(--muted); }
-  section { margin-bottom: 40px; }
-  section > h2 {
-    font-size: 1.25rem;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 16px;
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+    border-radius: 22px;
+    color: #fff;
+    padding: 56px 56px 44px;
+    margin-bottom: 44px;
+    position: relative;
+    overflow: hidden;
   }
-  section > .desc { color: var(--muted); font-size: 0.9rem; margin: -8px 0 16px; }
-  ul.files { list-style: none; display: grid; gap: 10px; }
-  ul.files a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  header.hero::after {
+    content: "";
+    position: absolute; right: -70px; top: -70px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+  }
+  header.hero::before {
+    content: "";
+    position: absolute; right: 90px; bottom: -110px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  header.hero h1 { font-size: 34px; font-weight: 800; letter-spacing: .01em; }
+  header.hero p.sub { margin-top: 12px; font-size: 15.5px; opacity: .92; max-width: 720px; }
+  header.hero .meta { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+  header.hero .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 4px 14px; border-radius: 999px; font-size: 12.5px;
+  }
+  nav.quicknav { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  nav.quicknav a {
+    color: #fff; text-decoration: none; font-size: 13.5px; font-weight: 600;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.3);
+    padding: 7px 18px; border-radius: 999px;
+    transition: background .15s, transform .15s;
+  }
+  nav.quicknav a:hover { background: rgba(255,255,255,.28); transform: translateY(-1px); }
+
+  /* ---------- 分区 ---------- */
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  section > .sec-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 6px;
+  }
+  section > .sec-head h2 { font-size: 21px; font-weight: 800; }
+  section > .sec-head .count {
+    font-size: 12px; font-weight: 700; color: var(--sec, var(--accent));
+    background: var(--sec-soft, #eeeefc);
+    padding: 2px 12px; border-radius: 999px;
+  }
+  section > .desc { color: var(--muted); font-size: 13.5px; margin: 4px 0 18px; max-width: 860px; }
+  section > .sec-head + .grid { margin-top: 18px; }
+
+  /* ---------- 卡片网格 ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+    gap: 16px;
+  }
+  a.card {
+    position: relative;
+    display: flex; flex-direction: column; gap: 12px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
+    border-radius: 16px;
+    padding: 22px 22px 20px;
+    min-height: 158px;
     text-decoration: none;
     color: var(--text);
-    transition: border-color .15s, box-shadow .15s;
+    box-shadow: 0 1px 3px rgba(30,36,51,.04);
+    transition: transform .18s, box-shadow .18s, border-color .18s;
   }
-  ul.files a:hover {
-    border-color: var(--accent);
-    box-shadow: 0 1px 6px rgba(9, 105, 218, .15);
+  a.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--sec, var(--accent));
+    box-shadow: 0 12px 28px rgba(30,36,51,.10);
   }
-  ul.files a:hover .name { color: var(--accent); }
-  .badge {
-    flex-shrink: 0;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: .03em;
-    color: #fff;
-    border-radius: 4px;
-    padding: 2px 8px;
-    min-width: 44px;
-    text-align: center;
+  a.card::after {
+    content: "↗";
+    position: absolute; top: 18px; right: 20px;
+    font-size: 15px; font-weight: 700;
+    color: var(--sec, var(--accent));
+    opacity: 0; transform: translate(-4px, 4px);
+    transition: opacity .18s, transform .18s;
   }
+  a.card:hover::after { opacity: 1; transform: translate(0, 0); }
+  .card .icon {
+    width: 46px; height: 46px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: var(--sec-soft, #eeeefc);
+  }
+  .card .card-title { font-size: 15px; font-weight: 700; line-height: 1.5; }
+  .card .card-note { color: var(--faint); font-size: 12.5px; margin-top: auto; line-height: 1.5; }
+  .card .badge {
+    position: absolute; top: 20px; right: 20px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .05em;
+    color: #fff; border-radius: 5px; padding: 2px 8px;
+    transition: opacity .18s;
+  }
+  a.card:hover .badge { opacity: 0; }
   .badge.pdf  { background: var(--pdf); }
   .badge.pptx { background: var(--ppt); }
   .badge.html { background: var(--html); }
   .badge.md   { background: var(--md); }
   .badge.img  { background: var(--img); }
-  .name { font-weight: 500; }
-  .note { color: var(--muted); font-size: 0.8rem; margin-left: auto; flex-shrink: 0; }
+
+  /* ---------- 分区主题色 ---------- */
+  #tutorial   { --sec: #d1242f; --sec-soft: #fdecec; }
+  #hrdocs     { --sec: #2563eb; --sec-soft: #e8f0fe; }
+  #enterprise { --sec: #0e9f6e; --sec-soft: #e6f7f1; }
+  #backend    { --sec: #8b5cf6; --sec-soft: #f3eefe; }
+  #flowcharts { --sec: #d97706; --sec-soft: #fdf3e3; }
+
   footer {
     text-align: center;
-    color: var(--muted);
-    font-size: 0.85rem;
+    color: var(--faint);
+    font-size: 13px;
     border-top: 1px solid var(--border);
-    padding-top: 24px;
+    padding-top: 28px;
   }
-  @media (max-width: 600px) {
-    .note { display: none; }
+
+  @media (max-width: 640px) {
+    body { padding: 16px 14px 60px; }
+    header.hero { padding: 36px 26px 30px; border-radius: 18px; }
+    header.hero h1 { font-size: 26px; }
+    .grid { grid-template-columns: 1fr; }
+    a.card { min-height: 0; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <header>
+
+  <!-- ==================== Hero ==================== -->
+  <header class="hero">
     <h1>HR Agent 智能人事助手</h1>
-    <p>项目文档中心 · 通过 GitHub Pages 发布</p>
+    <p class="sub">项目文档中心 · 从教程课件、项目文档到后端源码机制专题与业务流程图，一站式导航。</p>
+    <div class="meta">
+      <span>📚 36 份文档</span>
+      <span>🗂 5 大分区</span>
+      <span>🚀 通过 GitHub Pages 发布</span>
+    </div>
+    <nav class="quicknav">
+      <a href="#tutorial">📕 教程课件</a>
+      <a href="#hrdocs">📘 HR Agent 文档</a>
+      <a href="#enterprise">📗 企业级项目文档</a>
+      <a href="#backend">📙 后端源码机制</a>
+      <a href="#flowcharts">🗺️ 业务流程图</a>
+    </nav>
   </header>
 
-  <section>
-    <h2>📕 教程课件（PDF / PPT）</h2>
-    <ul class="files">
-      <li><a href="origin/pdf/1-项目环境配置与部署v1.pdf" target="_blank" rel="noopener">
-        <span class="badge pdf">PDF</span><span class="name">1 - 项目环境配置与部署 v1</span>
-      </a></li>
-      <li><a href="origin/pdf/2-使用流程.pdf" target="_blank" rel="noopener">
-        <span class="badge pdf">PDF</span><span class="name">2 - 使用流程</span>
-      </a></li>
-      <li><a href="origin/pdf/3-项目设计与实现.pptx" target="_blank" rel="noopener">
-        <span class="badge pptx">PPTX</span><span class="name">3 - 项目设计与实现</span><span class="note">下载后用 PowerPoint / WPS 打开</span>
-      </a></li>
-    </ul>
+  <!-- ==================== 教程课件 ==================== -->
+  <section id="tutorial">
+    <div class="sec-head"><h2>📕 教程课件</h2><span class="count">3 份</span></div>
+    <div class="grid">
+      <a class="card" href="origin/pdf/1-项目环境配置与部署v1.pdf" target="_blank" rel="noopener">
+        <span class="badge pdf">PDF</span><span class="icon">📕</span>
+        <span class="card-title">1 · 项目环境配置与部署 v1</span>
+        <span class="card-note">环境搭建与部署指引</span>
+      </a>
+      <a class="card" href="origin/pdf/2-使用流程.pdf" target="_blank" rel="noopener">
+        <span class="badge pdf">PDF</span><span class="icon">📕</span>
+        <span class="card-title">2 · 使用流程</span>
+        <span class="card-note">产品功能操作指引</span>
+      </a>
+      <a class="card" href="origin/pdf/3-项目设计与实现.pptx" target="_blank" rel="noopener">
+        <span class="badge pptx">PPTX</span><span class="icon">📊</span>
+        <span class="card-title">3 · 项目设计与实现</span>
+        <span class="card-note">下载后用 PowerPoint / WPS 打开</span>
+      </a>
+    </div>
   </section>
 
-  <section>
-    <h2>📘 HR Agent 文档</h2>
-    <ul class="files">
-      <li><a href="origin/md/1-HTML-HR-Agent文档/01-HR-Agent项目介绍.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">01 - HR-Agent 项目介绍</span>
-      </a></li>
-      <li><a href="origin/md/1-HTML-HR-Agent文档/02-技术栈与选型思路.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">02 - 技术栈与选型思路</span>
-      </a></li>
-      <li><a href="origin/md/1-HTML-HR-Agent文档/03-LangGraph设计与实现.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">03 - LangGraph 设计与实现</span>
-      </a></li>
-      <li><a href="origin/md/1-HTML-HR-Agent文档/04-核心业务链路与实现.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">04 - 核心业务链路与实现</span>
-      </a></li>
-      <li><a href="origin/md/1-HTML-HR-Agent文档/05-Agent服务四大类深度导读.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">05 - Agent 服务四大类深度导读（图解版）</span><span class="note">含目录与 SVG 图解 · 推荐在线阅读</span>
-      </a></li>
-    </ul>
+  <!-- ==================== HR Agent 文档 ==================== -->
+  <section id="hrdocs">
+    <div class="sec-head"><h2>📘 HR Agent 文档</h2><span class="count">5 份</span></div>
+    <div class="grid">
+      <a class="card" href="origin/md/1-HTML-HR-Agent文档/01-HR-Agent项目介绍.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">01 · HR-Agent 项目介绍</span>
+        <span class="card-note">项目定位与功能全景</span>
+      </a>
+      <a class="card" href="origin/md/1-HTML-HR-Agent文档/02-技术栈与选型思路.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">02 · 技术栈与选型思路</span>
+        <span class="card-note">技术选型与架构考量</span>
+      </a>
+      <a class="card" href="origin/md/1-HTML-HR-Agent文档/03-LangGraph设计与实现.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">03 · LangGraph 设计与实现</span>
+        <span class="card-note">图编排 · 节点与状态设计</span>
+      </a>
+      <a class="card" href="origin/md/1-HTML-HR-Agent文档/04-核心业务链路与实现.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">04 · 核心业务链路与实现</span>
+        <span class="card-note">招聘主链路实现拆解</span>
+      </a>
+      <a class="card" href="origin/md/1-HTML-HR-Agent文档/05-Agent服务四大类深度导读.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">05 · Agent 服务四大类深度导读（图解版）</span>
+        <span class="card-note">含目录与 SVG 图解 · 推荐在线阅读</span>
+      </a>
+    </div>
   </section>
 
-  <section>
-    <h2>📗 企业级项目文档</h2>
+  <!-- ==================== 企业级项目文档 ==================== -->
+  <section id="enterprise">
+    <div class="sec-head"><h2>📗 企业级项目文档</h2><span class="count">15 份</span></div>
     <p class="desc">提示：03 / 05 已提供 HTML 图解版，推荐优先在线阅读；GitHub Pages 不渲染 Markdown，.md 文件将以纯文本形式展示（可另存后本地阅读）。</p>
-    <ul class="files">
-      <li><a href="origin/md/2-MD-企业级项目文档/README.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">README - 文档总览</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/10-HR-Agent-智能人力资源管理系统.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">HR Agent - 智能人力资源管理系统</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/01-项目背景与目标说明.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">01 - 项目背景与目标说明</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/02-项目计划与干系人矩阵.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">02 - 项目计划与干系人矩阵</span>
-      </a></li>
-      <li><a href="html/03-需求文档.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">03 - 需求文档（图解版）</span><span class="note">含目录与 SVG 图解 · 推荐在线阅读</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/03-需求文档.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">03 - 需求文档</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/04-权限矩阵与数据字典.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">04 - 权限矩阵与数据字典</span>
-      </a></li>
-      <li><a href="html/05-方案设计文档.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">05 - 方案设计文档（图解版）</span><span class="note">含目录与 SVG 图解 · 推荐在线阅读</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/05-方案设计文档.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">05 - 方案设计文档</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/06-API接口清单.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">06 - API 接口清单</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/07-AI工作流与质量控制说明.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">07 - AI 工作流与质量控制说明</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/08-测试与验收文档.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">08 - 测试与验收文档</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/09-UAT验收单与上线检查表.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">09 - UAT 验收单与上线检查表</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/11-HR项目代码文件说明.md" target="_blank" rel="noopener">
-        <span class="badge md">MD</span><span class="name">HR 项目代码文件说明</span>
-      </a></li>
-      <li><a href="origin/md/2-MD-企业级项目文档/12-agent-flowchart.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">Agent 流程图</span>
-      </a></li>
-    </ul>
+    <div class="grid">
+      <a class="card" href="origin/md/2-MD-企业级项目文档/README.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">README · 文档总览</span>
+        <span class="card-note">企业级文档导航</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/10-HR-Agent-智能人力资源管理系统.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">HR Agent · 智能人力资源管理系统</span>
+        <span class="card-note">系统总体说明</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/01-项目背景与目标说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">01 · 项目背景与目标说明</span>
+        <span class="card-note">立项背景与目标定义</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/02-项目计划与干系人矩阵.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">02 · 项目计划与干系人矩阵</span>
+        <span class="card-note">里程碑计划与干系人</span>
+      </a>
+      <a class="card" href="html/03-需求文档.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">03 · 需求文档（图解版）</span>
+        <span class="card-note">含目录与 SVG 图解 · 推荐在线阅读</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/03-需求文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">03 · 需求文档</span>
+        <span class="card-note">Markdown 原文</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/04-权限矩阵与数据字典.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">04 · 权限矩阵与数据字典</span>
+        <span class="card-note">角色权限与数据定义</span>
+      </a>
+      <a class="card" href="html/05-方案设计文档.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">05 · 方案设计文档（图解版）</span>
+        <span class="card-note">含目录与 SVG 图解 · 推荐在线阅读</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/05-方案设计文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">05 · 方案设计文档</span>
+        <span class="card-note">Markdown 原文</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/06-API接口清单.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">06 · API 接口清单</span>
+        <span class="card-note">后端接口定义一览</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/07-AI工作流与质量控制说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">07 · AI 工作流与质量控制说明</span>
+        <span class="card-note">AI 工作流与质检机制</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/08-测试与验收文档.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">08 · 测试与验收文档</span>
+        <span class="card-note">测试计划与验收标准</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/09-UAT验收单与上线检查表.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">09 · UAT 验收单与上线检查表</span>
+        <span class="card-note">上线前验收检查清单</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/11-HR项目代码文件说明.md" target="_blank" rel="noopener">
+        <span class="badge md">MD</span><span class="icon">📝</span>
+        <span class="card-title">HR 项目代码文件说明</span>
+        <span class="card-note">代码目录与文件导读</span>
+      </a>
+      <a class="card" href="origin/md/2-MD-企业级项目文档/12-agent-flowchart.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🌐</span>
+        <span class="card-title">Agent 流程图</span>
+        <span class="card-note">HTML 交互流程图</span>
+      </a>
+    </div>
   </section>
 
-  <section>
-    <h2>📙 后端源码机制专题</h2>
+  <!-- ==================== 后端源码机制专题 ==================== -->
+  <section id="backend">
+    <div class="sec-head"><h2>📙 后端源码机制专题</h2><span class="count">4 份</span></div>
     <p class="desc">基于 backend 源码与 frontend 调用点整理的机制详解，位于 backend/docs/ 目录，含侧边目录、CSS 流程图与源码行号引用，推荐在线阅读。</p>
-    <ul class="files">
-      <li><a href="../backend/docs/intent-recognition.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">HR Agent 意图识别机制详解</span><span class="note">两套识别机制的链路与取舍</span>
-      </a></li>
-      <li><a href="../backend/docs/agent-skills.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">HR Agent Skill 机制详解</span><span class="note">技能加载 · 草稿→确认→发送</span>
-      </a></li>
-      <li><a href="../backend/docs/chat-vs-agent-endpoints.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">chat / agent / agent-graph 三组 API 详解</span><span class="note">端点定位 · 前端落点</span>
-      </a></li>
-      <li><a href="../backend/docs/files-exec-nodes.html" target="_blank" rel="noopener">
-        <span class="badge html">HTML</span><span class="name">files.py 三大 exec 节点详解</span><span class="note">简历评分 / 面试计划 / 试卷生成</span>
-      </a></li>
-    </ul>
+    <div class="grid">
+      <a class="card" href="../backend/docs/intent-recognition.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🧭</span>
+        <span class="card-title">HR Agent 意图识别机制详解</span>
+        <span class="card-note">两套识别机制的链路与取舍</span>
+      </a>
+      <a class="card" href="../backend/docs/agent-skills.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🧩</span>
+        <span class="card-title">HR Agent Skill 机制详解</span>
+        <span class="card-note">技能加载 · 草稿→确认→发送</span>
+      </a>
+      <a class="card" href="../backend/docs/chat-vs-agent-endpoints.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">🔌</span>
+        <span class="card-title">chat / agent / agent-graph 三组 API 详解</span>
+        <span class="card-note">端点定位 · 前端落点</span>
+      </a>
+      <a class="card" href="../backend/docs/files-exec-nodes.html" target="_blank" rel="noopener">
+        <span class="badge html">HTML</span><span class="icon">⚙️</span>
+        <span class="card-title">files.py 三大 exec 节点详解</span>
+        <span class="card-note">简历评分 / 面试计划 / 试卷生成</span>
+      </a>
+    </div>
   </section>
 
-  <section>
-    <h2>🗺️ 业务流程图</h2>
-    <ul class="files">
-      <li><a href="origin/md/3-IMG-业务流程图/01_workbench-intent-flow.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">01 - 工作台意图识别流程</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/02_jd-create-save-flow.svg" target="_blank" rel="noopener">
-        <span class="badge img">SVG</span><span class="name">02 - JD 创建与保存流程</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/02_jd-create-save-flow2.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">02 - JD 创建与保存流程（版本 2）</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/03_scoring-criteria-flow.svg" target="_blank" rel="noopener">
-        <span class="badge img">SVG</span><span class="name">03 - 评分标准流程</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/03_scoring-criteria-flow2.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">03 - 评分标准流程（版本 2）</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/04_resume-screening-upload-evaluate-flow.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">04 - 简历筛选上传与评估流程</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/04_resume-screening-upload-score-flow2.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">04 - 简历筛选上传与评分流程（版本 2）</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/05_smart-interview-plan-flow.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">05 - 智能面试计划流程</span>
-      </a></li>
-      <li><a href="origin/md/3-IMG-业务流程图/05_smart-interview-plan-flow2.png" target="_blank" rel="noopener">
-        <span class="badge img">PNG</span><span class="name">05 - 智能面试计划流程（版本 2）</span>
-      </a></li>
-    </ul>
+  <!-- ==================== 业务流程图 ==================== -->
+  <section id="flowcharts">
+    <div class="sec-head"><h2>🗺️ 业务流程图</h2><span class="count">9 份</span></div>
+    <div class="grid">
+      <a class="card" href="origin/md/3-IMG-业务流程图/01_workbench-intent-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">01 · 工作台意图识别流程</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/02_jd-create-save-flow.svg" target="_blank" rel="noopener">
+        <span class="badge img">SVG</span><span class="icon">🗺️</span>
+        <span class="card-title">02 · JD 创建与保存流程</span>
+        <span class="card-note">SVG 矢量 · 无损缩放</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/02_jd-create-save-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">02 · JD 创建与保存流程（版本 2）</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/03_scoring-criteria-flow.svg" target="_blank" rel="noopener">
+        <span class="badge img">SVG</span><span class="icon">🗺️</span>
+        <span class="card-title">03 · 评分标准流程</span>
+        <span class="card-note">SVG 矢量 · 无损缩放</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/03_scoring-criteria-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">03 · 评分标准流程（版本 2）</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/04_resume-screening-upload-evaluate-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">04 · 简历筛选上传与评估流程</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/04_resume-screening-upload-score-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">04 · 简历筛选上传与评分流程（版本 2）</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/05_smart-interview-plan-flow.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">05 · 智能面试计划流程</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+      <a class="card" href="origin/md/3-IMG-业务流程图/05_smart-interview-plan-flow2.png" target="_blank" rel="noopener">
+        <span class="badge img">PNG</span><span class="icon">🗺️</span>
+        <span class="card-title">05 · 智能面试计划流程（版本 2）</span>
+        <span class="card-note">PNG 位图 · 新窗口打开</span>
+      </a>
+    </div>
   </section>
 
   <footer>
